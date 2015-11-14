@@ -5,6 +5,7 @@ import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSName
+import scala.util.Try
 
 object Benchy {
 
@@ -38,24 +39,38 @@ object Benchy {
     override def toString() = {
       val opsPerSec = 1.second / average
 //      val opsPerSec = "%0.3f".format(1.second / average)
-      s"$opsPerSec ops/sec ($runs runs, Σ $totalTime)"
+      val tot = "%0.3f sec".format(totalTime.toMicros.toDouble / 1000000L.toDouble)
+      s"$opsPerSec ops/sec ($runs runs, Σ $tot)"
     }
 
     def runs =
       times.length
 
-    def totalTime: FiniteDuration =
+    val totalTime: FiniteDuration =
       if (times.isEmpty)
         Duration.Zero
       else
         times.reduce(_ + _)
 
-    def average: Duration =
+    val average: Duration =
       if (times.isEmpty)
         Duration.Inf
       else
         totalTime / runs
   }
+
+  class RunStatsM {
+    var times = new js.Array[FiniteDuration]
+    var totalTime: FiniteDuration = Duration.Zero
+
+    def add(d: FiniteDuration): Unit = {
+      times push d
+      totalTime += d
+    }
+
+    def runs = times.length
+  }
+
   type RunResult = Either[Throwable, RunStats]
   case class Result[A](bm: Benchmark[A], params: A, result: RunResult)
   def runSuite[A](s: Suite[A]): Unit = {
@@ -69,19 +84,17 @@ object Benchy {
       val fn = b.setup(p)
       val rr: RunResult =
         try {
-
+          val rs = new RunStatsM
           @tailrec
-          def go(rs1: RunStats): RunStats = {
+          def go: Unit = {
             val t = clock.justTime(fn())
-//            val t = clock.justTime((1 to 10).foreach(_ => fn()))
-            val rs2 = RunStats(rs1.times :+ t)
-            if (enough_?(rs2))
-              rs2
-            else
-              go(rs2)
+            rs add t
+            if (!enough_?(rs))
+              go
           }
+          go
+          Right(RunStats(rs.times.toVector))
 
-          Right(go(RunStats(Vector.empty)))
         } catch {
           case t: Throwable => Left(t)
         }
@@ -91,7 +104,7 @@ object Benchy {
 
   }
 
-  def enough_?(s: RunStats): Boolean = {
+  def enough_?(s: RunStatsM): Boolean = {
     def small = s.runs >= 10000
     def large = s.totalTime > 3.seconds
 //    (s.totalTime > 5.second) || (s.runs >= 1000)
@@ -99,11 +112,11 @@ object Benchy {
   }
 
   trait Clock {
-    type Time
     def justTime(f: => Any): FiniteDuration
   }
 
   trait StatelessClock extends Clock {
+    type Time
     def get: Time
     def duration(start: Time, end: Time): FiniteDuration
 
@@ -113,37 +126,51 @@ object Benchy {
       val a = get
       val x = f
       val b = get
-//      bh.consumeA(x)
+      // bh.consumeA(x)
       duration(a, b)
     }
   }
 
   object Clock {
-    val Default = SysMilli
-
     object SysNano extends StatelessClock {
+      override def toString = "SysNano"
       override type Time                      = Long
       override def get                        = System.nanoTime()
       override def duration(a: Time, b: Time) = FiniteDuration(b - a, NANOSECONDS)
     }
 
     object SysMilli extends StatelessClock {
+      override def toString = "SysMilli"
       override type Time                      = Long
       override def get                        = System.currentTimeMillis()
       override def duration(a: Time, b: Time) = FiniteDuration(b - a, MILLISECONDS)
     }
 
-//    object Chrome extends Clock {
-//
-//      @JSName("chrome.Interval")
-//      private class Interval() extends js.Any
-//
-//      private val i = new Interval().asInstanceOf[js.Dynamic]
-//
-//      override type Time                      = Double
-//      override def get                        =
-//      override def duration(a: Time, b: Time) = FiniteDuration(b - a, MILLISECONDS)
-//    }
+    @JSName("chrome.Interval")
+    @js.native
+    class ChromeInterval() extends js.Any {
+      def start(): Unit = js.native
+      def stop(): Unit = js.native
+      def microseconds(): Double = js.native
+    }
 
+    val Chrome: Option[Clock] =
+      Try(new ChromeInterval()).toOption.map(i =>
+        new Clock {
+          override def toString = "Chrome"
+          override def justTime(f: => Any): FiniteDuration = {
+            i.start()
+            val x = f
+            i.stop()
+            // bh.consumeA(x)
+            FiniteDuration(i.microseconds().toLong, MICROSECONDS)
+          }
+        }
+      )
+
+    val Default: Clock =
+      Chrome getOrElse SysNano
+
+    println("Clock: " + Default)
   }
 }
