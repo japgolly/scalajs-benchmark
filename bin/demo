@@ -1,0 +1,9 @@
+#!/bin/bash
+cd "$(dirname "$(readlink -e "$0"/..)")" || exit 1
+
+html="$(pwd)/demo/index.html"
+
+[ ! -e "$html" ] && echo "HTML not found: $html" && exit 1
+
+google-chrome-stable --incognito --user-data-dir=/tmp/chrome-session --enable-benchmarking "$html"
+

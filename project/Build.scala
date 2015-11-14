@@ -28,33 +28,43 @@ object ScalaJsBenchmark extends Build {
       updateOptions            := updateOptions.value.withCachedResolution(true))
     .configure(
       addCommandAliases(
-        "/"   -> "project root",
-        "B"   -> "project benchmarkJVM",
-        "J"   -> "project benchmarkJS",
-        "C"   -> "root/clean",
-        "cc"  -> ";clear;compile",
-        "ccc" -> ";clear;clean;compile"))
+        "/"    -> "project root",
+        "C"    -> "root/clean",
+        "cc"   -> ";clear;compile",
+        "ctc"  -> ";clear;test:compile",
+        "ct"   -> ";clear;test",
+        "cq"   -> ";clear;testQuick",
+        "ccc"  -> ";clear;clean;compile",
+        "cctc" -> ";clear;clean;test:compile",
+        "cct"  -> ";clear;clean;test"))
 
   override def rootProject = Some(root)
 
   lazy val root =
     Project("root", file("."))
       .configure(commonSettings)
-      .aggregate(benchmarkJVM, benchmarkJS, demoJVM, demoJS)
+      .aggregate(benchmark, demo)
 
   lazy val benchmark =
-    crossProject.in(file("benchmark"))
-      .bothConfigure(commonSettings)
+    Project("benchmark", file("benchmark"))
+      .enablePlugins(ScalaJSPlugin)
+      .configure(commonSettings)
+      .settings(
+        libraryDependencies ++= Seq(
+          "com.github.japgolly.scalajs-react" %%% "core"  % "0.10.1",
+          "com.github.japgolly.scalajs-react" %%% "extra" % "0.10.1"),
+        jsDependencies ++= Seq(
+          "org.webjars.npm" % "react"     % "0.14.2" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
+          "org.webjars.npm" % "react-dom" % "0.14.2" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js")
+      )
 
-  lazy val benchmarkJVM = benchmark.jvm
-  lazy val benchmarkJS  = benchmark.js
-
+  val demoJs = "output.js"
   lazy val demo =
-    crossProject.in(file("demo"))
-      .bothConfigure(commonSettings)
+    Project("demo", file("demo"))
+      .enablePlugins(ScalaJSPlugin)
+      .configure(commonSettings)
       .dependsOn(benchmark)
-      .jvmConfigure(_.enablePlugins(JmhPlugin))
-
-  lazy val demoJVM = demo.jvm
-  lazy val demoJS  = demo.js
+      .settings(
+        artifactPath in (Compile, fastOptJS) := ((target in Compile).value / demoJs),
+        artifactPath in (Compile, fullOptJS) := ((target in Compile).value / demoJs))
 }
