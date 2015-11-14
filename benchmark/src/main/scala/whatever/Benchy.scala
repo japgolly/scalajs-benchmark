@@ -49,7 +49,7 @@ object Benchy {
 
   case class AbortFn(run: () => Unit)
 
-  def runToConsole[A](s: Suite[A]): Unit = {
+  def runToConsole[A](s: Suite[A], delay: FiniteDuration = DefaultDelay): Unit = {
     val fmt = {
       val prog  = s.totalBenchmarks.toString.length
       val name  = s.bms.foldLeft(0)(_ max _.name.length)
@@ -59,7 +59,7 @@ object Benchy {
       s"[%${prog}d/%d] %-${name}s %${param}s : %s"
     }
 
-    runSuiteAsync(s) {
+    runSuiteAsync(s, delay) {
       case SuiteStarting    (p)           => println("Starting...")
       case BenchmarkStarting(p, bm, a)    => ()
       case BenchmarkFinished(p, bm, a, r) => println(fmt.format(p.run, p.total, bm.name, a, r))
@@ -67,7 +67,7 @@ object Benchy {
     }
   }
 
-  def runSuiteAsync[A](s: Suite[A])(eh: Event[A] => Unit): AbortFn = {
+  def runSuiteAsync[A](s: Suite[A], delay: FiniteDuration = DefaultDelay)(eh: Event[A] => Unit): AbortFn = {
     val clock = Clock.Default
 
     def run: Unit = {
@@ -81,8 +81,10 @@ object Benchy {
       } {
 
         eh(BenchmarkStarting(progress, b, p))
+
         val fn = b.setup(p)
-        val rr: RunResult =
+
+        def runBM(): RunResult =
           try {
             val rs = new RunStatsM
             @tailrec
@@ -95,8 +97,18 @@ object Benchy {
             go
             Right(RunStats(rs.times.toVector))
           } catch {
-            case t: Throwable => Left(t)
+            case t: Throwable =>
+//              t.printStackTrace()
+              Left(t)
+            //              throw t
           }
+
+        // warmup first
+//        val rr = runBM().right.flatMap(_ => {
+//          runBM()
+//        })
+
+        val rr = runBM()
 
         progress = progress.copy(run = progress.run + 1)
         eh(BenchmarkFinished(progress, b, p, rr))
@@ -106,25 +118,50 @@ object Benchy {
 
     }
 
-    val hnd = js.timers.setTimeout(4.millis)(run)
+    val hnd = js.timers.setTimeout(delay)(run)
     AbortFn(() => js.timers.clearTimeout(hnd))
   }
+
+  val DefaultDelay: FiniteDuration = 4.millis
 
   // suites, benchmarks, and run fns should all take options with shit like the enoughFn, clock
 
   // ====================================================================================================
+
 
   case class Progress[A](s: Suite[A], run: Int) {
     def total = s.totalBenchmarks
     def remaining = total - run
   }
 
+  def toOpsPerSec(d: FiniteDuration): Double =
+    d.toMicros.toDouble / 1000000L.toDouble
+
+  def trimOutliers(v: Vector[Double]): Vector[Double] = {
+    val t = (v.length.toDouble * 0.01).toInt
+    if (t > 0) {
+//      println(s"Dropping: ${v.sorted.takeRight(t).reverse}")
+      v.sorted.dropRight(t)
+    }
+    else
+      v
+  }
+
   case class RunStats(times: Vector[FiniteDuration]) {
     override def toString() = {
-      val opsPerSec = 1.second / average
-//      val opsPerSec = "%0.3f".format(1.second / average)
-      val tot = "%0.3f sec".format(totalTime.toMicros.toDouble / 1000000L.toDouble)
-      s"$opsPerSec ops/sec ($runs runs, Σ $tot)"
+      val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
+
+//      val opsPerSec = 1.second / average
+////      val opsPerSec = "%0.3f".format(1.second / average)
+//      val moe = toOpsPerSec(marginOfError)
+//      s"$opsPerSec ± $moe ops/sec ($runs runs, Σ $tot)"
+
+      def fmtD(d: Duration): String =
+        //"%0.3fms" format (d.toMicros / 1000.0)
+        d.toMicros.toInt + "μs"
+
+//      s"${fmtD(average)} ± ${fmtD(marginOfError)} ${"%0.1f%%" format statsInMicroSec.rme} /op ($runs runs, Σ $tot)"
+      s"${fmtD(average)} ± ${fmtD(marginOfError)} ${statsInMicroSec.rme.toInt}% /op ($runs runs, Σ $tot)"
     }
 
     def runs =
@@ -141,6 +178,12 @@ object Benchy {
         Duration.Inf
       else
         totalTime / runs
+
+    val statsInMicroSec: Stats =
+      Stats(trimOutliers(times.map(_.toMicros.toDouble)))
+
+    def marginOfError: FiniteDuration =
+      FiniteDuration(statsInMicroSec.marginOfError.toLong, MICROSECONDS)
   }
 
   class RunStatsM {
@@ -162,9 +205,13 @@ object Benchy {
 
   // ====================================================================================================
 
+//  val minRuns = 1000
+//  val minTime = 1.second
+//  val maxTime = 2.second
+
   val minRuns = 10000
-  val minTime = 1.second
-  val maxTime = 10.second
+  val minTime = 3.second
+  val maxTime = 30.second
 
   def enough_?(s: RunStatsM): Boolean = {
     def small = s.runs >= minRuns && s.totalTime >= minTime
@@ -230,6 +277,20 @@ object Benchy {
           }
         }
       )
+
+    /*
+    From https://github.com/bestiejs/benchmark.js/blob/master/benchmark.js
+
+      // Detect Node.js's nanosecond resolution timer available in Node.js >= 0.8.
+      if (processObject && typeof (timer.ns = processObject.hrtime) == 'function') {
+        timers.push({ 'ns': timer.ns, 'res': getRes('ns'), 'unit': 'ns' });
+      }
+      // Detect Wade Simmons' Node.js `microtime` module.
+      if (microtimeObject && typeof (timer.ns = microtimeObject.now) == 'function') {
+        timers.push({ 'ns': timer.ns,  'res': getRes('us'), 'unit': 'us' });
+      }
+
+     */
 
     val Default: Clock =
       Chrome getOrElse SysNano

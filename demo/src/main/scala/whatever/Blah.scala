@@ -27,8 +27,8 @@ object IntSet_X {
         var s = Set.empty[Int]
         for (i <- is) if (s contains i) ??? else s += i
         s
-      }),
-
+      })
+,
       Benchmark[Int]("mutableBitSetAdd", setup2 { is =>
         val s = mutable.BitSet.empty
         for (i <- is) if (!s.add(i)) ???
@@ -38,7 +38,8 @@ object IntSet_X {
     )
 
 //    Suite("IntSet", bms, Vector(10, 100, 1000, 10000))
-    Suite("IntSet", bms, Vector(10, 100, 1000))
+//    Suite("IntSet", bms, Vector(10, 100, 1000))
+    Suite("IntSet", bms, Vector(100))
 
   }
 }
