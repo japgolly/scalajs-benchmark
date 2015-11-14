@@ -1,6 +1,9 @@
 package whatever
 
 //import java.util.concurrent.TimeUnit._
+import japgolly.scalajs.react.Callback
+
+import org.scalajs.dom
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.scalajs.js
@@ -11,7 +14,10 @@ object Benchy {
 
   case class Suite[I](name: String,
                       bms: Vector[Benchmark[I]],
-                      params: Vector[I])
+                      params: Vector[I]) {
+    val totalBenchmarks: Int =
+      bms.length * params.length
+  }
 
   type BenchmarkFn = () => Any
   type SetupFn[-I] = I => BenchmarkFn
@@ -34,6 +40,84 @@ object Benchy {
 
 
   // ====================================================================================================
+
+  sealed trait Event[A]
+  case class SuiteStarting[A](p: Progress[A]) extends Event[A]
+  case class BenchmarkStarting[A](p: Progress[A], bm: Benchmark[A], param: A) extends Event[A]
+  case class BenchmarkFinished[A](p: Progress[A], bm: Benchmark[A], param: A, result: RunResult) extends Event[A]
+  case class SuiteFinished[A](p: Progress[A] /*, aborted | results, */) extends Event[A]
+
+  case class AbortFn(run: () => Unit)
+
+  def runToConsole[A](s: Suite[A]): Unit = {
+    val fmt = {
+      val prog  = s.totalBenchmarks.toString.length
+      val name  = s.bms.foldLeft(0)(_ max _.name.length)
+      var param = s.params.foldLeft(0)(_ max _.toString.length)
+      if (!s.params.forall(_.toString.matches("^-?\\d+$")))
+        param = -param
+      s"[%${prog}d/%d] %-${name}s %${param}s : %s"
+    }
+
+    runSuiteAsync(s) {
+      case SuiteStarting    (p)           => println("Starting...")
+      case BenchmarkStarting(p, bm, a)    => ()
+      case BenchmarkFinished(p, bm, a, r) => println(fmt.format(p.run, p.total, bm.name, a, r))
+      case SuiteFinished    (p)           => println("Done.")
+    }
+  }
+
+  def runSuiteAsync[A](s: Suite[A])(eh: Event[A] => Unit): AbortFn = {
+    val clock = Clock.Default
+
+    def run: Unit = {
+      var progress = Progress(s, 0)
+
+      eh(SuiteStarting(progress))
+
+      for {
+        p <- s.params
+        b <- s.bms
+      } {
+
+        eh(BenchmarkStarting(progress, b, p))
+        val fn = b.setup(p)
+        val rr: RunResult =
+          try {
+            val rs = new RunStatsM
+            @tailrec
+            def go: Unit = {
+              val t = clock.justTime(fn())
+              rs add t
+              if (!enough_?(rs))
+                go
+            }
+            go
+            Right(RunStats(rs.times.toVector))
+          } catch {
+            case t: Throwable => Left(t)
+          }
+
+        progress = progress.copy(run = progress.run + 1)
+        eh(BenchmarkFinished(progress, b, p, rr))
+      }
+
+      eh(SuiteFinished(progress))
+
+    }
+
+    val hnd = js.timers.setTimeout(4.millis)(run)
+    AbortFn(() => js.timers.clearTimeout(hnd))
+  }
+
+  // suites, benchmarks, and run fns should all take options with shit like the enoughFn, clock
+
+  // ====================================================================================================
+
+  case class Progress[A](s: Suite[A], run: Int) {
+    def total = s.totalBenchmarks
+    def remaining = total - run
+  }
 
   case class RunStats(times: Vector[FiniteDuration]) {
     override def toString() = {
@@ -71,45 +155,24 @@ object Benchy {
     def runs = times.length
   }
 
+//  type Enough_? = RunStatsM => Boolean
+
   type RunResult = Either[Throwable, RunStats]
-  case class Result[A](bm: Benchmark[A], params: A, result: RunResult)
-  def runSuite[A](s: Suite[A]): Unit = {
-    val clock = Clock.Default
+//  case class Result[A](bm: Benchmark[A], params: A, result: RunResult)
 
-    for {
-      p <- s.params
-      b <- s.bms
-    } {
+  // ====================================================================================================
 
-      val fn = b.setup(p)
-      val rr: RunResult =
-        try {
-          val rs = new RunStatsM
-          @tailrec
-          def go: Unit = {
-            val t = clock.justTime(fn())
-            rs add t
-            if (!enough_?(rs))
-              go
-          }
-          go
-          Right(RunStats(rs.times.toVector))
-
-        } catch {
-          case t: Throwable => Left(t)
-        }
-
-      println(Result(b, p, rr))
-    }
-
-  }
+  val minRuns = 10000
+  val minTime = 1.second
+  val maxTime = 10.second
 
   def enough_?(s: RunStatsM): Boolean = {
-    def small = s.runs >= 10000
-    def large = s.totalTime > 3.seconds
-//    (s.totalTime > 5.second) || (s.runs >= 1000)
+    def small = s.runs >= minRuns && s.totalTime >= minTime
+    def large = s.totalTime > maxTime
     small || large
   }
+
+  // ====================================================================================================
 
   trait Clock {
     def justTime(f: => Any): FiniteDuration
