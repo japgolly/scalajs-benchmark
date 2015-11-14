@@ -8,7 +8,13 @@ import Lib._
 
 object ScalaJsBenchmark extends Build {
 
-  val Scala211 = "2.11.7"
+  object Ver {
+    final val Scala211      = "2.11.7"
+    final val MacroParadise = "2.0.1"
+    final val Monocle       = "1.1.1"
+    final val ScalaJsReact  = "0.10.1"
+    final val React         = "0.14.2"
+  }
 
   def scalacFlags = Seq(
     "-deprecation", "-unchecked", "-feature",
@@ -20,7 +26,7 @@ object ScalaJsBenchmark extends Build {
       version                  := "0.1.0-SNAPSHOT",
       homepage                 := Some(url("https://github.com/japgolly/tempname")),
       licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion             := Scala211,
+      scalaVersion             := Ver.Scala211,
       scalacOptions           ++= scalacFlags,
       clearScreenTask          := clearScreen(),
       shellPrompt in ThisBuild := ((s: State) => Project.extract(s).currentRef.project + "> "),
@@ -38,6 +44,9 @@ object ScalaJsBenchmark extends Build {
         "cctc" -> ";clear;clean;test:compile",
         "cct"  -> ";clear;clean;test"))
 
+  def macroParadisePlugin =
+    compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.full)
+
   override def rootProject = Some(root)
 
   lazy val root =
@@ -51,11 +60,12 @@ object ScalaJsBenchmark extends Build {
       .configure(commonSettings)
       .settings(
         libraryDependencies ++= Seq(
-          "com.github.japgolly.scalajs-react" %%% "core"  % "0.10.1",
-          "com.github.japgolly.scalajs-react" %%% "extra" % "0.10.1"),
+          "com.github.japgolly.scalajs-react" %%% "core"        % Ver.ScalaJsReact,
+          "com.github.japgolly.scalajs-react" %%% "extra"       % Ver.ScalaJsReact,
+          "com.github.japgolly.scalajs-react" %%% "ext-monocle" % Ver.ScalaJsReact),
         jsDependencies ++= Seq(
-          "org.webjars.npm" % "react"     % "0.14.2" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
-          "org.webjars.npm" % "react-dom" % "0.14.2" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js")
+          "org.webjars.npm" % "react"     % Ver.React / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
+          "org.webjars.npm" % "react-dom" % Ver.React / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js")
       )
 
   val demoJs = "output.js"
@@ -65,6 +75,11 @@ object ScalaJsBenchmark extends Build {
       .configure(commonSettings)
       .dependsOn(benchmark)
       .settings(
+        libraryDependencies ++= Seq(
+          "com.github.japgolly.fork.monocle" %%% "monocle-core"  % Ver.Monocle,
+          "com.github.japgolly.fork.monocle" %%% "monocle-macro" % Ver.Monocle),
+        addCompilerPlugin(macroParadisePlugin),
+        skip in packageJSDependencies := false,
         artifactPath in (Compile, fastOptJS) := ((target in Compile).value / demoJs),
         artifactPath in (Compile, fullOptJS) := ((target in Compile).value / demoJs))
 }

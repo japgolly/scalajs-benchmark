@@ -7,7 +7,9 @@ import org.scalajs.dom
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.scalajs.js
+import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSName
+import scala.scalajs.js.timers.SetTimeoutHandle
 import scala.util.Try
 
 object Benchy {
@@ -17,6 +19,27 @@ object Benchy {
                       params: Vector[I]) {
     val totalBenchmarks: Int =
       bms.length * params.length
+
+    def keys: List[BMKey] = {
+      val bis = bms.indices
+      val pis = params.indices
+      for {
+        pi <- pis.toList
+        bi <- bis
+      } yield BMKey(bi, pi)
+    }
+
+    // TODO bad idea idiot
+    def iterator[B](f: (BMKey, Benchmark[I], I) => B): Iterator[B] = {
+      val bis = bms.indices
+      val pis = params.indices
+
+      for {
+        pi <- pis.iterator
+        bi <- bis
+      } yield f(BMKey(bi, pi), bms(bi), params(pi))
+    }
+
   }
 
   type BenchmarkFn = () => Any
@@ -41,10 +64,15 @@ object Benchy {
 
   // ====================================================================================================
 
+  case class BMKey(bmIndex: Int, paramIndex: Int) {
+    def bm[A](s: Suite[A]): Benchmark[A] = s.bms(bmIndex)
+    def param[A](s: Suite[A]): A = s.params(paramIndex)
+  }
+
   sealed trait Event[A]
   case class SuiteStarting[A](p: Progress[A]) extends Event[A]
-  case class BenchmarkStarting[A](p: Progress[A], bm: Benchmark[A], param: A) extends Event[A]
-  case class BenchmarkFinished[A](p: Progress[A], bm: Benchmark[A], param: A, result: RunResult) extends Event[A]
+  case class BenchmarkStarting[A](p: Progress[A], key: BMKey) extends Event[A]
+  case class BenchmarkFinished[A](p: Progress[A], key: BMKey, result: RunResult) extends Event[A]
   case class SuiteFinished[A](p: Progress[A] /*, aborted | results, */) extends Event[A]
 
   case class AbortFn(run: () => Unit)
@@ -60,27 +88,30 @@ object Benchy {
     }
 
     runSuiteAsync(s, delay) {
-      case SuiteStarting    (p)           => println("Starting...")
-      case BenchmarkStarting(p, bm, a)    => ()
-      case BenchmarkFinished(p, bm, a, r) => println(fmt.format(p.run, p.total, bm.name, a, r))
-      case SuiteFinished    (p)           => println("Done.")
+      case SuiteStarting    (p)       => Callback.log("Starting...")
+      case BenchmarkStarting(p, k)    => Callback.empty
+      case BenchmarkFinished(p, k, r) => Callback.log(fmt.format(p.run, p.total, k bm p.s, k param p.s, r))
+      case SuiteFinished    (p)       => Callback.log("Done.")
     }
   }
 
-  def runSuiteAsync[A](s: Suite[A], delay: FiniteDuration = DefaultDelay)(eh: Event[A] => Unit): AbortFn = {
+  private class Ref[A](var value: A)
+
+  def runSuiteAsync[A](s: Suite[A], delay: FiniteDuration = DefaultDelay)(eh: Event[A] => Callback): AbortFn = {
     val clock = Clock.Default
+
+    val hnd = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
 
     def run: Unit = {
       var progress = Progress(s, 0)
 
-      eh(SuiteStarting(progress))
 
-      for {
-        p <- s.params
-        b <- s.bms
-      } {
+      /*
+      eh(SuiteStarting(progress)).runNow()
 
-        eh(BenchmarkStarting(progress, b, p))
+      s.iterator { (key, b, p) =>
+
+        eh(BenchmarkStarting(progress, key)).runNow()
 
         val fn = b.setup(p)
 
@@ -111,15 +142,64 @@ object Benchy {
         val rr = runBM()
 
         progress = progress.copy(run = progress.run + 1)
-        eh(BenchmarkFinished(progress, b, p, rr))
+        eh(BenchmarkFinished(progress, key, rr)).runNow()
+      }.foreach(_ => ())
+      */
+
+      val delay2 = 10.millis
+
+      def doeh(e: Event[A])(next: => Any): Unit = {
+        eh(e).runNow()
+        hnd.value = js.timers.setTimeout(delay2)(next)
       }
 
-      eh(SuiteFinished(progress))
+
+      def go(keys: List[BMKey]): Unit = keys match {
+        case key :: next =>
+          val b = key bm s
+          val p = key param s
+
+          doeh(BenchmarkStarting(progress, key)) {
+
+            val fn = b.setup(p)
+
+            def runBM(): RunResult =
+              try {
+                val rs = new RunStatsM
+                @tailrec
+                def go: Unit = {
+                  val t = clock.justTime(fn())
+                  rs add t
+                  if (!enough_?(rs))
+                    go
+                }
+                go
+                Right(RunStats(rs.times.toVector))
+              } catch {
+                case t: Throwable =>
+                  //              t.printStackTrace()
+                  Left(t)
+                //              throw t
+              }
+
+            val rr = runBM()
+
+            progress = progress.copy(run = progress.run + 1)
+            doeh(BenchmarkFinished(progress, key, rr)) {
+              go(next)
+            }
+          }
+
+        case Nil =>
+          eh(SuiteFinished(progress)).runNow()
+      }
+
+      doeh(SuiteStarting(progress))(go(s.keys))
 
     }
 
-    val hnd = js.timers.setTimeout(delay)(run)
-    AbortFn(() => js.timers.clearTimeout(hnd))
+    hnd.value = js.timers.setTimeout(delay)(run)
+    AbortFn(() => hnd.value foreach js.timers.clearTimeout)
   }
 
   val DefaultDelay: FiniteDuration = 4.millis
