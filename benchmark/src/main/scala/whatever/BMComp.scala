@@ -57,6 +57,14 @@ object BMComp {
     implicit def suiteReuse = Reusability.byRef[Suite2]
     val arcane = Px.bs($).propsA.map(new Arcane(_))
 
+    import ReactChart.RGB
+    import ReactChart.ColourByValue
+    import ReactChart.ColourByValue.scaleFn
+    val graphFX = Some(ColourByValue(
+      fill = Some(scaleFn(RGB(32,255,32), RGB(255,32,32))),
+      stroke = Some(scaleFn(RGB(0,92,0), RGB(92,0,0)))))
+
+
     class Arcane(val s2: Suite2) {
       implicit val s = s2.suite
 
@@ -140,7 +148,7 @@ object BMComp {
                     )))
                   )
 
-                val p = Props(*.graph, bd)
+                val p = Props(*.graph, bd, fx = graphFX)
                 ReactChart.Comp(p)
 
               case Mada => EmptyTag

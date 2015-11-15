@@ -41,6 +41,10 @@ trait ChartElement1 extends Object {
 @native
 trait ChartElement2 extends Object {
   var value: Chart.Value = native
+  var fillColor: String = native
+  var strokeColor: String = native
+  var highlightFill: String = native
+  var highlightStroke: String = native
 }
 
 @native

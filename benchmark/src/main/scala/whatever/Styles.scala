@@ -31,8 +31,8 @@ object Styles extends StyleSheet.Inline {
 
     val graph = style(
       marginTop(2 em),
-      width(400 px),
-      height(400 px))
+      width(800 px),
+      height(800 px))
 
     def styleDataset(d: ScalaDataset): ScalaDataset =
       d.copy(

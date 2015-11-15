@@ -19,7 +19,8 @@ object Main extends js.JSApp {
   def main(): Unit = {
 
 //    val s = IntSet_X.suite2
-    val s = IntSet_X2.suite2
+//    val s = IntSet_X2.suite2
+    val s = BlahReal_IntSet.suite2
 
 //        runToConsole(s)
 
@@ -36,5 +37,11 @@ object Main extends js.JSApp {
     Styles.addToDocument()
     val tgt = dom.document.getElementById("body")
     ReactDOM.render(BMComp.Comp(s), tgt)
+
+    // router
+    // library of bm suites
+    // allow checkboxes beside BMs before starting to turn some off
+
+    // would be good to keep everything on one screen (with expand/collapse) and allow run all/some
   }
 }

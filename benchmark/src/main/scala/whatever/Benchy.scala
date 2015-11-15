@@ -257,9 +257,13 @@ object Benchy {
 
   // ====================================================================================================
 
-  val minRuns = 1000
+//  val minRuns = 1000
+//  val minTime = 1.second
+//  val maxTime = 2.second
+
+  val minRuns = 10000
   val minTime = 1.second
-  val maxTime = 2.second
+  val maxTime = 10.second
 
 //  val minRuns = 10000
 //  val minTime = 3.second

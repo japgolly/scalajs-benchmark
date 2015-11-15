@@ -42,7 +42,37 @@ object ReactChart {
     }
   }
 
-  case class Props(style: TagMod, data: ScalaBarData, options: Chart.BarOptions = newObj)
+  sealed trait Effect
+  case class Roar(min: Double, max: Double, value: Double, datasetIndex: Int) {
+    val range = max - min
+    val pct: Double =
+      if (range <= 0)
+        1.0
+      else
+        (value - min) / range
+  }
+  type Ggggg = Roar => String
+  case class ColourByValue(stroke: Option[Ggggg] = None, fill: Option[Ggggg] = None) extends Effect
+  object ColourByValue {
+    def scaleFn(from: RGB, to: RGB): Ggggg = {
+      val dr = (to.r - from.r).toDouble
+      val dg = (to.g - from.g).toDouble
+      val db = (to.b - from.b).toDouble
+      def fix(d: Double): Int =
+        d.toInt min 255 max 0
+      x => {
+        val r = fix(x.pct * dr + from.r)
+        val g = fix(x.pct * dg + from.g)
+        val b = fix(x.pct * db + from.b)
+        s"rgb($r,$g,$b)"
+      }
+    }
+  }
+  case class RGB(r: Int, g: Int, b: Int)
+
+
+  case class Props(style: TagMod, data: ScalaBarData, options: Chart.BarOptions = newObj,
+                   fx: Option[Effect] = None)
 
   type State = Option[BarChart]
 
@@ -92,10 +122,35 @@ js.Dynamic.global.ccc = c //////////////////////////////////
           }
         }
 
+        np.fx.foreach(applyFx(c, _, np.data).runNow())
+
         c.scale.xLabels = np.data.labels.toJsArray
         c.scale.calculateXLabelRotation()
         c.update()
       }
+
+    def applyFx(c: BarChart, fx: Effect, data: ScalaBarData) = Callback {
+      fx match {
+        case x: ColourByValue =>
+          // ignore errors and the -0.1 while a BM is running
+          val ignoreValue: Double => Boolean = _ < 0
+
+          for ((ds, i) <- data.datasets.iterator.zipWithIndex) {
+            var min = Double.MaxValue
+            var max = Double.MinValue
+            for (v <- ds.data if !ignoreValue(v)) {
+              if (v < min) min = v
+              if (v > max) max = v
+            }
+            for ((v, j) <- ds.data.iterator.zipWithIndex if !ignoreValue(v)) {
+              val r = Roar(min, max, v, i)
+              val m = c.datasets(i).bars.get(j)
+              x.fill.foreach(f => m.fillColor = f(r))
+              x.stroke.foreach(f => m.strokeColor = f(r))
+            }
+          }
+      }
+    }
 
     def unmount: Callback =
       for {
