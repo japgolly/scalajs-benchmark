@@ -12,6 +12,7 @@ object ScalaJsBenchmark extends Build {
     final val Scala211      = "2.11.7"
     final val MacroParadise = "2.0.1"
     final val Monocle       = "1.1.1"
+    final val ScalaCss      = "0.3.1"
     final val ScalaJsReact  = "0.10.1"
     final val React         = "0.14.2"
   }
@@ -62,7 +63,9 @@ object ScalaJsBenchmark extends Build {
         libraryDependencies ++= Seq(
           "com.github.japgolly.scalajs-react" %%% "core"        % Ver.ScalaJsReact,
           "com.github.japgolly.scalajs-react" %%% "extra"       % Ver.ScalaJsReact,
-          "com.github.japgolly.scalajs-react" %%% "ext-monocle" % Ver.ScalaJsReact),
+          "com.github.japgolly.scalajs-react" %%% "ext-monocle" % Ver.ScalaJsReact,
+          "com.github.japgolly.scalacss"      %%% "core"        % Ver.ScalaCss,
+          "com.github.japgolly.scalacss"      %%% "ext-react"   % Ver.ScalaCss),
         jsDependencies ++= Seq(
           "org.webjars.npm" % "react"     % Ver.React / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
           "org.webjars.npm" % "react-dom" % Ver.React / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js")

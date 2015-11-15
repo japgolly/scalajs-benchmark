@@ -17,10 +17,12 @@ object Benchy {
   case class Suite[I](name: String,
                       bms: Vector[Benchmark[I]],
                       params: Vector[I]) {
+    type Param = I
+
     val totalBenchmarks: Int =
       bms.length * params.length
 
-    def keys: List[BMKey] = {
+    val keys: List[BMKey] = {
       val bis = bms.indices
       val pis = params.indices
       for {
@@ -28,18 +30,6 @@ object Benchy {
         bi <- bis
       } yield BMKey(bi, pi)
     }
-
-    // TODO bad idea idiot
-    def iterator[B](f: (BMKey, Benchmark[I], I) => B): Iterator[B] = {
-      val bis = bms.indices
-      val pis = params.indices
-
-      for {
-        pi <- pis.iterator
-        bi <- bis
-      } yield f(BMKey(bi, pi), bms(bi), params(pi))
-    }
-
   }
 
   type BenchmarkFn = () => Any
@@ -105,54 +95,12 @@ object Benchy {
     def run: Unit = {
       var progress = Progress(s, 0)
 
-
-      /*
-      eh(SuiteStarting(progress)).runNow()
-
-      s.iterator { (key, b, p) =>
-
-        eh(BenchmarkStarting(progress, key)).runNow()
-
-        val fn = b.setup(p)
-
-        def runBM(): RunResult =
-          try {
-            val rs = new RunStatsM
-            @tailrec
-            def go: Unit = {
-              val t = clock.justTime(fn())
-              rs add t
-              if (!enough_?(rs))
-                go
-            }
-            go
-            Right(RunStats(rs.times.toVector))
-          } catch {
-            case t: Throwable =>
-//              t.printStackTrace()
-              Left(t)
-            //              throw t
-          }
-
-        // warmup first
-//        val rr = runBM().right.flatMap(_ => {
-//          runBM()
-//        })
-
-        val rr = runBM()
-
-        progress = progress.copy(run = progress.run + 1)
-        eh(BenchmarkFinished(progress, key, rr)).runNow()
-      }.foreach(_ => ())
-      */
-
       val delay2 = 10.millis
 
       def doeh(e: Event[A])(next: => Any): Unit = {
         eh(e).runNow()
         hnd.value = js.timers.setTimeout(delay2)(next)
       }
-
 
       def go(keys: List[BMKey]): Unit = keys match {
         case key :: next =>
@@ -285,13 +233,13 @@ object Benchy {
 
   // ====================================================================================================
 
-//  val minRuns = 1000
-//  val minTime = 1.second
-//  val maxTime = 2.second
+  val minRuns = 1000
+  val minTime = 1.second
+  val maxTime = 2.second
 
-  val minRuns = 10000
-  val minTime = 3.second
-  val maxTime = 30.second
+//  val minRuns = 10000
+//  val minTime = 3.second
+//  val maxTime = 30.second
 
   def enough_?(s: RunStatsM): Boolean = {
     def small = s.runs >= minRuns && s.totalTime >= minTime

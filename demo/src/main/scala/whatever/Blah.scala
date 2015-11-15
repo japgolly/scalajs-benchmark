@@ -39,7 +39,7 @@ object IntSet_X {
 
 //    Suite("IntSet", bms, Vector(10, 100, 1000, 10000))
 //    Suite("IntSet", bms, Vector(10, 100, 1000))
-    Suite("IntSet", bms, Vector(100))
+    Suite("IntSet", bms, Vector(10, 100))
 
   }
 }
