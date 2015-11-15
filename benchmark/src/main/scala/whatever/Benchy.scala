@@ -14,15 +14,23 @@ import scala.util.Try
 
 object Benchy {
 
+  /*
   case class Suite[I](name: String,
                       bms: Vector[Benchmark[I]],
                       params: Vector[I]) {
-    type Param = I
+  */
 
-    val totalBenchmarks: Int =
+  trait Suite {
+    type Param
+
+    val name: String
+    val bms: Vector[Benchmark[Param]]
+    val params: Vector[Param]
+
+    def totalBenchmarks: Int =
       bms.length * params.length
 
-    val keys: List[BMKey] = {
+    lazy val keys: List[BMKey] = {
       val bis = bms.indices
       val pis = params.indices
       for {
@@ -30,6 +38,20 @@ object Benchy {
         bi <- bis
       } yield BMKey(bi, pi)
     }
+  }
+
+  object Suite {
+    type WithParam[A] = Suite {type Param = A}
+
+    def apply[A](_name: String,
+                 _bms: Vector[Benchmark[A]],
+                 _params: Vector[A]): WithParam[A] =
+      new Suite {
+        override type Param = A
+        override val name   = _name
+        override val bms    = _bms
+        override val params = _params
+      }
   }
 
   type BenchmarkFn = () => Any
@@ -55,19 +77,19 @@ object Benchy {
   // ====================================================================================================
 
   case class BMKey(bmIndex: Int, paramIndex: Int) {
-    def bm[A](implicit s: Suite[A]): Benchmark[A] = s.bms(bmIndex)
-    def param[A](implicit s: Suite[A]): A = s.params(paramIndex)
+    def bm(implicit s: Suite): Benchmark[s.Param] = s.bms(bmIndex)
+    def param(implicit s: Suite): s.Param = s.params(paramIndex)
   }
 
-  sealed trait Event[A]
-  case class SuiteStarting[A](p: Progress[A]) extends Event[A]
-  case class BenchmarkStarting[A](p: Progress[A], key: BMKey) extends Event[A]
-  case class BenchmarkFinished[A](p: Progress[A], key: BMKey, result: RunResult) extends Event[A]
-  case class SuiteFinished[A](p: Progress[A] /*, aborted | results, */) extends Event[A]
+  sealed trait Event
+  case class SuiteStarting(p: Progress) extends Event
+  case class BenchmarkStarting(p: Progress, key: BMKey) extends Event
+  case class BenchmarkFinished(p: Progress, key: BMKey, result: RunResult) extends Event
+  case class SuiteFinished(p: Progress /*, aborted | results, */) extends Event
 
   case class AbortFn(run: () => Unit)
 
-  def runToConsole[A](s: Suite[A], delay: FiniteDuration = DefaultDelay): Unit = {
+  def runToConsole(s: Suite, delay: FiniteDuration = DefaultDelay): Unit = {
     val fmt = {
       val prog  = s.totalBenchmarks.toString.length
       val name  = s.bms.foldLeft(0)(_ max _.name.length)
@@ -89,7 +111,7 @@ object Benchy {
 
   var minBmDelay = 10.millis
 
-  def runSuiteAsync[A](s: Suite[A], delay: FiniteDuration = DefaultDelay)(eh: Event[A] => Callback): AbortFn = {
+  def runSuiteAsync(s: Suite, delay: FiniteDuration = DefaultDelay)(eh: Event => Callback): AbortFn = {
     val clock = Clock.Default
 
     val hnd = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
@@ -99,7 +121,7 @@ object Benchy {
 
       val delay2 = minBmDelay
 
-      def doeh(e: Event[A])(next: => Any): Unit = {
+      def doeh(e: Event)(next: => Any): Unit = {
         eh(e).runNow()
         hnd.value = js.timers.setTimeout(delay2)(next)
       }
@@ -159,7 +181,7 @@ object Benchy {
   // ====================================================================================================
 
 
-  case class Progress[A](s: Suite[A], run: Int) {
+  case class Progress(s: Suite, run: Int) {
     def total = s.totalBenchmarks
     def remaining = total - run
   }
