@@ -55,8 +55,8 @@ object Benchy {
   // ====================================================================================================
 
   case class BMKey(bmIndex: Int, paramIndex: Int) {
-    def bm[A](s: Suite[A]): Benchmark[A] = s.bms(bmIndex)
-    def param[A](s: Suite[A]): A = s.params(paramIndex)
+    def bm[A](implicit s: Suite[A]): Benchmark[A] = s.bms(bmIndex)
+    def param[A](implicit s: Suite[A]): A = s.params(paramIndex)
   }
 
   sealed trait Event[A]
@@ -87,6 +87,8 @@ object Benchy {
 
   private class Ref[A](var value: A)
 
+  var minBmDelay = 10.millis
+
   def runSuiteAsync[A](s: Suite[A], delay: FiniteDuration = DefaultDelay)(eh: Event[A] => Callback): AbortFn = {
     val clock = Clock.Default
 
@@ -95,7 +97,7 @@ object Benchy {
     def run: Unit = {
       var progress = Progress(s, 0)
 
-      val delay2 = 10.millis
+      val delay2 = minBmDelay
 
       def doeh(e: Event[A])(next: => Any): Unit = {
         eh(e).runNow()

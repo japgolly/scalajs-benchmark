@@ -7,6 +7,7 @@ object Styles extends StyleSheet.Inline {
   import dsl._
 
   object ResultTable {
+    import whatever.ReactChart.ScalaDataset
 
     val table = style(
       borderCollapse.collapse,
@@ -21,8 +22,19 @@ object Styles extends StyleSheet.Inline {
 
     val numericResult = style(
       textAlign.right,
-      fontFamily := "monospace"
-    )
+      fontFamily := "monospace")
+
+    val graph = style(
+      marginTop(2 em),
+      width(400 px),
+      height(400 px))
+
+    def styleDataset(d: ScalaDataset): ScalaDataset =
+      d.copy(
+        fillColor       = "#FFC870",
+        strokeColor     = "#FFC870",
+        highlightFill   = "#FDB45C",
+        highlightStroke = "#FDB45C")
   }
 
   // ===================================================================================================================

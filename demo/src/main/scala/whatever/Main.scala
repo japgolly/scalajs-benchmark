@@ -1,6 +1,8 @@
 package whatever
 
 import japgolly.scalajs.react._, vdom.prefix_<^._, MonocleReact._
+import whatever.ReactChart.ScalaDataset
+import whatever.chartjs.Chart
 import scala.concurrent.duration._
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit._
@@ -21,10 +23,23 @@ object Main extends js.JSApp {
 
 //        runToConsole(s)
 
+    chartjs.Chart.defaults.global.animationSteps = 20
+
+    // Ensure benchmarks don't start before chart animation finishes
+    Benchy.minBmDelay = {
+      val chartTimeSec = chartjs.Chart.defaults.global.animationSteps / 60.0
+      val delaySec = chartTimeSec * 1.2
+      val delayMicro = delaySec * 1000000.0
+      delayMicro.toInt.micros
+    }
+
     Styles.addToDocument()
     val tgt = dom.document.getElementById("body")
     ReactDOM.render(Comp(), tgt)
   }
+
+  def newObj[T <: js.Object]: T =
+    js.Object().asInstanceOf[T]
 
   type Props = Unit
 
@@ -71,6 +86,7 @@ object Main extends js.JSApp {
 
   trait ValueFmt {
     def render(s: RunStats): ReactElement
+    def asDouble(s: RunStats): Option[Double]
   }
 
   case class ResultFmt(header: String,
@@ -88,18 +104,21 @@ object Main extends js.JSApp {
             case _ => None
           }
 
-        def fmtS(avgOpDuration: Duration): String =
-          fmtD(avgOpDuration).fold("∞")(scoreToString)
+        def fmtS(od: Option[Double]): String =
+          od.fold("∞")(scoreToString)
 
         def scoreToString(d: Double) = fmt format d
 
+        override def asDouble(s: RunStats) =
+          fmtD(s.average)
+
         override def render(s: RunStats): ReactElement =
-          <.div(Styles.ResultTable.numericResult, fmtS(s.average))
+          <.div(Styles.ResultTable.numericResult, fmtS(asDouble(s)))
       }
 
     val fmtError: ValueFmt = new ValueFmt {
-      override def render(s: RunStats): ReactElement =
-        <.div("?")
+      override def asDouble(s: RunStats) = None
+      override def render(s: RunStats): ReactElement = <.div("?")
     }
 
     def OpsPerT(t: TimeUnit, dp: Int): ResultFmt = {
@@ -123,9 +142,9 @@ object Main extends js.JSApp {
 
   class Backend($: BackendScope[Props, State]) {
     import Styles.{ResultTable => *}
-    val s = IntSet_X.suite
+    implicit val s = IntSet_X.suite
 
-    val resultFmts = Vector(ResultFmt.OpsPerSec, ResultFmt.MicrosPerOp)
+    val resultFmts = Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
     val resultBlock1 = ^.colSpan := 3
     val resultBlockAll = ^.colSpan := (3 * resultFmts.length)
 
@@ -164,7 +183,7 @@ object Main extends js.JSApp {
             val x: TagMod = y match {
               case Nope    => <.td(resultBlockAll)
               case Running => <.td(resultBlockAll, "Running…")
-              case Done(Left(err)) => ???
+              case Done(Left(err)) => ??? // ////////////////////////////////////////////////
               case Done(Right(r)) =>
                 //<.pre(r.toString)
                 resultFmts.map(f => TagMod(
@@ -180,25 +199,102 @@ object Main extends js.JSApp {
               x)
           }
 
+          def graph: TagMod = state match {
+            case Running(r) =>
+
+              import ReactChart._
+
+              val f = resultFmts.head
+
+              val n = r.size max 1
+
+              val bd =
+              ScalaBarData(
+                s.keys.iterator.map(k => s"${k.bm.name} @ ${k.param.toString}").take(n).toVector,
+                Vector(*.styleDataset(ScalaDataset(
+                  f.header,
+                  s.keys.iterator.map[Chart.Value](k =>
+                    r.getOrElse(k, Nope) match {
+                      case Done(Right(rr)) => f.fmtScore.asDouble(rr) getOrElse 0
+                      case Done(Left(_)) | Nope | Running => 0
+                    }
+                  ).take(n).toVector
+                )))
+              )
+
+              val p = Props(*.graph, bd)
+              ReactChart.Comp(p)
+
+//              import whatever.chartjs._
+//              val bd = newObj[BarData]
+//              val ds1 = newObj[Dataset]
+//
+//              bd.labels = js.Array() //"Hello","b","c")
+//              ds1.label = "hehe"
+//              ds1.data = js.Array() //23,14,50)
+//            val ds2 = newObj[Dataset]
+//              ds2.label = "hoho"
+//              ds2.data = js.Array() //32,7,13)
+//              bd.datasets = js.Array(ds1, ds2)
+//              val cp = Charty.Props(
+//                TagMod(^.width := 400, ^.height := 400),
+//                bd)
+
+            case Mada => EmptyTag
+          }
+
           <.div(
             <.table(
               *.table,
               <.thead(header),
               <.tbody(rows: _*)),
-            <.button("Abort", ^.onClick --> Callback(TEMP_HACK_ABORT.run()))
-
+            <.button("Abort", ^.onClick --> Callback(TEMP_HACK_ABORT.run())),
+            graph
           )
 
 
       }
       <.div(
         <.h1(s.name),
-        body)
+        body
+        /*
+        ,
+        Charty.Comp(cp),
+        <.button("more", ^.onClick --> Callback {
+//          ds1.data push (ds1.## % 50)
+//          ds2.data push (ds2.## % 50)
+          ds2.data(0) = 90
+          println(ds2.data)
+          $.forceUpdate.runNow()
+        })
+        */
+      )
     }
+
+    /*
+    import whatever.chartjs._
+    val bd = newObj[BarData]
+    bd.labels = js.Array() //"Hello","b","c")
+    val ds1 = newObj[Dataset]
+    ds1.label = "hehe"
+    ds1.data = js.Array() //23,14,50)
+    val ds2 = newObj[Dataset]
+    ds2.label = "hoho"
+    ds2.data = js.Array()//32,7,13)
+    bd.datasets = js.Array(ds1, ds2)
+    val cp = Charty.Props(
+      TagMod(^.width := 400, ^.height := 400),
+      bd)
+*/
   }
 
   val Comp = ReactComponentB[Props]("")
     .initialState[State](Mada)
     .renderBackend[Backend]
     .buildU
+
+  object Charty {
+
+  }
+
 }

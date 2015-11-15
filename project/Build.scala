@@ -15,6 +15,7 @@ object ScalaJsBenchmark extends Build {
     final val ScalaCss      = "0.3.1"
     final val ScalaJsReact  = "0.10.1"
     final val React         = "0.14.2"
+    final val ChartJs       = "1.0.2"
   }
 
   def scalacFlags = Seq(
@@ -67,9 +68,9 @@ object ScalaJsBenchmark extends Build {
           "com.github.japgolly.scalacss"      %%% "core"        % Ver.ScalaCss,
           "com.github.japgolly.scalacss"      %%% "ext-react"   % Ver.ScalaCss),
         jsDependencies ++= Seq(
-          "org.webjars.npm" % "react"     % Ver.React / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
-          "org.webjars.npm" % "react-dom" % Ver.React / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js")
-      )
+          "org.webjars.npm" % "react"     % Ver.React   / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
+          "org.webjars.npm" % "react-dom" % Ver.React   / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
+          "org.webjars"     % "chartjs"   % Ver.ChartJs / "Chart.js"                                     minified "Chart.min.js"))
 
   val demoJs = "output.js"
   lazy val demo =
