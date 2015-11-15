@@ -1,12 +1,14 @@
 package whatever
 
+import whatever.BMComp.Suite2
+import whatever.Formaty._
 import scala.collection.immutable._
 import scala.collection.mutable
 import Benchy._
 
 object IntSet_X {
 
-  lazy val suite: Suite = {
+  lazy val suite = {
 
     def setup(size: Int): List[Int] =
       // Puts it in a non-linear, deterministic order then change to disrupt hash order
@@ -40,13 +42,17 @@ object IntSet_X {
 //    Suite("IntSet", bms, Vector(10, 100, 1000))
     Suite("IntSet", bms, Vector(10, 100))
   }
+
+  lazy val suite2 = Suite2(suite)(FmtParam int "size")
 }
 
 object IntSet_X2 {
 
-  case class Params(size: Int, reverse: Boolean)
+  case class Params(size: Int, reverse: Boolean) {
+    override def toString = s"$size | $reverse"
+  }
 
-  lazy val suite: Suite = {
+  lazy val suite = {
 
     def setup(p: Params): List[Int] = {
       // Puts it in a non-linear, deterministic order then change to disrupt hash order
@@ -88,4 +94,9 @@ object IntSet_X2 {
 
     Suite("IntSet₂", bms, params)
   }
+
+  lazy val suite2 = Suite2(suite)(
+    FmtParam.int("size").cmap[Params](_.size) :+
+      FmtParam.bool("reverse").cmap[Params](_.reverse)
+  )
 }

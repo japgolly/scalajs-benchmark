@@ -18,8 +18,8 @@ import Benchy._
 object Main extends js.JSApp {
   def main(): Unit = {
 
-    val s = IntSet_X.suite
-//    val s = IntSet_X2.suite
+//    val s = IntSet_X.suite2
+    val s = IntSet_X2.suite2
 
 //        runToConsole(s)
 

@@ -24,6 +24,11 @@ object Styles extends StyleSheet.Inline {
       textAlign.right,
       fontFamily := "monospace")
 
+    def paramInt = numericResult
+
+    val paramBool = style(
+      textAlign.center)
+
     val graph = style(
       marginTop(2 em),
       width(400 px),

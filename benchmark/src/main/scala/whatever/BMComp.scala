@@ -2,23 +2,32 @@ package whatever
 
 import japgolly.scalajs.react._, vdom.prefix_<^._, MonocleReact._
 import japgolly.scalajs.react.extra._
-import whatever.ReactChart.ScalaDataset
 import whatever.chartjs.Chart
-import scala.concurrent.duration._
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit._
 import scalajs.js
-import org.scalajs.dom
 import monocle._
-import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-
 import Benchy._
+import Formaty._
 
 object BMComp {
 
   def newObj[T <: js.Object]: T =
     js.Object().asInstanceOf[T]
+
+  trait Suite2 {
+    type Param
+    val suite: Suite.WithParam[Param]
+    val paramFmt: FmtParams[Param]
+  }
+  object Suite2 {
+    type WithParam[A] = Suite2 {type Param = A}
+    def apply[A](s: Suite.WithParam[A])(p: FmtParams[A]): WithParam[A] =
+      new Suite2 {
+        override type Param = A
+        override val suite = s
+        override val paramFmt = p
+      }
+  }
 
   sealed trait BMState
   case object Nope extends BMState
@@ -40,97 +49,29 @@ object BMComp {
       running ^|-> runningAt(k)
   }
 
-  def abbrev(t: TimeUnit): String =
-    t match {
-      case TimeUnit.NANOSECONDS  => "ns"
-      case TimeUnit.MICROSECONDS => "μs"
-      case TimeUnit.MILLISECONDS => "ms"
-      case TimeUnit.SECONDS      => "s"
-      case TimeUnit.MINUTES      => "m"
-      case TimeUnit.HOURS        => "d"
-      case TimeUnit.DAYS         => "hr"
-    }
-  def mkDouble(t: TimeUnit): FiniteDuration => Double =
-    t match {
-      case TimeUnit.NANOSECONDS  => _.toNanos.toDouble
-      case TimeUnit.MICROSECONDS => _.toNanos.toDouble / 1000.0
-      case TimeUnit.MILLISECONDS => _.toNanos.toDouble / 1000000.0
-      case TimeUnit.SECONDS      => _.toMicros.toDouble / 1000000.0
-      case TimeUnit.MINUTES      => _.toMillis.toDouble / 60000.0
-      case TimeUnit.HOURS        => _.toMillis.toDouble / 3660000.0
-      case TimeUnit.DAYS         => _.toSeconds.toDouble / (3660 * 24)
-    }
-
-  trait ValueFmt {
-    def render(s: RunStats): ReactElement
-    def asDouble(s: RunStats): Option[Double]
-  }
-
-  case class ResultFmt(header: String,
-                       fmtScore: ValueFmt,
-                       fmtMoE: ValueFmt)
-
-  object ResultFmt {
-    def fmtDurToDbl(fmtF: FiniteDuration => Double, dp: Int): ValueFmt =
-      new ValueFmt {
-        val fmt = if (dp <= 0) "%0f" else s"%0.${dp}f"
-
-        def fmtD(avgOpDuration: Duration): Option[Double] =
-          avgOpDuration match {
-            case f: FiniteDuration => Some(fmtF(f))
-            case _ => None
-          }
-
-        def fmtS(od: Option[Double]): String =
-          od.fold("∞")(scoreToString)
-
-        def scoreToString(d: Double) = fmt format d
-
-        override def asDouble(s: RunStats) =
-          fmtD(s.average)
-
-        override def render(s: RunStats): ReactElement =
-          <.div(Styles.ResultTable.numericResult, fmtS(asDouble(s)))
-      }
-
-    val fmtError: ValueFmt = new ValueFmt {
-      override def asDouble(s: RunStats) = None
-      override def render(s: RunStats): ReactElement = <.div("?")
-    }
-
-    def OpsPerT(t: TimeUnit, dp: Int): ResultFmt = {
-      val one = FiniteDuration(1, t)
-      val hdr = "ops/" + abbrev(t)
-      val fmtScore = fmtDurToDbl(one / _, dp)
-      ResultFmt(hdr, fmtScore, fmtError)
-    }
-
-    def TPerOp(t: TimeUnit, dp: Int): ResultFmt = {
-      val hdr = abbrev(t) + "/op"
-      val fmtScore = fmtDurToDbl(mkDouble(t), dp)
-      ResultFmt(hdr, fmtScore, fmtError)
-    }
-
-    val OpsPerSec   = OpsPerT(TimeUnit.SECONDS, 3)
-    val MillisPerOp = TPerOp(TimeUnit.MILLISECONDS, 3)
-    val MicrosPerOp = TPerOp(TimeUnit.MICROSECONDS, 3)
-  }
-
-  type Props = Suite
+  type Props = Suite2
 
   class Backend($: BackendScope[Props, State]) {
-    implicit def suiteReuse = Reusability.byRef[Suite]
-    val arcane = Px.bs($).propsA.map(new Arcane()(_))
+    import Styles.{ResultTable => *}
 
-    def render(s: State) = arcane.value().render(s)
+    implicit def suiteReuse = Reusability.byRef[Suite2]
+    val arcane = Px.bs($).propsA.map(new Arcane(_))
 
-    class Arcane(implicit val s: Suite) {
-
-      import Styles.{ResultTable => *}
+    class Arcane(val s2: Suite2) {
+      implicit val s = s2.suite
 
       val resultFmts = Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
       val resultBlock1 = ^.colSpan := 3
       val resultBlockAll = ^.colSpan := (3 * resultFmts.length)
+
+      val header = {
+        var hs = Vector.empty[ReactTag]
+        hs :+= <.th("Benchmark")
+        hs ++= s2.paramFmt.map(f => <.th(f.header))
+        hs ++= resultFmts.map(f =>
+          <.th(*.resultHeader, resultBlock1, f.header))
+        <.tr(hs: _*)
+      }
 
       var TEMP_HACK_ABORT: AbortFn = _
 
@@ -149,38 +90,31 @@ object BMComp {
           case Mada => <.button("Start", ^.onClick --> start)
           case Running(m) =>
 
-            def header =
-              <.tr(
-                <.th("Benchmark"),
-                <.th("Params"))(
-                resultFmts.map(f =>
-                  <.th(
-                    *.resultHeader,
-                    resultBlock1,
-                    f.header)
-                ): _*)
+            def rows = {
+              s.keys.map { key =>
+                val b = key bm s
+                val p = key param s
+                val y = m.getOrElse(key, Nope)
 
-            def rows = s.keys.map { key =>
-              val b = key bm s
-              val p = key param s
-              val y = m.getOrElse(key, Nope)
-              val x: TagMod = y match {
-                case Nope => <.td(resultBlockAll)
-                case Running => <.td(resultBlockAll, "Running…")
-                case Done(Left(err)) => ??? // ////////////////////////////////////////////////
-                case Done(Right(r)) =>
-                  //<.pre(r.toString)
-                  resultFmts.map(f => TagMod(
-                    <.td(f.fmtScore render r),
-                    <.td("±"),
-                    <.td(f.fmtMoE render r))
-                  ).reduce(_ + _)
+                var hs = Vector.empty[ReactTag]
+                hs :+= <.td(b.name)
+                hs ++= s2.paramFmt.map(f => <.td(f render p))
+
+                hs ++= (y match {
+                  case Nope    => Vector.empty :+ <.td(resultBlockAll)
+                  case Running => Vector.empty :+ <.td(resultBlockAll, "Running…")
+                  case Done(Left(err)) => ??? // ////////////////////////////////////////////////
+                  case Done(Right(r)) =>
+                    //<.pre(r.toString)
+                    resultFmts.flatMap(f =>
+                      Vector(
+                      <.td(f.fmtScore render r),
+                      <.td("±"),
+                      <.td(f.fmtMoE render r)))
+                })
+
+                <.tr(hs: _*)
               }
-
-              <.tr(
-                <.td(b.name),
-                <.td(p.toString),
-                x)
             }
 
             def graph: TagMod = state match {
@@ -200,7 +134,7 @@ object BMComp {
                       s.keys.iterator.map[Chart.Value](k =>
                         r.getOrElse(k, Nope) match {
                           case Done(Right(rr)) => f.fmtScore.asDouble(rr) getOrElse 0
-                          case Done(Left(_)) | Nope | Running => 0
+                          case Done(Left(_)) | Nope | Running => -0.1
                         }
                       ).take(n).toVector
                     )))
@@ -229,6 +163,8 @@ object BMComp {
         )
       }
     }
+
+    def render(s: State) = arcane.value().render(s)
   }
 
   val Comp = ReactComponentB[Props]("")
