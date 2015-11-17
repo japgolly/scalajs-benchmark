@@ -47,7 +47,7 @@ object IntSet_X {
     Suite("IntSet", bms, Vector(10, 100))
   }
 
-  val param1 = Param[Int, String]("size", renderInt, textEditor, Some("10, 100"))
+  val param1 = Param[Int, String]("size", renderInt, textEditor, Vector(10, 100), intsToText)
   object paramz extends Params[Int] {
     type P = Int
 
@@ -57,27 +57,16 @@ object IntSet_X {
           override type B = String
           override val param = param1
           override val key = Key[B]()
-
-          override def parseEditorState(ob: Option[B]): String \/ Vector[Int] =
-          ob match {
-            case None => \/-(Vector.empty)
-            case Some(b) =>
-              b.split("[ ,]")
-                .iterator
-                .map(_.trim)
-                .filter(_.nonEmpty)
-                .map(is => \/.fromTryCatchNonFatal(is.toInt).leftMap(_ => s"$is is not a valid integer."))
-                .toVector
-                .sequenceU
-          }
         }
       )
 
     override val forState =
       (s: GenState) => {
         val p1 = paramDefs.head
-        val x = p1.parseEditorState(p1.key.get(s))
-        x leftMap (_ => p1)
+        p1.parseEditorState(p1.key.get(s)) match {
+          case None => -\/(p1)
+          case Some(x) => \/-(x)
+        }
       }
   }
 

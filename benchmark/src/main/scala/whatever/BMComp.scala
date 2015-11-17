@@ -101,11 +101,12 @@ object BMComp {
 
         s2.paramFmt.forState(gs) match {
           case \/-(ps) => run(s.withParams(ps))
-          case -\/(e) => Callback.alert(s"Error in ${e.param.header} editor.")
+          case -\/(e) => Callback.alert(s"Error in param: ${e.param.header}")
         }
       }
 
       def render(state: State[P]) = {
+//println(state.ep)
         val body: ReactTag = state.status match {
           case Mada =>
 

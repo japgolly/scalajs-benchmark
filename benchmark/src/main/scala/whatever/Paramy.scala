@@ -1,5 +1,6 @@
 package whatever
 
+import monocle._
 import java.util.concurrent.TimeUnit
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
@@ -79,46 +80,24 @@ object NotMyProb {
   type Header       = String
   type RenderValue[-A]   = A => TagMod
   //  type Defaults[+A] = Vector[A]
-  type Editor[S] = ExternalVar[Option[S]] => ReactElement
+  type Editor[S] = ExternalVar[S] => ReactElement
 
 
-  type Key[T] = monocle.Lens[GenState, Option[T]]
-//  trait Key[T] {
-//    def get(s: GenState): Option[T]
-//    def mod(s: GenState)(f: Option[T] => Option[T]): GenState
-//  }
+  type Key[T] = Lens[GenState, T]
   object Key {
     private var global = ' '
 
     def apply[T](): Key[T] = {
       global = (global + 1).toChar
       val key = global
-
-//      new Key[T] {
-//        override def get(s: GenState): Option[T] = {
-//          val o: Option[Any] = s.flatMap(_.get(key))
-//          o.asInstanceOf[Option[T]]
-//        }
-//      }
-
-      monocle.Lens[GenState, Option[T]](
-        s => {
-          val o: Option[Any] = s.get(key)
-          o.asInstanceOf[Option[T]]
-        }
-      )({
-        case Some(t) => _.updated(key, t)
-        case None    => _ - key
-      })
+      Lens[GenState, T](_.apply(key).asInstanceOf[T])(t => _.updated(key, t))
     }
   }
 
-//  type PDState = Map[Char, Any]
-//  type GenState = Option[PDState]
-
   type GenState = Map[Char, Any]
 
-  case class Param[A, B](header: Header, renderValue: RenderValue[A], editor: Editor[B], initState: Option[B])
+  case class Param[A, B](header: Header, renderValue: RenderValue[A], editor: Editor[B], initValues: Vector[A],
+                         bas: Prism[B, Vector[A]])
 
   trait ParamWithKey[A] {
     type B
@@ -126,9 +105,10 @@ object NotMyProb {
     val key: Key[B]
 
     def editor(e: ExternalVar[GenState]): TagMod =
-      param editor ExternalVar(key get e.value)(ob => e.set(key.set(ob)(e.value)))
+      param editor ExternalVar(key get e.value)(b => e.set(key.set(b)(e.value)))
 
-    def parseEditorState(ob: Option[B]): String \/ Vector[A]
+    def parseEditorState(b: B): Option[Vector[A]] =
+      param.bas.getOption(b)
   }
 
   trait Params[P] {
@@ -137,9 +117,13 @@ object NotMyProb {
 
     def initState: GenState =
       paramDefs.foldLeft(Map.empty: GenState)((m, p) =>
-        p.key.set(p.param.initState)(m))
+        p.key.set(p.param.bas reverseGet p.param.initValues)(m))
 
   }
+
+
+  // Vec P -> B
+  // B -> S \/ Vec P
 
   // ===================================================================================================================
 
@@ -153,6 +137,18 @@ object NotMyProb {
     e =>
       <.input(
         ^.`type` := "text",
-        ^.value := e.value.getOrElse(""),
-        ^.onChange ==> ((i: ReactEventI) => e.set(Some(i.target.value).filter(_.nonEmpty))))
+        ^.value := e.value,
+        ^.onChange ==> ((i: ReactEventI) => e.set(i.target.value)))
+
+  import scalaz._, Scalaz._
+
+  val intsToText = Prism[String, Vector[Int]](
+              _.split("[ ,]")
+                .iterator
+                .map(_.trim)
+                .filter(_.nonEmpty)
+                .map(is => \/.fromTryCatchNonFatal(is.toInt).toOption)
+                .toVector
+                .sequence
+  )(_ mkString ", ")
 }
