@@ -15,19 +15,10 @@ object BMComp {
   def newObj[T <: js.Object]: T =
     js.Object().asInstanceOf[T]
 
-  trait Suite2 {
-    type Param
-    val suite: Suite.WithParam[Param]
-    val paramFmt: FmtParams[Param]
-  }
+  class Suite2[P](val suite: Suite.WithParam[P], val paramFmt: FmtParams[P])
   object Suite2 {
-    type WithParam[A] = Suite2 {type Param = A}
-    def apply[A](s: Suite.WithParam[A])(p: FmtParams[A]): WithParam[A] =
-      new Suite2 {
-        override type Param = A
-        override val suite = s
-        override val paramFmt = p
-      }
+    def apply[P](suite: Suite.WithParam[P])(paramFmt: FmtParams[P]) =
+      new Suite2(suite, paramFmt)
   }
 
   sealed trait BMState
@@ -51,19 +42,19 @@ object BMComp {
   }
 
   @Lenses
-  case class State(status: SuiteStatus)
+  case class State[A](status: SuiteStatus)
   object State {
-    def at(k: BMKey): Optional[State, BMState] =
+    def at[A](k: BMKey): Optional[State[A], BMState] =
       status ^|-? SuiteStatus.at(k)
   }
 
 
-  type Props = Suite2
+  type Props[P] = Suite2[P]
 
-  class Backend($: BackendScope[Props, State]) {
+  class Backend[P]($: BackendScope[Props[P], State[P]]) {
     import Styles.{ResultTable => *}
 
-    implicit def suiteReuse = Reusability.byRef[Suite2]
+    implicit def suiteReuse = Reusability.byRef[Suite2[P]]
     val arcane = Px.bs($).propsA.map(new Arcane(_))
 
     import ReactChart.RGB
@@ -74,7 +65,7 @@ object BMComp {
       stroke = Some(scaleFn(RGB(0,92,0), RGB(92,0,0)))))
 
 
-    class Arcane(val s2: Suite2) {
+    class Arcane(val s2: Suite2[P]) {
       implicit val s = s2.suite
 
       val resultFmts = Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
@@ -102,7 +93,7 @@ object BMComp {
           }
         ))
 
-      def render(state: State) = {
+      def render(state: State[P]) = {
         val body: ReactTag = state.status match {
           case Mada => <.button("Start", ^.onClick --> start)
           case Running(m) =>
@@ -181,12 +172,21 @@ object BMComp {
       }
     }
 
-    def render(s: State) = arcane.value().render(s)
+    def render(s: State[P]) = arcane.value().render(s)
   }
 
-  val Comp = ReactComponentB[Props]("")
-    .initialState[State](State(Mada))
-    .renderBackend[Backend]
-    // TODO when suite changes, abort current & wipe state
-    .build
+  type Comp[P] = ReactComponentC.ReqProps[Props[P], State[P], Backend[P], TopNode]
+  private val __Comp = {
+    // TODO Bloody hack. Really need to accommodate this properly in scalajs-react
+    type P = Unit
+    val c: Comp[_] =
+      ReactComponentB[Props[P]]("")
+        .initialState[State[P]](State[P](Mada))
+        .renderBackend[Backend[P]]
+        // TODO when suite changes, abort current & wipe state
+        .build
+    c
+  }
+
+  def Comp[P] = __Comp.asInstanceOf[Comp[P]]
 }
