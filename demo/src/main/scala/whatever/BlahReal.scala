@@ -5,7 +5,7 @@ import whatever.Formaty._
 import scala.collection.immutable._
 import scala.collection.mutable
 import Benchy._
-
+/*
 object BlahReal_IntSet {
 
   lazy val suite = {
@@ -136,3 +136,4 @@ object BlahReal_IntSet {
 
   lazy val suite2 = Suite2(suite)(FmtParam int "size")
 }
+*/

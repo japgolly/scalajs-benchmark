@@ -85,41 +85,4 @@ object Formaty {
     val MicrosPerOp = TPerOp(TimeUnit.MICROSECONDS, 3)
   }
 
-//  class ParamFmt[-A](val headers: Vector[String], val render: A => Vector[TagMod])
-
-  case class FmtParam[-A](header: String, render: A => TagMod) {
-//    def :+[B <: A](b: FmtParam[B]): FmtParams[B] =
-//      Vector.empty :+ this :+ b
-    def cmap[B](f: B => A): FmtParam[B] =
-      FmtParam(header, render compose f)
-  }
-  object FmtParam {
-    def int(header: String): FmtParam[Int] =
-      FmtParam(header, i => TagMod(Styles.ResultTable.paramInt, i))
-
-    def bool(header: String): FmtParam[Boolean] =
-      FmtParam(header, b => TagMod(Styles.ResultTable.paramBool, if (b) "T" else "F"))
-
-    //def apply2[A, B, Z](a: Z => A, b: Z => B)
-  }
-
-  implicit def liftFmtParam[A](p: FmtParam[A]): FmtParams[A] =
-    Vector.empty :+ p
-
-  type FmtParams[-A] = Vector[FmtParam[A]]
-
-  /*
-  object FmtParams {
-
-    def apply[A](a: FmtParam[A]*): FmtParams[A] =
-      a.toVector
-
-//    def single[A](header: String, render: A => TagMod): FmtParams[A] =
-//      apply(header)(Vector.empty :+ render(_))
-
-    def int(header: String): FmtParams[Int] =
-      Vector(FmtParam int header)
-  }
-  */
-
 }

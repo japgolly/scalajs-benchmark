@@ -38,6 +38,9 @@ object Benchy {
         bi <- bis
       } yield BMKey(bi, pi)
     }
+
+    def withParams(p2: Vector[Param]): Suite.WithParam[Param] =
+      Suite[Param](name, bms, p2)
   }
 
   object Suite {
