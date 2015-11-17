@@ -5,6 +5,7 @@ import japgolly.scalajs.react.extra._
 import whatever.chartjs.Chart
 import scalajs.js
 import monocle._
+import monocle.macros.Lenses
 import scalacss.ScalaCssReact._
 import Benchy._
 import Formaty._
@@ -34,20 +35,28 @@ object BMComp {
   case object Running extends BMState
   case class Done(result: RunResult) extends BMState
 
-  sealed trait State
-  case object Mada extends State
-  case class Running(m: Map[BMKey, BMState]) extends State
+  sealed trait SuiteStatus
+  case object Mada extends SuiteStatus
+  case class Running(m: Map[BMKey, BMState]) extends SuiteStatus
 
-  object State {
-    val running: Prism[State, Running] =
-      Prism[State, Running] { case r: Running => Some(r); case _ => None }(s => s)
+  object SuiteStatus {
+    val running: Prism[SuiteStatus, Running] =
+      Prism[SuiteStatus, Running] { case r: Running => Some(r); case _ => None }(s => s)
 
     def runningAt(k: BMKey): Lens[Running, BMState] =
       Lens[Running, BMState](_.m.getOrElse(k, Nope))(s => r => Running(r.m.updated(k, s)))
 
-    def at(k: BMKey): Optional[State, BMState] =
+    def at(k: BMKey): Optional[SuiteStatus, BMState] =
       running ^|-> runningAt(k)
   }
+
+  @Lenses
+  case class State(status: SuiteStatus)
+  object State {
+    def at(k: BMKey): Optional[State, BMState] =
+      status ^|-? SuiteStatus.at(k)
+  }
+
 
   type Props = Suite2
 
@@ -84,7 +93,7 @@ object BMComp {
       var TEMP_HACK_ABORT: AbortFn = _
 
       def start: Callback =
-        $.setState(Running(Map.empty), Callback(
+        $.modState(State.status set Running(Map.empty), Callback(
           TEMP_HACK_ABORT = runSuiteAsync(s) {
             case SuiteStarting(p) => Callback.empty
             case BenchmarkStarting(p, k) => $.modState(State.at(k).set(Running))
@@ -94,7 +103,7 @@ object BMComp {
         ))
 
       def render(state: State) = {
-        val body: ReactTag = state match {
+        val body: ReactTag = state.status match {
           case Mada => <.button("Start", ^.onClick --> start)
           case Running(m) =>
 
@@ -125,7 +134,7 @@ object BMComp {
               }
             }
 
-            def graph: TagMod = state match {
+            def graph: TagMod = state.status match {
               case Running(r) =>
 
                 import ReactChart._
@@ -176,7 +185,7 @@ object BMComp {
   }
 
   val Comp = ReactComponentB[Props]("")
-    .initialState[State](Mada)
+    .initialState[State](State(Mada))
     .renderBackend[Backend]
     // TODO when suite changes, abort current & wipe state
     .build

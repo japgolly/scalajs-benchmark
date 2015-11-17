@@ -46,6 +46,8 @@ object IntSet_X {
   lazy val suite2 = Suite2(suite)(FmtParam int "size")
 }
 
+// =====================================================================================================================
+
 object IntSet_X2 {
 
   case class Params(size: Int, reverse: Boolean) {
@@ -70,12 +72,12 @@ object IntSet_X2 {
 
     val bms = Vector[Benchmark[Params]](
 
-      Benchmark("immutableSet", setup2 { is =>
-        var s = Set.empty[Int]
-        for (i <- is) if (s contains i) ??? else s += i
-        s
-      })
-,
+//      Benchmark("immutableSet", setup2 { is =>
+//        var s = Set.empty[Int]
+//        for (i <- is) if (s contains i) ??? else s += i
+//        s
+//      })
+//      ,
       Benchmark("mutableBitSetAdd", setup2 { is =>
         val s = mutable.BitSet.empty
         for (i <- is) if (!s.add(i)) ???

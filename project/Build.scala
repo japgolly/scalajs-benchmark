@@ -62,15 +62,18 @@ object ScalaJsBenchmark extends Build {
       .configure(commonSettings)
       .settings(
         libraryDependencies ++= Seq(
-          "com.github.japgolly.scalajs-react" %%% "core"        % Ver.ScalaJsReact,
-          "com.github.japgolly.scalajs-react" %%% "extra"       % Ver.ScalaJsReact,
-          "com.github.japgolly.scalajs-react" %%% "ext-monocle" % Ver.ScalaJsReact,
-          "com.github.japgolly.scalacss"      %%% "core"        % Ver.ScalaCss,
-          "com.github.japgolly.scalacss"      %%% "ext-react"   % Ver.ScalaCss),
+          "com.github.japgolly.scalajs-react" %%% "core"          % Ver.ScalaJsReact,
+          "com.github.japgolly.scalajs-react" %%% "extra"         % Ver.ScalaJsReact,
+          "com.github.japgolly.scalajs-react" %%% "ext-monocle"   % Ver.ScalaJsReact,
+          "com.github.japgolly.scalacss"      %%% "core"          % Ver.ScalaCss,
+          "com.github.japgolly.scalacss"      %%% "ext-react"     % Ver.ScalaCss,
+          "com.github.japgolly.fork.monocle"  %%% "monocle-core"  % Ver.Monocle,
+          "com.github.japgolly.fork.monocle"  %%% "monocle-macro" % Ver.Monocle),
         jsDependencies ++= Seq(
           "org.webjars.npm" % "react"     % Ver.React   / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
           "org.webjars.npm" % "react-dom" % Ver.React   / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
-          "org.webjars"     % "chartjs"   % Ver.ChartJs / "Chart.js"                                     minified "Chart.min.js"))
+          "org.webjars"     % "chartjs"   % Ver.ChartJs / "Chart.js"                                     minified "Chart.min.js"),
+        addCompilerPlugin(macroParadisePlugin))
 
   val demoJs = "output.js"
   lazy val demo =
@@ -79,9 +82,6 @@ object ScalaJsBenchmark extends Build {
       .configure(commonSettings)
       .dependsOn(benchmark)
       .settings(
-        libraryDependencies ++= Seq(
-          "com.github.japgolly.fork.monocle" %%% "monocle-core"  % Ver.Monocle,
-          "com.github.japgolly.fork.monocle" %%% "monocle-macro" % Ver.Monocle),
         addCompilerPlugin(macroParadisePlugin),
         skip in packageJSDependencies := false,
         artifactPath in (Compile, fastOptJS) := ((target in Compile).value / demoJs),
