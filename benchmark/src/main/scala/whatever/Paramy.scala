@@ -118,7 +118,7 @@ object NotMyProb {
 
   type GenState = Map[Char, Any]
 
-  case class Param[A, B](header: Header, renderValue: RenderValue[A], editor: Editor[B])
+  case class Param[A, B](header: Header, renderValue: RenderValue[A], editor: Editor[B], initState: Option[B])
 
   trait ParamWithKey[A] {
     type B
@@ -134,6 +134,11 @@ object NotMyProb {
   trait Params[P] {
     val paramDefs: Vector[ParamWithKey[P]]
     val forState: GenState => ParamWithKey[P] \/ Vector[P]
+
+    def initState: GenState =
+      paramDefs.foldLeft(Map.empty: GenState)((m, p) =>
+        p.key.set(p.param.initState)(m))
+
   }
 
   // ===================================================================================================================

@@ -211,7 +211,7 @@ object BMComp {
     type P = Unit
     val c: Comp[_] =
       ReactComponentB[Props[P]]("")
-        .initialState[State[P]](State[P](Mada, Map.empty))
+        .initialState_P[State[P]](p => State[P](Mada, p.paramFmt.initState))
         .renderBackend[Backend[P]]
         // TODO handle suite changes - it's all in state atm
         .build

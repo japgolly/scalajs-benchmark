@@ -47,7 +47,7 @@ object IntSet_X {
     Suite("IntSet", bms, Vector(10, 100))
   }
 
-  val param1 = Param[Int, String]("size", renderInt, textEditor)
+  val param1 = Param[Int, String]("size", renderInt, textEditor, Some("10, 100"))
   object paramz extends Params[Int] {
     type P = Int
 
@@ -60,7 +60,7 @@ object IntSet_X {
 
           override def parseEditorState(ob: Option[B]): String \/ Vector[Int] =
           ob match {
-            case None => \/-(Vector(10, 100)) // defaults
+            case None => \/-(Vector.empty)
             case Some(b) =>
               b.split("[ ,]")
                 .iterator
