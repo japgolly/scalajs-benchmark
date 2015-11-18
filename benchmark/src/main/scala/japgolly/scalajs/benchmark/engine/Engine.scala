@@ -1,0 +1,123 @@
+package japgolly.scalajs.benchmark.engine
+
+import japgolly.scalajs.benchmark._
+import japgolly.scalajs.react.Callback
+
+import scala.annotation.tailrec
+import scala.scalajs.js
+import scala.scalajs.js.UndefOr
+import scala.scalajs.js.timers.SetTimeoutHandle
+import scalaz.\/
+
+sealed abstract class Event[P] {
+  val progress: Progress[P]
+  @inline def plan = progress.plan
+}
+
+final case class SuiteStarting    [P](progress: Progress[P])                                  extends Event[P]
+final case class BenchmarkStarting[P](progress: Progress[P], key: PlanKey[P])                 extends Event[P]
+final case class BenchmarkFinished[P](progress: Progress[P], key: PlanKey[P], result: Result) extends Event[P]
+final case class SuiteFinished    [P](progress: Progress[P]/*, aborted | results, */)         extends Event[P]
+
+final case class Progress[P](plan: Plan[P], runs: Int) {
+  def total = plan.totalBenchmarks
+  def remaining = total - runs
+}
+
+final case class AbortFn(run: () => Unit) extends AnyVal
+
+object Engine {
+
+  private class Ref[A](var value: A)
+
+  /**
+    * Runs a suite of benchmarks (asynchronously).
+    *
+    * You are required to handle events in order to extract any meaning.
+    *
+    * @return A function by which the benchmarks can be aborted.
+    */
+  def run[P](plan: Plan[P], options: Options = Options.default)(eventCallback: Event[P] => Callback): AbortFn = {
+    val hnd = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
+
+    def isEnough(s: Stats.Mutable): Boolean = {
+      import options._
+      @inline def small = s.runs >= minRuns && s.totalTime >= minTime
+      @inline def large = s.totalTime > maxTime
+      small || large
+    }
+
+    def runAsync: Unit = {
+      val clock = options.clock
+      var progress = Progress(plan, 0)
+
+      def msg(e: Event[P])(next: => Any): Unit = {
+        eventCallback(e).runNow()
+        hnd.value = js.timers.setTimeout(options.delay)(next)
+      }
+
+      def go(keys: List[PlanKey[P]]): Unit = keys match {
+        case key :: next =>
+          msg(BenchmarkStarting(progress, key)) {
+            val result: Result =
+              \/.fromTryCatchNonFatal {
+                val (fn, teardown) = key.bm.setup.run(key.param)
+                val rs = new Stats.Mutable
+
+                @tailrec
+                def go(): Unit = {
+                  // val localFnAndTeardown = local.run(())
+                  // val t = clock.time(localFnAndTeardown._1())
+                  // localFnAndTeardown._2.run()
+                  val t = clock.time(fn())
+                  rs add t
+                  if (!isEnough(rs))
+                    go()
+                }
+                go()
+
+                teardown.run()
+                Stats(rs.times.toVector, options.outlierTrimPct)
+              }
+
+            progress = progress.copy(runs = progress.runs + 1)
+            msg(BenchmarkFinished(progress, key, result))(
+              go(next))
+          }
+
+        case Nil =>
+          hnd.value = js.undefined
+          eventCallback(SuiteFinished(progress)).runNow()
+      }
+
+      msg(SuiteStarting(progress))(go(plan.keys))
+    }
+
+    hnd.value = js.timers.setTimeout(options.initialDelay)(runAsync)
+    AbortFn(() => hnd.value foreach js.timers.clearTimeout)
+  }
+
+  /**
+    * Runs a suite of benchmarks (asynchronously), printing details and results to the console.
+    *
+    * @return A function by which the benchmarks can be aborted.
+    */
+  def runToConsole[P](plan: Plan[P], options: Options = Options.default): AbortFn = {
+    val fmt = {
+      val prog  = plan.totalBenchmarks.toString.length
+      val name  = plan.bms.foldLeft(0)(_ max _.name.value.length)
+      var param = plan.params.foldLeft(0)(_ max _.toString.length)
+      if (!plan.params.forall(_.toString.matches("^-?\\d+$")))
+        param = -param
+      s"[%${prog}d/%d] %-${name}s %${param}s : %s"
+    }
+
+    run(plan, options) {
+      case SuiteStarting    (p)       => Callback.log("Starting suite: " + p.plan.name.value)
+      case BenchmarkStarting(p, k)    => Callback.empty
+      case BenchmarkFinished(p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name.value, k.param, r))
+      case SuiteFinished    (p)       => Callback.log("Suite completed: " + p.plan.name.value)
+    }
+  }
+
+}

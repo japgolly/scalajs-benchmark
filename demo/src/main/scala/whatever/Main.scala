@@ -2,7 +2,7 @@ package whatever
 
 import japgolly.scalajs.react._, vdom.prefix_<^._, MonocleReact._
 import whatever.ReactChart.ScalaDataset
-import whatever.chartjs.Chart
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import scala.concurrent.duration._
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit._
@@ -24,11 +24,11 @@ object Main extends js.JSApp {
 
 //        runToConsole(s)
 
-    chartjs.Chart.defaults.global.animationSteps = 20
+    Chart.defaults.global.animationSteps = 20
 
     // Ensure benchmarks don't start before chart animation finishes
     Benchy.minBmDelay = {
-      val chartTimeSec = chartjs.Chart.defaults.global.animationSteps / 60.0
+      val chartTimeSec = Chart.defaults.global.animationSteps / 60.0
       val delaySec = chartTimeSec * 1.2
       val delayMicro = delaySec * 1000000.0
       delayMicro.toInt.micros

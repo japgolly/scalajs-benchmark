@@ -2,7 +2,7 @@ package whatever
 
 import japgolly.scalajs.react._, vdom.prefix_<^._
 import org.scalajs.dom.html.Canvas
-import whatever.chartjs._
+import japgolly.scalajs.benchmark.vendor.chartjs._
 
 import scala.scalajs.js
 

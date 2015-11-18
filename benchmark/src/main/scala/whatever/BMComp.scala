@@ -2,7 +2,7 @@ package whatever
 
 import japgolly.scalajs.react._, vdom.prefix_<^._, MonocleReact._
 import japgolly.scalajs.react.extra._
-import whatever.chartjs.Chart
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import scalajs.js
 import monocle._
 import monocle.macros.Lenses

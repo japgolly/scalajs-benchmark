@@ -1,4 +1,4 @@
-package whatever.chartjs
+package japgolly.scalajs.benchmark.vendor.chartjs
 
 import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.raw.CanvasRenderingContext2D
