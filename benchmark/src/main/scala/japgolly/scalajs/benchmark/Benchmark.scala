@@ -8,8 +8,8 @@ final class Benchmark[-A](val name: Name, val setup: SetupFn[A]) {
 
 object Benchmark {
 
-  def apply[A](name: Name)(setup: SetupFn[A]): Benchmark[A] =
-    new Benchmark(name, setup)
+  def apply(name: Name)(f: => Any): Benchmark[Unit] =
+    new Benchmark(name, Setup.unit(() => f))
 
   type SetupFn[-I] = Setup[I, Fn]
   // TODO later: type SetupFn[-I] = Setup[I, Setup[Unit, Fn]]
@@ -19,11 +19,18 @@ object Benchmark {
     def apply[A](f: A => Any): SetupFn[A] =
       Setup(a => () => f(a))
 
-    def map[A, B](prepare: A => B): (B => Any) => SetupFn[A] =
-      f => Setup { a =>
-        val b = prepare(a)
-        () => f(b)
-      }
+    def map[A, B](prepare: A => B): Builder[A, B] =
+      new Builder[A, B](
+        f => Setup { a =>
+          val b = prepare(a)
+          () => f(b)
+        }
+      )
+
+    class Builder[A, B](g: (B => Any) => SetupFn[A]) {
+      def apply(name: String)(f: B => Any): Benchmark[A] =
+        new Benchmark(name, g(f))
+    }
   }
 
   /**
@@ -40,6 +47,9 @@ final class Setup[-A, +B](val run: A => (B, Teardown)) extends AnyVal
 object Setup {
   def empty[A]: Setup[A, A] =
     apply(identity)
+
+  def unit[A](a: A): Setup[Unit, A] =
+    new Setup(Function const ((a, Teardown.empty)))
 
   /** Setup only; no teardown. */
   def apply[A, B](f: A => B): Setup[A, B] =
