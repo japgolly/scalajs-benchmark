@@ -105,7 +105,7 @@ object Engine {
   def runToConsole[P](plan: Plan[P], options: Options = Options.default): AbortFn = {
     val fmt = {
       val prog  = plan.totalBenchmarks.toString.length
-      val name  = plan.bms.foldLeft(0)(_ max _.name.value.length)
+      val name  = plan.bms.foldLeft(0)(_ max _.name.length)
       var param = plan.params.foldLeft(0)(_ max _.toString.length)
       if (!plan.params.forall(_.toString.matches("^-?\\d+$")))
         param = -param
@@ -113,10 +113,10 @@ object Engine {
     }
 
     run(plan, options) {
-      case SuiteStarting    (p)       => Callback.log("Starting suite: " + p.plan.name.value)
+      case SuiteStarting    (p)       => Callback.log("Starting suite: " + p.plan.name)
       case BenchmarkStarting(p, k)    => Callback.empty
-      case BenchmarkFinished(p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name.value, k.param, r))
-      case SuiteFinished    (p)       => Callback.log("Suite completed: " + p.plan.name.value)
+      case BenchmarkFinished(p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name, k.param, r))
+      case SuiteFinished    (p)       => Callback.log("Suite completed: " + p.plan.name)
     }
   }
 
