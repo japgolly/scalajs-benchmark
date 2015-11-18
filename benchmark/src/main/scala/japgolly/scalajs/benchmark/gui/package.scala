@@ -2,7 +2,9 @@ package japgolly.scalajs.benchmark
 
 package object gui {
 
-  class GuiSuite[P](val suite: Suite[P], val params: Params[P])
+  class GuiSuite[P](val suite: Suite[P], val params: Params[P]) {
+    @inline def name = suite.name
+  }
 
   object GuiSuite {
 
@@ -12,5 +14,4 @@ package object gui {
     def apply[P](suite: Suite[P], params: Params[P]): GuiSuite[P] =
       new GuiSuite(suite, params)
   }
-
 }

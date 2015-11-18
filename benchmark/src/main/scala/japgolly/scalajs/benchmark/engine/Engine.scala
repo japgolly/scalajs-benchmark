@@ -24,7 +24,9 @@ final case class Progress[P](plan: Plan[P], runs: Int) {
   def remaining = total - runs
 }
 
-final case class AbortFn(run: () => Unit) extends AnyVal
+final case class AbortFn(run: () => Unit) extends AnyVal {
+  def callback = Callback(run())
+}
 
 object Engine {
 

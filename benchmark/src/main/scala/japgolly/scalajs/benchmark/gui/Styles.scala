@@ -10,11 +10,12 @@ object Styles extends StyleSheet.Inline {
     import ReactChart.ScalaDataset
 
     val table = style(
-      borderCollapse.collapse,
-      unsafeChild("td,th")(
+      borderCollapse.collapse
+      ,unsafeChild("td,th")(
         border(solid, 1.px, black),
-        padding(v = 0.2 ex, h = 0.6 ex)
-      ))
+        padding(v = 0.3 ex, h = 1.2 ex)
+      )
+    )
 
     val resultHeader = style(
       minWidth(12 ex),
@@ -31,8 +32,8 @@ object Styles extends StyleSheet.Inline {
 
     val graph = style(
       marginTop(2 em),
-      width(600 px),
-      height(600 px))
+      width(400 px),
+      height(400 px))
 
     def styleDataset(d: ScalaDataset): ScalaDataset =
       d.copy(
