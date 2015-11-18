@@ -79,7 +79,7 @@ object BMComp {
       val header = {
         var hs = Vector.empty[ReactTag]
         hs :+= <.th("Benchmark")
-        hs ++= s2.paramFmt.paramDefs.map(f => <.th(f.param.header))
+        hs ++= s2.paramFmt.renderHE.map(x => <.th(x._1))
         hs ++= resultFmts.map(f =>
           <.th(*.resultHeader, resultBlock1, f.header))
         <.tr(hs: _*)
@@ -101,7 +101,7 @@ object BMComp {
 
         s2.paramFmt.forState(gs) match {
           case \/-(ps) => run(s.withParams(ps))
-          case -\/(e) => Callback.alert(s"Error in param: ${e.param.header}")
+          case -\/(name) => Callback.alert(s"Error in param: $name")
         }
       }
 
@@ -116,9 +116,9 @@ object BMComp {
               <.div(
                 "Params",
                 <.table(<.tbody(
-                  TagMod(s2.paramFmt.paramDefs.map(p =>
+                  TagMod(s2.paramFmt.renderHE.map(x =>
                     <.tr(
-                      <.th(p.param.header), <.td(p.editor(ev))
+                      <.th(x._1), <.td(x._2(ev))
                     )
                   ): _*)
                 ))
@@ -136,8 +136,7 @@ object BMComp {
 
                 var hs = Vector.empty[ReactTag]
                 hs :+= <.td(b.name)
-                hs ++= s2.paramFmt.paramDefs.map(f => <.td(f.param renderValue p))
-
+                hs ++= s2.paramFmt.renderValues(p).map(<.td(_))
                 hs ++= (y match {
                   case Nope    => Vector.empty :+ <.td(resultBlockAll)
                   case Running => Vector.empty :+ <.td(resultBlockAll, "Running…")

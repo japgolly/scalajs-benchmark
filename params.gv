@@ -8,7 +8,7 @@ initValues [label="initValues A\nVector A"]
 editor [label="Editor B\nExternalVar B => ReactElement"]
 prism [label="Prism B (Vector A)"]
 
-Param [label="Param A"]
+Param [label="Param A B"]
 header,render,initValues,editor,prism -> Param [dir=back]
 }
 
@@ -17,15 +17,16 @@ genEditor [label="GenEditor\nExternalVar GenState => TagMod"]
 { node[style=filled fillcolor="#33cc33"]
 gs [label="GenState"]
 gs -> gs
-GOAL_Params [label="Params"]
+GOAL_Params [label="Params P\n\nIso P (A₁,…,Aₙ) *\n[ Param Aₙ Bₙ * nKey Bₙ ]"]
 GOAL_editors [label="[ Headerₙ * GenEditorₙ ]"]
 initStateNeeds [label="[ Key Bₙ *\ninitValues Aₙ *\nPrism Bₙ (Vector Aₙ) ]"]
 editorNeeds [label="[ Headerₙ *\nKey Bₙ *\nEditor Bₙ ]"]
-parseNeeds [label="apply *\n[ Headerₙ *\nKey Bₙ *\nPrism Bₙ (Vector Aₙ) ]"]
+parseNeeds [label="(A₁,…,Aₙ) => P *\n[ Headerₙ *\nKey Bₙ *\nPrism Bₙ (Vector Aₙ) ]"]
 
 GOAL_parse [label="GenState => Header | Vector P"]
-apply [label="apply\n(A₁,…,Aₙ) => P"]
 
+GOAL_render [label="P => [ TagMod ]"]
+renderNeeds [label="P => (A₁,…,Aₙ) *\n[ RenderValue Aₙ ]"]
 
 edge [color=red fontcolor=red]
 GOAL_Params -> initStateNeeds [label="initialState"]
@@ -33,18 +34,24 @@ initStateNeeds -> gs [label="fold"]
 GOAL_Params -> editorNeeds [label="editor"]
 editorNeeds -> GOAL_editors
 GOAL_Params -> parseNeeds [label="parse"]
-parseNeeds -> apply,GOAL_parse
+parseNeeds -> GOAL_parse
+GOAL_Params -> renderNeeds [label="render"]
+renderNeeds -> GOAL_render
 
 edge [style=dashed color=red]
 }
+
+// PP [label="Header *\nKey B *\ninitValues A *\nPrism B (Vector A) *\nEditor B"]
+// GOAL_Params -> PP
+tup_PK [label="Param A B * Key B"]
+tup_PK -> Param
+GOAL_Params -> tup_PK
 
 tup_HKP [label="Header *\nKey B *\nPrism B (Vector A)"]
 parseOne [label="GenState => Header | Vector A"]
 parseNeeds -> tup_HKP -> parseOne,header,key,prism
 
-// PKeys [label="∀ B ⊂ P.Bs : Key[B]"]
-PKeys [label="[Key Bₙ]"]
-GOAL_Params -> PKeys
+renderNeeds -> render
 
 tup_initValuesPrism [label="initValues A * Prism B (Vector A)"]
 tup_initValuesPrism -> sb,initValues,prism
@@ -58,9 +65,9 @@ tup_keyGSB -> gs [label="set"]
 tup_keyGSB -> key,sb
 tup_keyGSB -> tup_keyGS [constraint=false]
 
-initStateNeeds-> key,prism,initValues,PKeys,tup_keyGSB,tup_initValuesPrism
+initStateNeeds-> key,prism,initValues,tup_keyGSB,tup_initValuesPrism
 
-editorNeeds -> header,tup_keyEd,PKeys
+editorNeeds -> header,tup_keyEd
 GOAL_editors -> header,genEditor
 tup_keyEd [label="Key B * Editor B"]
 tup_keyEd -> key,editor,genEditor

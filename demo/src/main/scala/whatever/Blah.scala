@@ -48,33 +48,12 @@ object IntSet_X {
   }
 
   val param1 = Param[Int, String]("size", renderInt, textEditor, Vector(10, 100), intsToText)
-  object paramz extends Params[Int] {
-    type P = Int
-
-    override val paramDefs: Vector[ParamWithKey[P]] =
-      Vector(
-        new ParamWithKey[Int] {
-          override type B = String
-          override val param = param1
-          override val key = Key[B]()
-        }
-      )
-
-    override val forState =
-      (s: GenState) => {
-        val p1 = paramDefs.head
-        p1.parseEditorState(p1.key.get(s)) match {
-          case None => -\/(p1)
-          case Some(x) => \/-(x)
-        }
-      }
-  }
+  val paramz = Params.single(param1)
 
   lazy val suite2 = Suite2(suite)(paramz)
 }
 
 // =====================================================================================================================
-
 /*
 object IntSet_X2 {
 
@@ -125,8 +104,17 @@ object IntSet_X2 {
     Suite("IntSet₂", bms, params)
   }
 
+  /*
   lazy val suite2 = Suite2(suite)(
     FmtParam.int("size").cmap[Params](_.size) :+
       FmtParam.bool("reverse").cmap[Params](_.reverse)
   )
-}*/
+  */
+
+  val param1 = Param[Int, String]("size", renderInt, textEditor, Vector(5, 10), intsToText)
+  val param2 = Param[Boolean, String]("reverse", renderBool, textEditor, Vector(true, false), boolsToText)
+
+  // val paramz = Params.single(param1)
+
+}
+*/
