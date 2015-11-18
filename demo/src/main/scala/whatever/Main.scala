@@ -1,7 +1,7 @@
 package whatever
 
+import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react._, vdom.prefix_<^._, MonocleReact._
-import whatever.ReactChart.ScalaDataset
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import scala.concurrent.duration._
 import java.util.concurrent.TimeUnit

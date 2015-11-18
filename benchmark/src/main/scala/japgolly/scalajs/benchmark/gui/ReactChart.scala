@@ -1,49 +1,50 @@
-package whatever
+package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.react._, vdom.prefix_<^._
-import org.scalajs.dom.html.Canvas
 import japgolly.scalajs.benchmark.vendor.chartjs._
-
-import scala.scalajs.js
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.prefix_<^._
+import org.scalajs.dom.html.Canvas
+import scalajs.js
 
 object ReactChart {
-  def newObj[T <: js.Object]: T =
+  private def newObj[T <: js.Object]: T =
     js.Object().asInstanceOf[T]
 
   case class ScalaBarData(
-    labels: Vector[String],
+    labels  : Vector[String],
     datasets: Vector[ScalaDataset]) {
 
     def toJs: BarData = {
-      val d = newObj[BarData]
-      d.labels = js.Array(labels: _*)
+      val d      = newObj[BarData]
+      d.labels   = js.Array(labels: _*)
       d.datasets = js.Array(datasets.map(_.toJs): _*)
       d
     }
   }
 
   case class ScalaDataset(
-    label: String,
-    data: Vector[Chart.Value],
-    fillColor: js.UndefOr[String] = js.undefined,
-    strokeColor: js.UndefOr[String] = js.undefined,
-    highlightFill: js.UndefOr[String] = js.undefined,
+    label          : String,
+    data           : Vector[Chart.Value],
+    fillColor      : js.UndefOr[String] = js.undefined,
+    strokeColor    : js.UndefOr[String] = js.undefined,
+    highlightFill  : js.UndefOr[String] = js.undefined,
     highlightStroke: js.UndefOr[String] = js.undefined) {
 
     def toJs: Dataset = {
-      val d = newObj[Dataset]
+      val d   = newObj[Dataset]
       d.label = label
-      d.data = js.Array(data: _*)
-      fillColor.foreach(d.fillColor = _)
-      strokeColor.foreach(d.strokeColor = _)
-      highlightFill.foreach(d.highlightFill = _)
+      d.data  = js.Array(data: _*)
+      fillColor      .foreach(d.fillColor       = _)
+      strokeColor    .foreach(d.strokeColor     = _)
+      highlightFill  .foreach(d.highlightFill   = _)
       highlightStroke.foreach(d.highlightStroke = _)
       d
     }
   }
 
   sealed trait Effect
-  case class Roar(min: Double, max: Double, value: Double, datasetIndex: Int) {
+
+  case class InfoForFx(min: Double, max: Double, value: Double, datasetIndex: Int) {
     val range = max - min
     val pct: Double =
       if (range <= 0)
@@ -51,10 +52,12 @@ object ReactChart {
       else
         (value - min) / range
   }
-  type Ggggg = Roar => String
-  case class ColourByValue(stroke: Option[Ggggg] = None, fill: Option[Ggggg] = None) extends Effect
+
+  type InfoToColour = InfoForFx => String
+
+  case class ColourByValue(stroke: Option[InfoToColour] = None, fill: Option[InfoToColour] = None) extends Effect
   object ColourByValue {
-    def scaleFn(from: RGB, to: RGB): Ggggg = {
+    def scaleFn(from: RGB, to: RGB): InfoToColour = {
       val dr = (to.r - from.r).toDouble
       val dg = (to.g - from.g).toDouble
       val db = (to.b - from.b).toDouble
@@ -68,15 +71,13 @@ object ReactChart {
       }
     }
   }
-  case class RGB(r: Int, g: Int, b: Int)
 
+  case class RGB(r: Int, g: Int, b: Int)
 
   case class Props(style: TagMod, data: ScalaBarData, options: Chart.BarOptions = newObj,
                    fx: Option[Effect] = None)
 
   type State = Option[BarChart]
-
-  //val chartRef = Ref[]("c")
 
   class Backend($: BackendScope[Props, State]) {
     def render(p: Props) =
@@ -86,7 +87,7 @@ object ReactChart {
       CallbackTo {
         val canvas = $.getDOMNode().domCast[Canvas]
         val c = new Chart(canvas.getContext("2d")).Bar(p.data.toJs, p.options)
-js.Dynamic.global.ccc = c //////////////////////////////////
+        // js.Dynamic.global.ccc = c
         c
       }
 
@@ -98,8 +99,6 @@ js.Dynamic.global.ccc = c //////////////////////////////////
         c  <- $.state.asCBO[BarChart]
         op <- $.props
       } yield {
-
-//        println(np.data)
 
         def xs = c.scale.xLabels.length
 
@@ -143,7 +142,7 @@ js.Dynamic.global.ccc = c //////////////////////////////////
               if (v > max) max = v
             }
             for ((v, j) <- ds.data.iterator.zipWithIndex if !ignoreValue(v)) {
-              val r = Roar(min, max, v, i)
+              val r = InfoForFx(min, max, v, i)
               val m = c.datasets(i).bars.get(j)
               x.fill.foreach(f => m.fillColor = f(r))
               x.stroke.foreach(f => m.strokeColor = f(r))
@@ -160,7 +159,7 @@ js.Dynamic.global.ccc = c //////////////////////////////////
       } yield ()
   }
 
-  val Comp = ReactComponentB[Props]("")
+  val Comp = ReactComponentB[Props]("ReactChart")
     .initialState[State](None)
     .renderBackend[Backend]
     .domType[Canvas]
@@ -168,5 +167,4 @@ js.Dynamic.global.ccc = c //////////////////////////////////
     .componentWillUnmount(_.backend.unmount)
     .componentWillReceiveProps(x => x.$.backend.update(x.nextProps))
     .build
-
 }

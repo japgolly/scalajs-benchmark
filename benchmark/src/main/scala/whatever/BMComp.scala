@@ -3,6 +3,8 @@ package whatever
 import japgolly.scalajs.react._, vdom.prefix_<^._, MonocleReact._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import japgolly.scalajs.benchmark.gui.ReactChart
+import japgolly.scalajs.benchmark.gui.Styles
 import scalajs.js
 import monocle._
 import monocle.macros.Lenses

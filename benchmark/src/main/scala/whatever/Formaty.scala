@@ -6,6 +6,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import whatever.Benchy._
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
+import japgolly.scalajs.benchmark.gui.Styles
 
 object Formaty {
 

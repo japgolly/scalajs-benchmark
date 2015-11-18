@@ -1,4 +1,4 @@
-package whatever
+package japgolly.scalajs.benchmark.gui
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -7,7 +7,7 @@ object Styles extends StyleSheet.Inline {
   import dsl._
 
   object ResultTable {
-    import whatever.ReactChart.ScalaDataset
+    import ReactChart.ScalaDataset
 
     val table = style(
       borderCollapse.collapse,

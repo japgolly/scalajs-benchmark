@@ -8,73 +8,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 import scalaz.{Lens => _, _}, Scalaz.{^ => _, _}
-
-//
-//object Paramy {
-//
-//  type Header       = String
-//  type Render[-A]   = A => TagMod
-//  type Defaults[+A] = Vector[A]
-//
-//
-//  /*
-////  class ParamFmt[-A](val headers: Vector[String], val render: A => Vector[TagMod])
-//
-//  case class FmtParam[-A](header: String, render: A => TagMod) {
-////    def :+[B <: A](b: FmtParam[B]): FmtParams[B] =
-////      Vector.empty :+ this :+ b
-//  }
-//*/
-//
-//  case class Param[P, A](header: Header,
-//                         render: Render[P],
-//                         defaults: Defaults[A]) {
-//
-//    def cmap[B](f: B => P): Param[B, A] =
-//      Param(header, render compose f, defaults)
-//
-//  }
-//
-//
-////  type Params[A] = Vector[Param[A]]
-////
-////  implicit def liftOneParam[A](p: Param[A]): Params[A] =
-////    Vector.empty :+ p
-//
-//  /*
-//
-//
-//  val ps = suite.params
-//  for p <- ps
-//    render p.header
-//    p.render(op state, op state -> Callback) <---- state is of type p.T
-//
-//
-//  // run benchmarks
-//  Vector P params = ps.gimme(state)
-//
-//
-//  ONE
-//  state = Vector[Bool]
-//
-//  STATE.getState(key): Op value: key.T
-//   */
-//
-//
-////  type PDState
-//
-//
-//
-//  // ===================================================================================================================
-//
-//  def renderInt: Render[Int] =
-//    i => TagMod(Styles.ResultTable.paramInt, i)
-//
-//  def renderBool: Render[Boolean] =
-//    b => TagMod(Styles.ResultTable.paramBool, if (b) "T" else "F")
-//
-//}
-
+import japgolly.scalajs.benchmark.gui.Styles
 
 object NotMyProb {
   type Header       = String
