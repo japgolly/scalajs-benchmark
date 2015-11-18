@@ -186,8 +186,9 @@ object SuiteComp {
         ).take(bmsToShow).toVector
 
         val dataset = ScalaDataset(fmt.header, dataPoints)
-        val bardata = ScalaBarData(titles, Vector(*.styleDataset(dataset)))
-        ReactChart.Comp(ReactChart.Props(*.graph, bardata))
+        val bardata = ScalaBarData(titles, Vector(dataset))
+        val props = ReactChart.Props(*.graphOuter, *.graphInner(bardata))
+        ReactChart.Comp(props)
       }
 
       <.div(
