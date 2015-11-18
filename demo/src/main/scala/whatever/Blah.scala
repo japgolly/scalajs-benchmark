@@ -1,5 +1,6 @@
 package whatever
 
+import monocle.Iso
 import whatever.BMComp.Suite2
 import whatever.Formaty._
 import scala.collection.immutable._
@@ -54,7 +55,7 @@ object IntSet_X {
 }
 
 // =====================================================================================================================
-/*
+
 object IntSet_X2 {
 
   case class Params(size: Int, reverse: Boolean) {
@@ -114,7 +115,8 @@ object IntSet_X2 {
   val param1 = Param[Int, String]("size", renderInt, textEditor, Vector(5, 10), intsToText)
   val param2 = Param[Boolean, String]("reverse", renderBool, textEditor, Vector(true, false), boolsToText)
 
-  // val paramz = Params.single(param1)
+  val iso = Iso((p: Params) => Params.unapply(p).get)((Params.apply _).tupled)
+  val paramz = NotMyProb.Params.two(iso, param1, param2)
 
+  lazy val suite2 = Suite2(suite)(paramz)
 }
-*/

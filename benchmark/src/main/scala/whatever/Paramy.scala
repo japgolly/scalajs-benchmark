@@ -124,7 +124,6 @@ object NotMyProb {
   }
 
   trait Params[P] {
-//    val paramDefs: Vector[ParamWithKey]
     def forState(s: GenState): Header \/ Vector[P]
     def initState: GenState
     def renderHE: Vector[(Header, GenEditor)]
@@ -136,9 +135,6 @@ object NotMyProb {
     def single[P, E](param: Param[P, E]): Params[P] =
       new Params[P] {
         val p = ParamWithKey(param)
-//        implicit def ev(a: p.)
-//        override val paramDefs: Vector[ParamWithKey] =
-//          Vector(p1)
 
         override def forState(s: GenState) = {
           p.parseEditorState(p.key.get(s)) match {
@@ -149,8 +145,6 @@ object NotMyProb {
 
         override def initState: GenState =
           p.key.set(p.param.prism reverseGet p.param.initValues)(Map.empty)
-//          paramDefs.foldLeft(Map.empty: GenState)((m, p) =>
-//            p.key.set(p.param.prism reverseGet p.param.initValues)(m))
 
         override def renderHE: Vector[(Header, GenEditor)] =
           Vector((param.header, p.editor))
@@ -159,19 +153,70 @@ object NotMyProb {
           Vector(param renderValue p)
       }
 
-//    def two[P, P1, E1, P2, E2](param1: Param[P1, E1], param2: Param[P2, E2]): Params[P] =
-//      new Params[P] {
+    def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: Param[P1, E1], param2: Param[P2, E2]): Params[P] =
+      new Params[P] {
+        import monocle.function.{first, second}
+        import monocle.std.tuple2._
+
 //        val p1 = ParamWithKey(param1)
 //        val p2 = ParamWithKey(param2)
-//        override val paramDefs: Vector[ParamWithKey[P]] =
-//          Vector(p1, p2)
-//        override val forState =
-//          (s: GenState) =>
-//            p1.parseEditorState(p1.key.get(s)) match {
-//              case None => -\/(p1)
-//              case Some(x) => \/-(x)
-//            }
-//      }
+//        val ps = Vector[ParamWithKey](p1, p2)
+        val p1 = ParamWithKey2(param1, iso ^|-> first)
+        val p2 = ParamWithKey2(param2, iso ^|-> second)
+        val ps = Vector[ParamWithKey2[P]](p1, p2)
+
+        override def forState(s: GenState): Header \/ Vector[P] = {
+
+//          val x =
+            for {
+              v1 <- p1.parseEditorState(p1.key.get(s)) \/> p1.param.header
+              v2 <- p2.parseEditorState(p2.key.get(s)) \/> p2.param.header
+            } yield (
+              for {a1 <- v1; a2 <- v2} yield iso.reverseGet((a1, a2))
+            )
+
+//          for {
+//            v1 <- p1.parseEditorState(p1.key.get(s)).toRight(p1.param.header)
+//            v2 <- p2.parseEditorState(p2.key.get(s)).toRight(p2.param.header)
+//            a1 <- v1; a2 <- v2
+//          } yield iso.reverseGet((a1, a2))
+
+        }
+
+        override def initState: GenState =
+          ps.foldLeft(Map.empty: GenState)((m, p) =>
+            p.key.set(p.param.prism reverseGet p.param.initValues)(m))
+
+        override def renderHE: Vector[(Header, GenEditor)] =
+          ps.map(p => (p.param.header, p.editor))
+
+        override def renderValues(v: P): Vector[TagMod] =
+          ps.map(p => p.param renderValue p.lens.get(v))
+      }
+
+    trait ParamWithKey2[P] {
+      type A
+      type B
+      val param: Param[A, B]
+      val key: Key[B]
+      val lens: Lens[P, A]
+      val editor: GenEditor =
+        e => param editor ExternalVar(key get e.value)(b => e.set(key.set(b)(e.value)))
+      def parseEditorState(b: B): Option[Vector[A]] =
+        param.prism.getOption(b)
+    }
+    object ParamWithKey2 {
+      type Aux[P, X, Y] = ParamWithKey2[P] {type A =X; type B = Y}
+
+      def apply[P, X, Y](p: Param[X, Y], _lens: Lens[P, X]): Aux[P, X, Y] =
+        new ParamWithKey2[P] {
+          override type A = X
+          override type B = Y
+          override val param = p
+          override val key = Key[B]()
+          override val lens = _lens
+        }
+    }
   }
 
   // ===================================================================================================================
