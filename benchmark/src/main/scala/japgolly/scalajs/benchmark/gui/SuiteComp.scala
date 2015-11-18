@@ -15,7 +15,7 @@ import Params.GenState
 import Styles.{ResultTable => *}
 
 /**
-  * React component that provides the GUI over a [[Suite]].
+  * React component that provides the GUI over a [[GuiSuite]].
   */
 object SuiteComp {
   type Comp[P] = ReactComponentC.ReqProps[Props[P], State[P], Backend[P], TopNode]
