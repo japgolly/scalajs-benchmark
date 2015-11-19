@@ -83,7 +83,10 @@ object ScalaJsBenchmark extends Build {
           "org.webjars"     % "chartjs"   % Ver.ChartJs / "Chart.js"                                     minified "Chart.min.js"),
         addCompilerPlugin(macroParadisePlugin))
 
-  val demoJs = "output.js"
+  object Demo {
+    val outputJS = "output.js"
+    val scalazVer = "7.1.3"
+  }
   lazy val demo =
     Project("demo", file("demo"))
       .enablePlugins(ScalaJSPlugin)
@@ -91,7 +94,11 @@ object ScalaJsBenchmark extends Build {
       .dependsOn(benchmark)
       .settings(
         addCompilerPlugin(macroParadisePlugin),
+        libraryDependencies ++= Seq(
+          "com.github.japgolly.fork.scalaz" %%% "scalaz-core"       % Demo.scalazVer,
+          "com.github.japgolly.fork.scalaz" %%% "scalaz-concurrent" % Demo.scalazVer,
+          "com.github.japgolly.fork.scalaz" %%% "scalaz-effect"     % Demo.scalazVer),
         skip in packageJSDependencies := false,
-        artifactPath in (Compile, fastOptJS) := ((target in Compile).value / demoJs),
-        artifactPath in (Compile, fullOptJS) := ((target in Compile).value / demoJs))
+        artifactPath in (Compile, fastOptJS) := ((target in Compile).value / Demo.outputJS),
+        artifactPath in (Compile, fullOptJS) := ((target in Compile).value / Demo.outputJS))
 }
