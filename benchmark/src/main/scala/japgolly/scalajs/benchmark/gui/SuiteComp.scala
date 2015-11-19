@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 import scalaz.{-\/, \/-}
 import Params.GenState
-import Styles.{ResultTable => *}
+import Styles.{Suite => *}
 
 /**
   * React component that provides the GUI over a [[GuiSuite]].
@@ -66,11 +66,13 @@ object SuiteComp {
   private val resultBlock1 = ^.colSpan := 3
   private val resultBlockAll = ^.colSpan := (3 * resultFmts.length)
 
-  private val PlusMinusCell = <.td("±")
+  private val resultTD = <.td(*.resultData)
 
-  private val runsCellNone = <.td()
-  private val whenBMPending  = Vector[ReactTag](runsCellNone, <.td(resultBlockAll))
-  private val whenBMRunning = Vector[ReactTag](runsCellNone, <.td(resultBlockAll, "Running…"))
+  private val PlusMinusCell = resultTD("±")
+
+  private val runsCellNone = resultTD
+  private val whenBMPending = Vector[ReactTag](runsCellNone, resultTD(resultBlockAll))
+  private val whenBMRunning = Vector[ReactTag](runsCellNone, resultTD(resultBlockAll, "Running…"))
 
   private def formatTotalTime(fd: FiniteDuration): String =
     ValueFmt.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
@@ -127,26 +129,30 @@ object SuiteComp {
     def renderSuitePending(p: Props, s: State): ReactElement = {
       val ev = ExternalVar(s.editors)(updateEditorState)
       val params = p.suite.params
+      val th = <.th(*.settingsTableHeader)
+      val td = <.td(*.settingsTableData)
 
       def bmRow = {
         def bmCell(bm: Benchmark[P], i: Int) =
-          <.div(
-            <.label(
-              <.input(
-                ^.`type`    := "checkbox",
-                ^.checked   := !s.disabledBMs.contains(i),
-                ^.onChange --> toggleBM(i)),
+          <.label(
+            *.settingsTableBm,
+            <.input(
+              ^.`type`    := "checkbox",
+              ^.checked   := !s.disabledBMs.contains(i),
+              ^.onChange --> toggleBM(i)),
+            <.span(
+              *.settingsTableBmLabel,
               bm.name))
 
         <.tr(
-          <.th("Benchmarks"),
-          <.td(p.suite.suite.bms.iterator.zipWithIndex.map((bmCell _).tupled).toList: _*))
+          th("Benchmarks"),
+          td(p.suite.suite.bms.iterator.zipWithIndex.map((bmCell _).tupled).toList: _*))
       }
 
       def paramRow(i: Int) =
         <.tr(
-          <.th(params.headers(i)),
-          <.td(params.editors(i)(ev)))
+          th(params.headers(i)),
+          td(params.editors(i)(ev)))
 
       def paramRows: TagMod =
         if (params.headers.isEmpty)
@@ -179,6 +185,7 @@ object SuiteComp {
 
       <.div(
         <.table(
+          *.settingsTable,
           <.tbody(
             bmRow,
             paramRows)),
@@ -189,36 +196,37 @@ object SuiteComp {
       val keys = progress.plan.keys
 
       def header = {
+        val th = <.th(*.resultHeader)
         var hs = Vector.empty[ReactTag]
-        hs :+= <.th("Benchmark")
-        hs ++= suite.params.headers.map(<.th(_))
-        hs :+= <.th("Runs")
-        hs ++= resultFmts.map(f => <.th(*.resultHeader, resultBlock1, f.header))
+        hs :+= th("Benchmark")
+        hs ++= suite.params.headers.map(th(_))
+        hs :+= th("Runs")
+        hs ++= resultFmts.map(f => <.th(*.resultHeaderScore, resultBlock1, f.header))
         <.tr(hs: _*)
       }
 
       def runsCell(runs: Int) =
-        <.td(ValueFmt.Integer render runs)
+        resultTD(ValueFmt.Integer render runs)
 
       def rows =
         keys.map { k =>
           val status = m.getOrElse(k, BMPending)
           var hs = Vector.empty[ReactTag]
-          hs :+= <.td(k.bm.name)
-          hs ++= suite.params.renderParams(k.param).map(<.td(_))
+          hs :+= resultTD(k.bm.name)
+          hs ++= suite.params.renderParams(k.param).map(resultTD(_))
           hs ++= (status match {
             case BMPending        => whenBMPending
             case BMRunning        => whenBMRunning
             case BMDone(-\/(err)) =>
               Vector[ReactTag](
                 runsCellNone, // Hmmmmm.........
-                <.td(resultBlockAll, "ERROR", ^.onDoubleClick --> Callback{throw err; ()}))
+                resultTD(resultBlockAll, "ERROR", ^.onDoubleClick --> Callback{throw err; ()}))
             case BMDone(\/-(r)) =>
               runsCell(r.runs) +:
               resultFmts.flatMap(f => Vector(
-                <.td(f.score render r),
+                resultTD(f.score render r),
                 PlusMinusCell,
-                <.td(f.error render r)))
+                resultTD(f.error render r)))
           })
           <.tr(hs: _*)
         }
@@ -250,23 +258,40 @@ object SuiteComp {
 
       <.div(
         <.table(
-          *.table,
+          *.resultTable,
           <.thead(header),
           <.tbody(rows: _*)),
         <.div(
           graph))
     }
 
-    def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): ReactElement =
-      <.div(
-        renderResultTable(p.suite, r.progess, r.bm),
-        <.button("Abort", ^.onClick --> r.abortFn.callback))
+    def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): ReactElement = {
+      def abortButton =
+        <.button(
+          *.abortButton,
+          ^.onClick --> r.abortFn.callback,
+          "Abort")
 
-    def renderSuiteDone(p: Props, s: State, r: SuiteDone): ReactElement =
       <.div(
-        renderResultTable(p.suite, r.progess, r.bm),
-        <.div(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
-        <.button("Reset", ^.onClick --> $.modState(State.status set SuitePending)))
+        <.div(*.runningRow,
+          <.span("Benchmark running..."),
+          abortButton),
+        renderResultTable(p.suite, r.progess, r.bm))
+    }
+
+    def renderSuiteDone(p: Props, s: State, r: SuiteDone): ReactElement = {
+      def resetButton =
+        <.button(
+          *.resetButton,
+          ^.onClick --> $.modState(State.status set SuitePending),
+          "Reset")
+
+      <.div(
+        <.div(*.doneRow,
+          <.span(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
+          resetButton),
+        renderResultTable(p.suite, r.progess, r.bm))
+    }
 
     def render(p: Props, s: State): ReactElement = {
       val inner: ReactElement = s.status match {

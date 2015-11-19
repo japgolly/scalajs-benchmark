@@ -37,10 +37,10 @@ object Param {
 
   object Render {
     def int: Render[Int] =
-      i => TagMod(Styles.ResultTable.paramInt, i)
+      i => TagMod(Styles.Suite.paramInt, i)
 
     def bool: Render[Boolean] =
-      b => TagMod(Styles.ResultTable.paramBool, if (b) "T" else "F")
+      b => TagMod(Styles.Suite.paramBool, if (b) "T" else "F")
 
   }
 

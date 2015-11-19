@@ -123,11 +123,11 @@ object MenuComp {
             }.reduce(_ + _)
 
           def topNav =
-            <.table(*.topNav,
-              <.tbody(
-                <.tr(
-                  <.td(*.topNavBreadcrumb, breadcrumb),
-                  <.td(*.topNavBack, ctl.link(None)("← Back")))))
+            <.div(
+              *.topNav,
+              ctl.link(None)("Home"),
+              crumbSep,
+              breadcrumb)
 
           <.div(topNav, res.render())
       }

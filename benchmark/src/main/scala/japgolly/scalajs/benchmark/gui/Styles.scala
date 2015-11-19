@@ -6,19 +6,58 @@ import scalacss.ScalaCssReact._
 object Styles extends StyleSheet.Inline {
   import dsl._
 
-  object ResultTable {
+//  val cssReset = style(scalacss.ext.CssReset.normaliseCss)
 
-    val table = style(
-      borderCollapse.collapse
-      ,unsafeChild("td,th")(
-        border(solid, 1.px, black),
-        padding(v = 0.3 ex, h = 1.2 ex)
-      )
-    )
+  object Suite {
+
+    private val anyHeader = mixin(
+      backgroundColor(c"#eee"))
+
+    private val settingsCell = mixin(
+      border(solid, 1.px, black),
+      padding.vertical(1 ex))
+
+    val settingsTable = style(
+      borderCollapse.collapse,
+      marginBottom(1 em))
+
+    val settingsTableHeader = style(
+      settingsCell,
+      textAlign.right,
+      padding.horizontal(2 ex),
+      anyHeader)
+
+    val settingsTableData = style(
+      settingsCell,
+      padding.horizontal(1 ex),
+      textAlign.left)
+
+    val settingsTableBm = style(
+      display.block)
+
+    val settingsTableBmLabel = style(
+      fontWeight.normal,
+      paddingLeft(0.3 ex))
+
+    val resultTable = style(
+      borderCollapse.collapse)
+
+    private val resultCell = mixin(
+      border(solid, 1.px, black))
 
     val resultHeader = style(
-      minWidth(12 ex),
-      textAlign.center)
+      anyHeader,
+      resultCell,
+      textAlign.center,
+      padding(v = 0.5 ex, h = 1 ex))
+
+    val resultHeaderScore = style(
+      resultHeader,
+      minWidth(12 ex))
+
+    val resultData = style(
+      resultCell,
+      padding(v = 0.2 ex, h = 1 ex))
 
     val numericResult = style(
       textAlign.right,
@@ -31,6 +70,18 @@ object Styles extends StyleSheet.Inline {
 
     val startButton = style(
       &.disabled(color(c"#aaa")))
+
+    val runningRow = style(
+      marginBottom(1 ex))
+
+    val abortButton = style(
+      marginLeft(2 ex))
+
+    val doneRow = style(
+      color(green),
+      runningRow)
+
+    def resetButton = abortButton
 
     val graphOuter = style(
       marginTop(2 em),
@@ -65,30 +116,19 @@ object Styles extends StyleSheet.Inline {
   object Menu {
 
     val topNav = style(
-      borderCollapse.collapse,
       width(100 %%),
+      boxSizing.borderBox,
+      padding(v = 1 ex, h = 2 ex),
       backgroundColor(c"#eee"))
-
-    private val topNavTd = mixin(
-      padding(v = 0.5 ex, h = 1 em),
-      verticalAlign.middle
-    )
-
-    val topNavBreadcrumb = style(
-      topNavTd)
 
     val topNavBreadcrumbSep = style(
       color(c"#888"),
       margin.horizontal(1 ex))
-
-    val topNavBack = style(
-      topNavTd,
-      textAlign.right)
   }
 
   // ===================================================================================================================
 
   initInnerObjects(
     Menu.topNav,
-    ResultTable.table)
+    Suite.resultTable)
 }

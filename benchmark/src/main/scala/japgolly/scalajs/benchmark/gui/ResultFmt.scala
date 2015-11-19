@@ -37,7 +37,7 @@ object ValueFmt {
     val fmt = s"%.${dp}f"
     ValueFmt(Some.apply,
       d => <.div(
-        Styles.ResultTable.numericResult,
+        Styles.Suite.numericResult,
         addThousandSeps(fmt format d)))
   }
 
