@@ -13,15 +13,15 @@ import Styles.{Menu => *}
   */
 object MenuComp {
 
-  case class UrlFrag(path: String) extends AnyVal
+  final case class UrlFrag(path: String)
   object UrlFrag {
     def from(string: String): UrlFrag =
       UrlFrag(string.toLowerCase.replaceAll("[^a-zA-Z0-9-]+", "_"))
   }
 
   sealed trait MenuItem
-  case class MenuSuite(urlFrag: UrlFrag, suite: GuiSuite[_]) extends MenuItem
-  case class MenuFolder(name: String, urlFrag: UrlFrag, children: MenuItems) extends MenuItem
+  final case class MenuSuite(urlFrag: UrlFrag, suite: GuiSuite[_]) extends MenuItem
+  final case class MenuFolder(name: String, urlFrag: UrlFrag, children: MenuItems) extends MenuItem
   type MenuItems = Traversable[MenuItem]
 
   implicit def autoLiftGuiSuite(s: GuiSuite[_]): MenuSuite =
@@ -30,7 +30,7 @@ object MenuComp {
   implicit def autoSoleMenuItem(s: MenuItem): MenuItems =
     s :: Nil
 
-  def folder(name: String)(c: MenuItem*): MenuFolder = {
+  def folder(name: String, urlFrag: UrlFrag = null)(c: MenuItem*): MenuFolder = {
     val cs = c.iterator
       .map[((Int, String), MenuItem)] {
         case m: MenuSuite => ((1, m.suite.name), m)
@@ -39,11 +39,13 @@ object MenuComp {
       .toVector
       .sortBy(_._1)
       .map(_._2)
-    folderUnsorted(name)(cs: _*)
+    folderUnsorted(name, urlFrag)(cs: _*)
   }
 
-  def folderUnsorted(name: String)(c: MenuItem*): MenuFolder =
-    MenuFolder(name, UrlFrag from name, c)
+  def folderUnsorted(name: String, urlFrag: UrlFrag = null)(c: MenuItem*): MenuFolder = {
+    val uf = Option(urlFrag).getOrElse(UrlFrag from name)
+    MenuFolder(name, uf, c)
+  }
 
   def buildRouter(baseUrl: BaseUrl, options: Options = Options.Default)(m1: MenuItems, mn: MenuItems*): Router[_] = {
     val mis = m1.toVector ++ mn.flatten
