@@ -1,4 +1,4 @@
-package demo.scala
+package demo.suites.scala
 
 import scala.collection.immutable._
 import scala.collection.mutable
