@@ -1,4 +1,4 @@
-package whatever.newshit
+package whatever
 
 import monocle.Iso
 import scala.collection.immutable._
@@ -52,7 +52,7 @@ object Demos {
       }
     ))
 
-    val param = Param(Render.int, Editor.text, Parser.intsAsText)("size", 10, 100)
+    val param = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 10, 100)
 
     GuiSuite(suite, param)
   }
@@ -85,8 +85,8 @@ object Demos {
       }
     ))
 
-    val param1 = Param(Render.int, Editor.text, Parser.intsAsText)("size", 5, 10)
-    val param2 = Param(Render.bool, Editor.text, Parser.boolsAsText)("reverse", true, false)
+    val param1 = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 5, 10)
+    val param2 = Param(Render.bool, Editor.text, Parser.boolsAsText)("Reverse", true, false)
 
     val iso = Iso((m: Multi) => Multi.unapply(m).get)((Multi.apply _).tupled)
     val params = Params.two(iso, param1, param2)

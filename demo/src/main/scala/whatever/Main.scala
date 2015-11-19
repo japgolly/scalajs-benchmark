@@ -12,10 +12,9 @@ object Main extends js.JSApp {
   def main(): Unit = {
     import japgolly.scalajs.benchmark._
     import japgolly.scalajs.benchmark.gui.{Styles, SuiteComp}
-    import whatever.newshit.Demos
 
-    val s = Demos.noParams
-//    val s = Demos.oneParam
+//    val s = Demos.noParams
+    val s = Demos.oneParam
 
     Chart.defaults.global.animationSteps = 20
 
