@@ -265,7 +265,8 @@ object SuiteComp {
     def renderSuiteDone(p: Props, s: State, r: SuiteDone): ReactElement =
       <.div(
         renderResultTable(p.suite, r.progess, r.bm),
-        <.div(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."))
+        <.div(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
+        <.button("Reset", ^.onClick --> $.modState(State.status set SuitePending)))
 
     def render(p: Props, s: State): ReactElement = {
       val inner: ReactElement = s.status match {
