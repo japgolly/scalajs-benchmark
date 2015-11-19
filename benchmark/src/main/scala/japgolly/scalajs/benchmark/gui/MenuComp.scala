@@ -30,7 +30,19 @@ object MenuComp {
   implicit def autoSoleMenuItem(s: MenuItem): MenuItems =
     s :: Nil
 
-  def folder(name: String)(c: MenuItem*): MenuFolder =
+  def folder(name: String)(c: MenuItem*): MenuFolder = {
+    val cs = c.iterator
+      .map[((Int, String), MenuItem)] {
+        case m: MenuSuite => ((1, m.suite.name), m)
+        case m: MenuFolder => ((0, m.name), m)
+      }
+      .toVector
+      .sortBy(_._1)
+      .map(_._2)
+    folderUnsorted(name)(cs: _*)
+  }
+
+  def folderUnsorted(name: String)(c: MenuItem*): MenuFolder =
     MenuFolder(name, UrlFrag from name, c)
 
   def buildRouter(baseUrl: BaseUrl, options: Options = Options.Default)(m1: MenuItems, mn: MenuItems*): Router[_] = {
