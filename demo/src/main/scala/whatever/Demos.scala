@@ -10,7 +10,7 @@ import Param._
 
 object Demos {
 
-  lazy val noParams = {
+  val noParams = {
 
     val suite = Suite[Unit]("No Params", Vector(
 
@@ -30,9 +30,9 @@ object Demos {
     GuiSuite(suite)
   }
 
-  // =====================================================================================================================
+  // ===================================================================================================================
 
-  lazy val oneParam = {
+  val oneParam = {
 
     val bm = SetupFn.map[Int, List[Int]](size =>
       (-size to -1).toSet.iterator.map(-(_: Int)).toList)
@@ -57,13 +57,13 @@ object Demos {
     GuiSuite(suite, param)
   }
 
-  // =====================================================================================================================
+  // ===================================================================================================================
 
   case class Multi(size: Int, reverse: Boolean) {
     override def toString = s"$size | $reverse"
   }
 
-  lazy val twoParams = {
+  val twoParams = {
 
     val bm = SetupFn.map[Multi, List[Int]] { p =>
       val x = (-p.size to -1).toSet.iterator.map(-(_: Int)).toList
@@ -93,5 +93,10 @@ object Demos {
 
     GuiSuite(suite, params)
   }
+
+  // ===================================================================================================================
+  import japgolly.scalajs.benchmark.gui.MenuComp._
+
+  lazy val all = folder("Benchmark Demos")(noParams, oneParam, twoParams)
 
 }

@@ -61,6 +61,34 @@ object Styles extends StyleSheet.Inline {
   }
 
   // ===================================================================================================================
+
+  object Menu {
+
+    val topNav = style(
+      borderCollapse.collapse,
+      width(100 %%),
+      backgroundColor(c"#eee"))
+
+    private val topNavTd = mixin(
+      padding(v = 0.5 ex, h = 1 em),
+      verticalAlign.middle
+    )
+
+    val topNavBreadcrumb = style(
+      topNavTd)
+
+    val topNavBreadcrumbSep = style(
+      color(c"#888"),
+      margin.horizontal(1 ex))
+
+    val topNavBack = style(
+      topNavTd,
+      textAlign.right)
+  }
+
+  // ===================================================================================================================
+
   initInnerObjects(
+    Menu.topNav,
     ResultTable.table)
 }

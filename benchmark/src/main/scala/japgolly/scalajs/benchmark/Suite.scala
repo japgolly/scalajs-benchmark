@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark
 
-import monocle.macros.Lenses
+import monocle.Lens
 
 /**
   * A suite of benchmarks.
@@ -12,8 +12,12 @@ import monocle.macros.Lenses
   * To run a suite of benchmarks (without using a GUI), combine this with your desired param values to form a [[Plan]],
   * and then pass it to one of the run methods in [[japgolly.scalajs.benchmark.engine.Engine]].
   */
-@Lenses
-final case class Suite[P](name: String, bms: Vector[Benchmark[P]])
+final case class Suite[-P](name: String, bms: Vector[Benchmark[P]])
+
+object Suite {
+  def bms[P]: Lens[Suite[P], Vector[Benchmark[P]]] =
+    Lens((_: Suite[P]).bms)(b => _.copy(bms = b))
+}
 
 final case class Plan[P](suite: Suite[P], params: Vector[P]) {
   @inline def name = suite.name
