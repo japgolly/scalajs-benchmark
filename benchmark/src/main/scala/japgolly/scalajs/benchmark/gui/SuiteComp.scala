@@ -304,6 +304,14 @@ object SuiteComp {
         <.h3(p.suite.name),
         inner)
     }
+
+    def shutdown: Callback =
+      $.state.map(_.status) >>= {
+        case r: SuiteRunning => r.abortFn.callback
+        case _: SuiteDone
+           | SuitePending
+           | SuiteWillStart  => Callback.empty
+      }
   }
 
   private val __Comp = {
@@ -314,6 +322,7 @@ object SuiteComp {
         .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, Set.empty))
         .renderBackend[Backend[P]]
         // TODO handle suite changes - it's all in state atm
+        .componentWillUnmount(_.backend.shutdown)
         .build
     c
   }
