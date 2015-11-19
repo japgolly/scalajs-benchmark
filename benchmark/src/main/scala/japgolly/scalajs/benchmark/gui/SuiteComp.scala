@@ -23,7 +23,7 @@ object SuiteComp {
   case class Props[P](suite: GuiSuite[P], options: Options = Options.default)
 
   @Lenses
-  case class State[A](status: SuiteStatus[A], editors: GenState)
+  case class State[A](status: SuiteStatus[A], editors: GenState, disabledBMs: Set[Int])
 
   object State {
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
@@ -71,6 +71,8 @@ object SuiteComp {
     type SuiteRunning = SuiteComp.SuiteRunning[P]
     type SuiteDone    = SuiteComp.SuiteDone[P]
 
+    val guiSuiteBMs = GuiSuite.suite[P] ^|-> Suite.bms
+
     val updateEditorState: GenState => Callback =
       s => $.modState(State.editors set s)
 
@@ -108,9 +110,28 @@ object SuiteComp {
         }.flatten)
       }
 
+    def toggleBM(i: Int): Callback =
+      $.modState(State.disabledBMs.modify(s =>
+        if (s contains i) s - i else s + i))
+
     def renderSuitePending(p: Props, s: State): ReactElement = {
       val ev = ExternalVar(s.editors)(updateEditorState)
       val params = p.suite.params
+
+      def bmRow = {
+        def bmCell(bm: Benchmark[P], i: Int) =
+          <.div(
+            <.label(
+              <.input(
+                ^.`type`    := "checkbox",
+                ^.checked   := !s.disabledBMs.contains(i),
+                ^.onChange --> toggleBM(i)),
+              bm.name))
+
+        <.tr(
+          <.th("Benchmarks"),
+          <.td(p.suite.suite.bms.iterator.zipWithIndex.map((bmCell _).tupled).toList: _*))
+      }
 
       def paramRow(i: Int) =
         <.tr(
@@ -124,13 +145,24 @@ object SuiteComp {
           Some(
             <.table(
               <.tbody(
+                bmRow)(
                 params.headers.indices.map(paramRow): _*)))
 
-      val onStart: Option[Callback] =
-        params.parseState(ev.value)
-          .toOption
-          .filter(_.nonEmpty)
-          .map(start(p.suite, p.options, _))
+      val onStart: Option[Callback] = {
+        def selectedBMs = p.suite.suite.bms.iterator
+          .zipWithIndex
+          .filterNot(s.disabledBMs contains _._2)
+          .map(_._1)
+          .toVector
+
+        for {
+          ps <- params.parseState(ev.value).toOption.filter(_.nonEmpty)
+          bms <- Some(selectedBMs).filter(_.nonEmpty)
+        } yield {
+          val s2 = guiSuiteBMs.set(bms)(p.suite)
+          start(s2, p.options, ps)
+        }
+      }
 
       def startButton =
         <.button(
@@ -235,7 +267,7 @@ object SuiteComp {
     type P = Unit
     val c: Comp[_] =
       ReactComponentB[Props[P]]("SuiteComp")
-        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState))
+        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, Set.empty))
         .renderBackend[Backend[P]]
         // TODO handle suite changes - it's all in state atm
         .build
