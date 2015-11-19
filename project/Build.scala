@@ -46,6 +46,14 @@ object ScalaJsBenchmark extends Build {
         "cctc" -> ";clear;clean;test:compile",
         "cct"  -> ";clear;clean;test"))
 
+  def definesMacros: Project => Project =
+    _.settings(
+      scalacOptions += "-language:experimental.macros",
+      libraryDependencies ++= Seq(
+        "org.scala-lang" % "scala-reflect" % Ver.Scala211,
+        "org.scala-lang" % "scala-library" % Ver.Scala211,
+        "org.scala-lang" % "scala-compiler" % Ver.Scala211 % "provided"))
+
   def macroParadisePlugin =
     compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.full)
 
@@ -59,7 +67,7 @@ object ScalaJsBenchmark extends Build {
   lazy val benchmark =
     Project("benchmark", file("benchmark"))
       .enablePlugins(ScalaJSPlugin)
-      .configure(commonSettings)
+      .configure(commonSettings, definesMacros)
       .settings(
         libraryDependencies ++= Seq(
           "com.github.japgolly.scalajs-react" %%% "core"          % Ver.ScalaJsReact,

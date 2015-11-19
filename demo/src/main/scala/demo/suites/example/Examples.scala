@@ -1,5 +1,7 @@
 package demo.suites.example
 
+import demo.Util._
+import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.Iso
 import scala.collection.mutable
 import japgolly.scalajs.benchmark._
@@ -15,18 +17,22 @@ object Examples {
   val noParams = GuiSuite(
     Suite("No Params")(
 
-      Benchmark("immutableSet") {
+      Benchmark("immutable.Set[Int]") {
         var s = Set.empty[Int]
         for (i <- 1 to 100) s += i
         s
       },
 
-      Benchmark("mutableBitSetAdd") {
+      Benchmark("mutable.BitSet") {
         val s = mutable.BitSet.empty
         for (i <- 1 to 100) s.add(i)
         s
       }
-    ))
+    )
+  ).describe(
+    <.div(
+      <.div("The simplest of benchmarks takes no params and is just a collection of ", <.code("() => Any"), "s."),
+      linkToSource(sourceFilename)))
 
   // ===================================================================================================================
 
@@ -44,13 +50,13 @@ object Examples {
 
     val suite = Suite("One Param")(
 
-      bm("immutableSet") { is =>
+      bm("immutable.Set[Int]") { is =>
         var s = Set.empty[Int]
         for (i <- is) if (s contains i) ??? else s += i
         s
       },
 
-      bm("mutableBitSetAdd") { is =>
+      bm("mutable.BitSet") { is =>
         val s = mutable.BitSet.empty
         for (i <- is) if (!s.add(i)) ???
         s
@@ -59,7 +65,12 @@ object Examples {
 
     val param = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 10, 100)
 
-    GuiSuite(suite, param)
+    GuiSuite(suite, param).describe(
+      <.div(
+        <.div("These benchmarks accept a \"size\" parameter of type ", <.code("Int"), "."),
+        <.div("The size is used to generate a ", <.code("List[Int]"), " which is provided to each benchmark."),
+        linkToSource(sourceFilename)))
+
   }
 
   // ===================================================================================================================
@@ -71,6 +82,9 @@ object Examples {
     override def toString = s"$size | $reverse"
   }
 
+  /**
+    * This example uses a composite parameter which is a case class with two fields
+    */
   val twoParams = {
 
     /**
@@ -83,27 +97,31 @@ object Examples {
 
     val suite = Suite("Two Params")(
 
-      bm("immutableSet") { is =>
+      bm("immutable.Set[Int]") { is =>
         var s = Set.empty[Int]
         for (i <- is) if (s contains i) ??? else s += i
         s
       },
 
-      bm("mutableBitSetAdd") { is =>
+      bm("mutable.BitSet") { is =>
         val s = mutable.BitSet.empty
         for (i <- is) if (!s.add(i)) ???
         s
       }
     )
 
-    val param1 = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 5, 10)
-    val param2 = Param(Render.bool, Editor.text, Parser.boolsAsText)("Reverse", true, false)
-
     /** This specifies how to go back and forth between a [[Multi]] and two params. */
     val iso = Iso((m: Multi) => Multi.unapply(m).get)((Multi.apply _).tupled)
 
+    val param1 = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 5, 10)
+    val param2 = Param(Render.bool, Editor.text, Parser.boolsAsText)("Reverse", true, false)
     val params = Params.two(iso, param1, param2)
-    GuiSuite(suite, params)
+
+    GuiSuite(suite, params).describe(
+      <.div(
+        <.div("This example uses a composite parameter which is a case class with two fields."),
+        <.code("case class Multi(size: Int, reverse: Boolean)"),
+        linkToSource(sourceFilename)))
   }
 
   // ===================================================================================================================

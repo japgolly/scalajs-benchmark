@@ -293,6 +293,9 @@ object SuiteComp {
         renderResultTable(p.suite, r.progess, r.bm))
     }
 
+    def renderDesc(e: ReactElement) =
+      <.div(*.suiteDesc, e)
+
     def render(p: Props, s: State): ReactElement = {
       val inner: ReactElement = s.status match {
         case r: SuiteRunning => renderSuiteRunning(p, s, r)
@@ -301,7 +304,8 @@ object SuiteComp {
         case SuiteWillStart  => <.span
       }
       <.div(
-        <.h3(p.suite.name),
+        <.h2(*.suiteName, p.suite.name),
+        p.suite.desc.map(renderDesc),
         inner)
     }
 

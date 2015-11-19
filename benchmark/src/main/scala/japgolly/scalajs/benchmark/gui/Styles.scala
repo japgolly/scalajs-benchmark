@@ -10,6 +10,23 @@ object Styles extends StyleSheet.Inline {
 
   object Suite {
 
+    val suiteName = style(
+      fontSize(2 em),
+      margin.vertical(0.8 em))
+
+    val suiteDesc = style(
+      maxWidth(90 %%),
+      boxSizing.borderBox,
+      marginBottom(1.5 em),
+      padding(0.8 ex),
+      border(solid, 1.px, black),
+      backgroundColor(c"#d7ebff"),
+      unsafeChild("code")(
+        backgroundColor(c"#eee"),
+        padding(1 px, 3 px),
+        margin.horizontal(2 px),
+        border(solid, 1 px, c"#bbb")))
+
     private val anyHeader = mixin(
       backgroundColor(c"#eee"))
 

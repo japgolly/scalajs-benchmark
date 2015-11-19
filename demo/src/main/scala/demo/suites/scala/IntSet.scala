@@ -3,6 +3,8 @@ package demo.suites.scala
 import scala.collection.immutable._
 import scala.collection.mutable
 
+import demo.Util._
+import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.benchmark._
 import Benchmark.SetupFn
 import gui._
@@ -16,67 +18,67 @@ object IntSet {
 
   val suite = Suite("Int Set")(
 
-    bm("immutableSet"){ is =>
+    bm("immutable.Set"){ is =>
       var s = Set.empty[Int]
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("mutableSet"){ is =>
+    bm("mutable.Set"){ is =>
       val s = mutable.Set.empty[Int]
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("intMap"){ is =>
+    bm("immutable.IntMap"){ is =>
       var s = IntMap.empty[Unit]
       for (i <- is) if (s contains i) ??? else s = s.updated(i, ())
       s
     },
 
-//      bm("listSet"){ is =>
+//      bm("immutable.ListSet"){ is =>
 //        var s = ListSet.empty[Int]
 //        for (i <- is) if (s contains i) ??? else s += i
 //        s
 //      }),
 
-    bm("immutableHashSet"){ is =>
+    bm("immutable.HashSet"){ is =>
       var s = HashSet.empty[Int]
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("mutableHashSet"){ is =>
+    bm("mutable.HashSet"){ is =>
       val s = mutable.HashSet.empty[Int]
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("immutableTreeSet"){ is =>
+    bm("immutable.TreeSet"){ is =>
       var s = TreeSet.empty[Int]
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("mutableTreeSet"){ is =>
+    bm("mutable.TreeSet"){ is =>
       val s = mutable.TreeSet.empty[Int]
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("immutableBitSet"){ is =>
+    bm("immutable.BitSet"){ is =>
       var s = BitSet.empty
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("mutableBitSet"){ is =>
+    bm("mutable.BitSet (contains and +=)"){ is =>
       val s = mutable.BitSet.empty
       for (i <- is) if (s contains i) ??? else s += i
       s
     },
 
-    bm("mutableBitSetAdd"){ is =>
+    bm("mutable.BitSet (add)"){ is =>
       val s = mutable.BitSet.empty
       for (i <- is) if (!s.add(i)) ???
       s
@@ -85,7 +87,7 @@ object IntSet {
     // ===============================================================================================================
     // Add then check by ref
 
-    bm("immutableSetEq"){ is =>
+    bm("immutable.Set (eq)"){ is =>
       var s = Set.empty[Int]
       for (i <- is) {
         val b = s; s += i; if (b eq s) ???
@@ -93,7 +95,7 @@ object IntSet {
       s
     },
 
-//      bm("listSetEq"){ is =>
+//      bm("immutable.ListSet (eq)"){ is =>
 //        var s = ListSet.empty[Int]
 //        for (i <- is) {
 //          val b = s; s += i; if (b eq s) ???
@@ -101,7 +103,7 @@ object IntSet {
 //        s
 //      }),
 
-    bm("immutableHashSetEq"){ is =>
+    bm("immutable.HashSet (eq)"){ is =>
       var s = HashSet.empty[Int]
       for (i <- is) {
         val b = s; s += i; if (b eq s) ???
@@ -109,7 +111,7 @@ object IntSet {
       s
     },
 
-    bm("immutableBitSetEq"){ is =>
+    bm("immutable.BitSet (eq)"){ is =>
       var s = BitSet.empty
       for (i <- is) {
         val b = s; s += i; if (b eq s) ???
@@ -120,5 +122,16 @@ object IntSet {
 
   val param = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 1000)
 
-  val guiSuite = GuiSuite(suite, param)
+  val guiSuite = GuiSuite(suite, param).describe(
+    <.div(
+      <.div(
+        "This explores different ways of building a unique set of ", <.code("Int"),
+        "s, and with the ability to react immediately when a duplicate is added."),
+      <.div(^.marginTop := "1ex",
+        "Included in the benchmarks are ", <.code("BitSet"), "s which are only useful when the numbers in the set:",
+        <.ol(^.marginTop := "2px", ^.marginBottom := "0",
+          <.li("Are ≥ 0.", <.em(" (else crash)")),
+          <.li("Don't get too large.", <.em(" (time/memory scale with size of largest member)")))),
+      linkToSource(sourceFilename))
+  )
 }
