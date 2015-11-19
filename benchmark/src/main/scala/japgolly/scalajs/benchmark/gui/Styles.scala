@@ -85,8 +85,8 @@ object Styles extends StyleSheet.Inline {
 
     val graphOuter = style(
       marginTop(2 em),
-      width(400 px),
-      height(400 px))
+      width(600 px),
+      height(500 px))
 
     import ReactChart._
     def graphInner(d: ScalaBarData): ScalaBarData = {
