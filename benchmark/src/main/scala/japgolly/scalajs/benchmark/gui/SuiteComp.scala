@@ -35,8 +35,14 @@ object SuiteComp {
   sealed trait SuiteStatus[+P]
   case object SuitePending   extends SuiteStatus[Nothing]
   case object SuiteWillStart extends SuiteStatus[Nothing]
-  case class SuiteRunning[P](suite: GuiSuite[P], plan: Plan[P], bm: EachBMStatus[P], abortFn: AbortFn) extends SuiteStatus[P]
-  case class SuiteDone   [P](suite: GuiSuite[P], plan: Plan[P], bm: EachBMStatus[P], totalTime: FiniteDuration) extends SuiteStatus[P]
+
+  case class SuiteRunning[P](suite: GuiSuite[P], progess: Progress[P], bm: EachBMStatus[P], abortFn: AbortFn) extends SuiteStatus[P] {
+    @inline def plan = progess.plan
+  }
+
+  case class SuiteDone[P](suite: GuiSuite[P], progess: Progress[P], bm: EachBMStatus[P], totalTime: FiniteDuration) extends SuiteStatus[P] {
+    @inline def plan = progess.plan
+  }
 
   object SuiteStatus {
     def running[P]: Prism[SuiteStatus[P], SuiteRunning[P]] =
@@ -62,8 +68,12 @@ object SuiteComp {
 
   private val PlusMinusCell = <.td("±")
 
+  private val runsCellNone = <.td()
+  private val whenBMPending  = Vector[ReactTag](runsCellNone, <.td(resultBlockAll))
+  private val whenBMRunning = Vector[ReactTag](runsCellNone, <.td(resultBlockAll, "Running…"))
+
   private def formatTotalTime(fd: FiniteDuration): String =
-    StatValueFmt.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
+    ValueFmt.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
 
   final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
     type Props        = SuiteComp.Props[P]
@@ -96,16 +106,16 @@ object SuiteComp {
             case SuiteStarting(_) =>
               Callback.empty
 
-            case SuiteFinished(_) =>
+            case SuiteFinished(progress) =>
               val endTime = System.currentTimeMillis()
               $.modState(State.status.modify { s =>
                 val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
                 val time = FiniteDuration(endTime - startTime, MILLISECONDS)
-                SuiteDone(suite, plan, bm, time)
+                SuiteDone(suite, progress, bm, time)
               })
           }
 
-          val running = SuiteRunning[P](suite, plan, Map.empty, abort)
+          val running = SuiteRunning[P](suite, Progress(plan, 0), Map.empty, abort)
           $.modState(State.status set running)
         }.flatten)
       }
@@ -175,31 +185,40 @@ object SuiteComp {
         startButton)
     }
 
-    def renderResultTable(suite: GuiSuite[P], plan: Plan[P], m: EachBMStatus[P]): ReactElement = {
+    def renderResultTable(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P]): ReactElement = {
+      val keys = progress.plan.keys
+
       def header = {
         var hs = Vector.empty[ReactTag]
         hs :+= <.th("Benchmark")
         hs ++= suite.params.headers.map(<.th(_))
+        hs :+= <.th("Runs")
         hs ++= resultFmts.map(f => <.th(*.resultHeader, resultBlock1, f.header))
         <.tr(hs: _*)
       }
 
+      def runsCell(runs: Int) =
+        <.td(ValueFmt.Integer render runs)
+
       def rows =
-        plan.keys.map { k =>
+        keys.map { k =>
           val status = m.getOrElse(k, BMPending)
           var hs = Vector.empty[ReactTag]
           hs :+= <.td(k.bm.name)
           hs ++= suite.params.renderParams(k.param).map(<.td(_))
           hs ++= (status match {
-            case BMPending        => Vector.empty :+ <.td(resultBlockAll)
-            case BMRunning        => Vector.empty :+ <.td(resultBlockAll, "Running…")
-            case BMDone(-\/(err)) => Vector.empty :+ <.td(resultBlockAll, "ERROR")
+            case BMPending        => whenBMPending
+            case BMRunning        => whenBMRunning
+            case BMDone(-\/(err)) =>
+              Vector[ReactTag](
+                runsCellNone, // Hmmmmm.........
+                <.td(resultBlockAll, "ERROR", ^.onDoubleClick --> Callback{throw err; ()}))
             case BMDone(\/-(r)) =>
-              resultFmts.flatMap(f =>
-                Vector(
-                  <.td(f.score render r),
-                  PlusMinusCell,
-                  <.td(f.error render r)))
+              runsCell(r.runs) +:
+              resultFmts.flatMap(f => Vector(
+                <.td(f.score render r),
+                PlusMinusCell,
+                <.td(f.error render r)))
           })
           <.tr(hs: _*)
         }
@@ -209,12 +228,12 @@ object SuiteComp {
         val fmt = resultFmts.head
         val bmsToShow = m.size max 1
 
-        val titles = plan.keys.iterator
+        val titles = keys.iterator
             .map(k => s"${k.bm.name} @ ${k.param}")
             .take(bmsToShow)
             .toVector
 
-        val dataPoints = plan.keys.iterator.map[Chart.Value](k =>
+        val dataPoints = keys.iterator.map[Chart.Value](k =>
           m.getOrElse(k, BMPending) match {
             case BMDone(\/-(stats)) => fmt.score.getDouble(stats) getOrElse 0
             case BMDone(-\/(_))
@@ -240,12 +259,12 @@ object SuiteComp {
 
     def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): ReactElement =
       <.div(
-        renderResultTable(p.suite, r.plan, r.bm),
+        renderResultTable(p.suite, r.progess, r.bm),
         <.button("Abort", ^.onClick --> r.abortFn.callback))
 
     def renderSuiteDone(p: Props, s: State, r: SuiteDone): ReactElement =
       <.div(
-        renderResultTable(p.suite, r.plan, r.bm),
+        renderResultTable(p.suite, r.progess, r.bm),
         <.div(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."))
 
     def render(p: Props, s: State): ReactElement = {

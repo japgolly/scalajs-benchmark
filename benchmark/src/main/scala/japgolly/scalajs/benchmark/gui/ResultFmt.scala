@@ -9,13 +9,16 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scalacss.ScalaCssReact._
 
 /**
-  * Format for a single value in [[Stats]].
+  * Format for a single value.
   *
   * Eg. 32.456 sec
   */
-case class StatValueFmt(render: Stats => ReactElement, getDouble: Stats => Option[Double])
+case class ValueFmt[-I](getDouble: I => Option[Double], render: I => ReactElement) {
+  def cmap[A](f: A => I): ValueFmt[A] =
+    ValueFmt(getDouble compose f, render compose f)
+}
 
-object StatValueFmt {
+object ValueFmt {
 
   private val addThouRegex = """(\d)(?=(\d\d\d)+(?!\d))""".r
 
@@ -30,25 +33,35 @@ object StatValueFmt {
     }
   }
 
-  def duration(getUnits: FiniteDuration => Double, dp: Int): StatValueFmt = {
+  def number(dp: Int): ValueFmt[Double] = {
     val fmt = s"%.${dp}f"
+    ValueFmt(Some.apply,
+      d => <.div(
+        Styles.ResultTable.numericResult,
+        addThousandSeps(fmt format d)))
+  }
 
-    val tryGetUnits: Duration => Option[Double] = {
+  def optionalNumber(dp: Int, default: ReactElement): ValueFmt[Option[Double]] = {
+    val n = number(dp)
+    ValueFmt(identity, {
+      case Some(d) => n render d
+      case None    => default
+    })
+  }
+
+  def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Duration] =
+    optionalNumber(dp, <.span("∞")).cmap {
       case f: FiniteDuration => Some(getUnits(f))
-      case _ => None
+      case _                 => None
     }
 
-    val toDouble: Stats => Option[Double] =
-      s => tryGetUnits(s.average)
+  def averageDuration(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Stats] =
+    duration(getUnits, dp).cmap(_.average)
 
-    def toString(od: Option[Double]): String =
-      od.fold("∞")(d => addThousandSeps(fmt format d))
+  def error(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Stats] =
+    duration(getUnits, dp).cmap(_.marginOfError)
 
-    val render: Stats => ReactElement =
-      s => <.div(Styles.ResultTable.numericResult, toString(toDouble(s)))
-
-    StatValueFmt(render, toDouble)
-  }
+  val Integer = number(0).cmap[Int](_.toDouble)
 }
 
 /**
@@ -59,7 +72,7 @@ object StatValueFmt {
   * @param score Formatter for the score itself.
   * @param error Formatter for the error in (score ± error).
   */
-case class ResultFmt(header: String, score: StatValueFmt, error: StatValueFmt)
+case class ResultFmt(header: String, score: ValueFmt[Stats], error: ValueFmt[Stats])
 
 object ResultFmt {
 
@@ -88,8 +101,8 @@ object ResultFmt {
   def duration(header: String, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): ResultFmt =
     ResultFmt(
       header,
-      StatValueFmt.duration(getUnits, scoreDP),
-      StatValueFmt.duration(getUnits, errorDP))
+      ValueFmt.averageDuration(getUnits, scoreDP),
+      ValueFmt.error          (getUnits, errorDP))
 
   def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt = {
     val one = FiniteDuration(1, t)
@@ -99,7 +112,7 @@ object ResultFmt {
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt =
     duration(abbrev(t) + "/op", getUnits(t), scoreDP, errorDP)
 
-  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 3, 0)
-  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 0)
-  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 0)
+  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 3, 1)
+  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 1)
+  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 1)
 }
