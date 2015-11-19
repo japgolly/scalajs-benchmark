@@ -45,7 +45,7 @@ object Engine {
     def isEnough(s: Stats.Mutable): Boolean = {
       import options._
       @inline def small = s.runs >= minRuns && s.totalTime >= minTime
-      @inline def large = s.totalTime > maxTime
+      @inline def large = s.runs >= maxRuns || s.totalTime >= maxTime
       small || large
     }
 

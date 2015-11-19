@@ -10,6 +10,7 @@ object Options {
     val OutlierTrimPct = 0.01
     val MinRuns        = 8000
     val MinTime        = 500.millis
+    val MaxRuns        = 100000
     val MaxTime        = 12.second
 
     // Ensure benchmarks don't start before chart animation finishes
@@ -32,4 +33,5 @@ final case class Options(
   outlierTrimPct: Double               = Options.Defaults.OutlierTrimPct,
   minRuns       : Int                  = Options.Defaults.MinRuns,
   minTime       : FiniteDuration       = Options.Defaults.MinTime,
+  maxRuns       : Int                  = Options.Defaults.MaxRuns,
   maxTime       : FiniteDuration       = Options.Defaults.MaxTime)
