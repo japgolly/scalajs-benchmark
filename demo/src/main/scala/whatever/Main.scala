@@ -12,7 +12,7 @@ object Main extends js.JSApp {
 
     val tgt = document.getElementById("body")
 
-//    val opts = Options.Default.copy(minRuns = 1, minTime = 10.millis)
+//    val opts = Options.Default.copy(minRuns = 1000, minTime = 0.millis)
 //    BenchmarkGUI.renderMenu(tgt, options = opts)(Demos.all)
 
     BenchmarkGUI.renderMenu(tgt)(Demos.all)

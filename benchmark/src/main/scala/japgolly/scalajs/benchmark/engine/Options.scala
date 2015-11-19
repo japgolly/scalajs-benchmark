@@ -8,9 +8,9 @@ object Options {
   object Defaults {
     val InitialDelay   = 4.millis
     val OutlierTrimPct = 0.01
-    val MinRuns        = 10000
-    val MinTime        = 1.second
-    val MaxTime        = 10.second
+    val MinRuns        = 8000
+    val MinTime        = 500.millis
+    val MaxTime        = 12.second
 
     // Ensure benchmarks don't start before chart animation finishes
     val Delay: () => FiniteDuration = () => {
