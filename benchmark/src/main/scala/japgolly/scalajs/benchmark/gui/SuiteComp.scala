@@ -138,15 +138,11 @@ object SuiteComp {
           <.th(params.headers(i)),
           <.td(params.editors(i)(ev)))
 
-      def paramTable: Option[ReactElement] =
+      def paramRows: TagMod =
         if (params.headers.isEmpty)
-          None
+          EmptyTag
         else
-          Some(
-            <.table(
-              <.tbody(
-                bmRow)(
-                params.headers.indices.map(paramRow): _*)))
+          TagMod(params.headers.indices.map(paramRow): _*)
 
       val onStart: Option[Callback] = {
         def selectedBMs = p.suite.suite.bms.iterator
@@ -172,7 +168,10 @@ object SuiteComp {
           "Start")
 
       <.div(
-        paramTable,
+        <.table(
+          <.tbody(
+            bmRow,
+            paramRows)),
         startButton)
     }
 

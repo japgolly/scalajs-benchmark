@@ -14,7 +14,8 @@ object Main extends js.JSApp {
     import japgolly.scalajs.benchmark.gui.{Styles, SuiteComp}
     import whatever.newshit.Demos
 
-    val s = Demos.oneParam
+    val s = Demos.noParams
+//    val s = Demos.oneParam
 
     Chart.defaults.global.animationSteps = 20
 
@@ -25,7 +26,6 @@ object Main extends js.JSApp {
 
     // router
     // library of bm suites
-    // allow checkboxes beside BMs before starting to turn some off
 
     // would be good to keep everything on one screen (with expand/collapse) and allow run all/some
 }
