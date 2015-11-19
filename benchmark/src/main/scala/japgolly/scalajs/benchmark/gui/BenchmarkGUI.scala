@@ -1,5 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.engine.Options
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import japgolly.scalajs.react.ReactDOM
 import japgolly.scalajs.react.extra.router.BaseUrl
@@ -21,16 +22,16 @@ object BenchmarkGUI {
   def defaultBaseUrl(): BaseUrl =
     BaseUrl(dom.window.location.href.takeWhile(_ != '#'))
 
-  def renderMenu(container: dom.Node, baseUrl: BaseUrl = defaultBaseUrl())(mis1: MenuItems, misN: MenuItems*): Unit = {
+  def renderMenu(container: dom.Node, baseUrl: BaseUrl = defaultBaseUrl(), options: Options = Options.Default)
+                (m1: MenuItems, mn: MenuItems*): Unit = {
     initialise()
-    val mis = mis1.toVector ++ misN.toVector.flatten
-    val router = MenuComp.buildRouter(baseUrl, mis)
+    val router = MenuComp.buildRouter(baseUrl, options)(m1, mn: _*)
     ReactDOM.render(router(), container)
   }
 
-  def renderSuite[P](container: dom.Node)(s: GuiSuite[P]): Unit = {
+  def renderSuite[P](container: dom.Node, options: Options = Options.Default)(s: GuiSuite[P]): Unit = {
     initialise()
-    val p = SuiteComp.Props(s)
+    val p = SuiteComp.Props(s, options)
     ReactDOM.render(SuiteComp.Comp(p), container)
   }
 }

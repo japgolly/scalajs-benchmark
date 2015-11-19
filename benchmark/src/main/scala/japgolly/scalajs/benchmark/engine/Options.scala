@@ -13,7 +13,7 @@ object Options {
     val MaxTime        = 10.second
 
     // Ensure benchmarks don't start before chart animation finishes
-    def delay: FiniteDuration = {
+    val Delay: () => FiniteDuration = () => {
       val chartTimeSec = Chart.defaults.global.animationSteps / 60.0
       val delaySec     = chartTimeSec * 1.2 // some buffer
       val delayMicro   = delaySec * 1000000.0
@@ -21,15 +21,15 @@ object Options {
     }
   }
 
-  def default: Options =
+  val Default: Options =
     Options()
 }
 
 final case class Options(
-  clock         : Clock          = Clock.Default,
-  initialDelay  : FiniteDuration = Options.Defaults.InitialDelay,
-  delay         : FiniteDuration = Options.Defaults.delay,
-  outlierTrimPct: Double         = Options.Defaults.OutlierTrimPct,
-  minRuns       : Int            = Options.Defaults.MinRuns,
-  minTime       : FiniteDuration = Options.Defaults.MinTime,
-  maxTime       : FiniteDuration = Options.Defaults.MaxTime)
+  clock         : Clock                = Clock.Default,
+  initialDelay  : FiniteDuration       = Options.Defaults.InitialDelay,
+  delay         : () => FiniteDuration = Options.Defaults.Delay,
+  outlierTrimPct: Double               = Options.Defaults.OutlierTrimPct,
+  minRuns       : Int                  = Options.Defaults.MinRuns,
+  minTime       : FiniteDuration       = Options.Defaults.MinTime,
+  maxTime       : FiniteDuration       = Options.Defaults.MaxTime)

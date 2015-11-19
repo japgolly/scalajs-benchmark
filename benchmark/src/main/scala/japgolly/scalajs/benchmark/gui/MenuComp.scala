@@ -1,5 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.engine.Options
 import japgolly.scalajs.react._, vdom.prefix_<^._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.router.{RouterCtl => RouterCtl_, _}
@@ -32,9 +33,10 @@ object MenuComp {
   def folder(name: String)(c: MenuItem*): MenuFolder =
     MenuFolder(name, UrlFrag from name, c)
 
-  def buildRouter(baseUrl: BaseUrl, mis: MenuItems): Router[_] = {
+  def buildRouter(baseUrl: BaseUrl, options: Options = Options.Default)(m1: MenuItems, mn: MenuItems*): Router[_] = {
+    val mis = m1.toVector ++ mn.flatten
     val mis2 = Internals.convert(mis)
-    val cfg = Internals.routerCfg(mis2)
+    val cfg = Internals.routerCfg(mis2, options)
     Router(baseUrl, cfg)
   }
 
@@ -84,7 +86,7 @@ object MenuComp {
       m
     }
 
-    def routerCfg(mis: MenuItems2): RouterConfig[Page] = {
+    def routerCfg(mis: MenuItems2, options: Options): RouterConfig[Page] = {
       val idx = index(mis)
 
       RouterConfigDsl[Page].buildConfig { dsl =>
@@ -95,7 +97,7 @@ object MenuComp {
 
         val routes =
           idx.foldLeft(rootRoute){ case (q, (path, mi)) =>
-            q | staticRoute(path, Some(mi)) ~> render(SuiteComp.Comp(SuiteComp.Props(mi.suite)))
+            q | staticRoute(path, Some(mi)) ~> render(SuiteComp.Comp(SuiteComp.Props(mi.suite, options)))
           }
 
         (routes | trimSlashes)

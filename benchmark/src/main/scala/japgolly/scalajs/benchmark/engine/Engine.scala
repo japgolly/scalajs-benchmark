@@ -39,7 +39,7 @@ object Engine {
     *
     * @return A function by which the benchmarks can be aborted.
     */
-  def run[P](plan: Plan[P], options: Options = Options.default)(eventCallback: Event[P] => Callback): AbortFn = {
+  def run[P](plan: Plan[P], options: Options = Options.Default)(eventCallback: Event[P] => Callback): AbortFn = {
     val hnd = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
 
     def isEnough(s: Stats.Mutable): Boolean = {
@@ -50,12 +50,13 @@ object Engine {
     }
 
     def runAsync: Unit = {
+      val delay = options.delay()
       val clock = options.clock
       var progress = Progress(plan, 0)
 
       def msg(e: Event[P])(next: => Any): Unit = {
         eventCallback(e).runNow()
-        hnd.value = js.timers.setTimeout(options.delay)(next)
+        hnd.value = js.timers.setTimeout(delay)(next)
       }
 
       def go(keys: List[PlanKey[P]]): Unit = keys match {
@@ -104,7 +105,7 @@ object Engine {
     *
     * @return A function by which the benchmarks can be aborted.
     */
-  def runToConsole[P](plan: Plan[P], options: Options = Options.default): AbortFn = {
+  def runToConsole[P](plan: Plan[P], options: Options = Options.Default): AbortFn = {
     val fmt = {
       val prog  = plan.totalBenchmarks.toString.length
       val name  = plan.bms.foldLeft(0)(_ max _.name.length)

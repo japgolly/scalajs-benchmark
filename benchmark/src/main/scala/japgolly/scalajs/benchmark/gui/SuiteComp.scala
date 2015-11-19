@@ -20,7 +20,7 @@ import Styles.{ResultTable => *}
 object SuiteComp {
   type Comp[P] = ReactComponentC.ReqProps[Props[P], State[P], Backend[P], TopNode]
 
-  case class Props[P](suite: GuiSuite[P], options: Options = Options.default)
+  case class Props[P](suite: GuiSuite[P], options: Options = Options.Default)
 
   @Lenses
   case class State[A](status: SuiteStatus[A], editors: GenState, disabledBMs: Set[Int])
