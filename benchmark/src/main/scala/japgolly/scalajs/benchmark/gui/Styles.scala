@@ -29,11 +29,13 @@ object Styles extends StyleSheet.Inline {
     val paramBool = style(
       textAlign.center)
 
+    val startButton = style(
+      &.disabled(color(c"#aaa")))
+
     val graphOuter = style(
       marginTop(2 em),
       width(400 px),
       height(400 px))
-
 
     import ReactChart._
     def graphInner(d: ScalaBarData): ScalaBarData = {

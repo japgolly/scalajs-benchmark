@@ -74,6 +74,40 @@ object SuiteComp {
     val updateEditorState: GenState => Callback =
       s => $.modState(State.editors set s)
 
+    def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): Callback =
+      Callback.byName {
+
+        // Prepare to start
+        val startTime = System.currentTimeMillis()
+        val plan = Plan(suite.suite, ps)
+        $.modState(State.status set SuiteWillStart, CallbackTo {
+
+          // Actually start
+          val abort = Engine.run(plan, options) {
+
+            case BenchmarkStarting(_, k) =>
+              $.modState(State.at(k) set BMRunning)
+
+            case BenchmarkFinished(_, k, r) =>
+              $.modState(State.at(k) set BMDone(r))
+
+            case SuiteStarting(_) =>
+              Callback.empty
+
+            case SuiteFinished(_) =>
+              val endTime = System.currentTimeMillis()
+              $.modState(State.status.modify { s =>
+                val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
+                val time = FiniteDuration(endTime - startTime, MILLISECONDS)
+                SuiteDone(suite, plan, bm, time)
+              })
+          }
+
+          val running = SuiteRunning[P](suite, plan, Map.empty, abort)
+          $.modState(State.status set running)
+        }.flatten)
+      }
+
     def renderSuitePending(p: Props, s: State): ReactElement = {
       val ev = ExternalVar(s.editors)(updateEditorState)
       val params = p.suite.params
@@ -93,41 +127,14 @@ object SuiteComp {
                 params.headers.indices.map(paramRow): _*)))
 
       val onStart: Option[Callback] =
-        params.parseState(ev.value).toOption.map(ps => Callback.lazily {
-
-          // Prepare to start
-          val startTime = System.currentTimeMillis()
-          val plan = Plan(p.suite.suite, ps)
-          $.modState(State.status set SuiteWillStart, CallbackTo {
-
-            // Actually start
-            val abort = Engine.run(plan, p.options) {
-
-              case BenchmarkStarting(_, k) =>
-                $.modState(State.at(k) set BMRunning)
-
-              case BenchmarkFinished(_, k, r) =>
-                $.modState(State.at(k) set BMDone(r))
-
-              case SuiteStarting(_) =>
-                Callback.empty
-
-              case SuiteFinished(_) =>
-                val endTime = System.currentTimeMillis()
-                $.modState(State.status.modify { s =>
-                  val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
-                  val time = FiniteDuration(endTime - startTime, MILLISECONDS)
-                  SuiteDone(p.suite, plan, bm, time)
-                })
-            }
-
-            val running = SuiteRunning[P](p.suite, plan, Map.empty, abort)
-            $.modState(State.status set running)
-          }.flatten)
-        })
+        params.parseState(ev.value)
+          .toOption
+          .filter(_.nonEmpty)
+          .map(start(p.suite, p.options, _))
 
       def startButton =
         <.button(
+          *.startButton,
           ^.disabled := onStart.isEmpty,
           ^.onClick -->? onStart,
           "Start")
