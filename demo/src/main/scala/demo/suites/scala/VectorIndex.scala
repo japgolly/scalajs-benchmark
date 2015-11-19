@@ -1,14 +1,11 @@
 package demo.suites.scala
 
 import demo.Util._
+import japgolly.scalajs.benchmark._
+import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.Iso
 import scala.collection.immutable._
-
-import japgolly.scalajs.benchmark._
-import Benchmark.SetupFn
-import gui._
-import Param._
 
 object VectorIndex {
 
@@ -18,7 +15,7 @@ object VectorIndex {
 
   case class Data(vector: Vector[Int], index: Int)
 
-  val bm = SetupFn.map[Cfg, Data](cfg =>
+  val bm = Benchmark.setup[Cfg, Data](cfg =>
     Data(
       Vector.fill(cfg.vectorSize)(0),
       cfg.index))

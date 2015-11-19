@@ -1,10 +1,9 @@
 package demo
 
 import org.scalajs.dom.document
-import scalajs.js
 import japgolly.scalajs.benchmark.gui.BenchmarkGUI
 
-object Main extends js.JSApp {
+object Main extends scalajs.js.JSApp {
 
   def main(): Unit = {
 

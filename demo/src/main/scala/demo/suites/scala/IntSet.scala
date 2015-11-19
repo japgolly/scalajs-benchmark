@@ -1,18 +1,15 @@
 package demo.suites.scala
 
+import demo.Util._
+import japgolly.scalajs.benchmark._
+import japgolly.scalajs.benchmark.gui._
+import japgolly.scalajs.react.vdom.prefix_<^._
 import scala.collection.immutable._
 import scala.collection.mutable
 
-import demo.Util._
-import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.benchmark._
-import Benchmark.SetupFn
-import gui._
-import Param._
-
 object IntSet {
 
-  val bm = SetupFn.map[Int, List[Int]](size =>
+  val bm = Benchmark.setup[Int, List[Int]](size =>
     // Puts it in a non-linear, deterministic order then change to disrupt hash order
     (-size to -1).toSet.iterator.map(-(_: Int)).toList)
 

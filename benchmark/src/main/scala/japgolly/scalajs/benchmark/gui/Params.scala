@@ -5,7 +5,6 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.{Iso, Lens}
 import scalaz.{\/-, \/}
 import scalaz.std.option.optionSyntax._
-import Param.{Editor, Header}
 import Params._
 
 trait Params[P] {

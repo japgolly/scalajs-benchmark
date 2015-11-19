@@ -30,22 +30,22 @@ object Benchmark {
   def apply(name: String)(f: => Any): Benchmark[Unit] =
     new Benchmark(name, Setup.unit(() => f))
 
-  object SetupFn {
+  /**
+    * Creates a benchmark that accepts a parameter (without needing transformation or preprocessing).
+    */
+  def apply[A](name: String, f: A => Any): Benchmark[A] =
+    new Benchmark(name, Setup(a => () => f(a)))
 
-    def apply[A](f: A => Any): SetupFn[A] =
-      Setup(a => () => f(a))
+  def setup[A, B](prepare: A => B): Builder[A, B] =
+    new Builder[A, B](
+      f => Setup { a =>
+        val b = prepare(a)
+        () => f(b)
+      }
+    )
 
-    def map[A, B](prepare: A => B): Builder[A, B] =
-      new Builder[A, B](
-        f => Setup { a =>
-          val b = prepare(a)
-          () => f(b)
-        }
-      )
-
-    class Builder[A, B](g: (B => Any) => SetupFn[A]) {
-      def apply(name: String)(f: B => Any): Benchmark[A] =
-        new Benchmark(name, g(f))
-    }
+  class Builder[A, B](g: (B => Any) => SetupFn[A]) {
+    def apply(name: String)(f: B => Any): Benchmark[A] =
+      new Benchmark(name, g(f))
   }
 }

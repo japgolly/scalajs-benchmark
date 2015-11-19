@@ -1,13 +1,11 @@
 package demo.suites.example
 
 import demo.Util._
+import japgolly.scalajs.benchmark._
+import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.Iso
 import scala.collection.mutable
-import japgolly.scalajs.benchmark._
-import Benchmark.SetupFn
-import gui._
-import Param._
 
 object Examples {
 
@@ -45,7 +43,7 @@ object Examples {
     /**
       * For each size, prepare a `List[Int]` to be passed to the benchmark functions.
       */
-    val bm = SetupFn.map[Int, List[Int]](size =>
+    val bm = Benchmark.setup[Int, List[Int]](size =>
       (-size to -1).toSet.iterator.map(-(_: Int)).toList)
 
     val suite = Suite("One Param")(
@@ -90,7 +88,7 @@ object Examples {
     /**
       * For each [[Multi]] param, prepare a `List[Int]` to be passed to the benchmark functions.
       */
-    val bm = SetupFn.map[Multi, List[Int]] { p =>
+    val bm = Benchmark.setup[Multi, List[Int]] { p =>
       val x = (-p.size to -1).toSet.iterator.map(-(_: Int)).toList
       if (p.reverse) x.reverse else x
     }
