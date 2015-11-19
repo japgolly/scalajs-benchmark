@@ -16,5 +16,5 @@ sbt clean demo/fullOptJS \
 && cp -v $outS $outT \
 && git add $deps \
 && git st \
-&& echo "git commit -m 'Refresh gh-pages'" && echo
+&& echo "git commit -m 'Refresh gh-pages' && git push && git checkout master" && echo
 
