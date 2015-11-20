@@ -1,12 +1,12 @@
 import sbt._
 import Keys._
-import pl.project13.scala.sbt.JmhPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin
-//import ScalaJSPlugin._
 import ScalaJSPlugin.autoImport._
 import Lib._
 
 object ScalaJsBenchmark extends Build {
+
+  private val ghProject = "scalajs-benchmark"
 
   object Ver {
     final val Scala211      = "2.11.7"
@@ -26,7 +26,7 @@ object ScalaJsBenchmark extends Build {
     _.settings(
       organization             := "com.github.japgolly.scalajs-benchmark",
       version                  := "0.1.0-SNAPSHOT",
-      homepage                 := Some(url("https://github.com/japgolly/scalajs-benchmark")),
+      homepage                 := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion             := Ver.Scala211,
       scalacOptions           ++= scalacFlags,
@@ -61,13 +61,13 @@ object ScalaJsBenchmark extends Build {
 
   lazy val root =
     Project("root", file("."))
-      .configure(commonSettings)
+      .configure(commonSettings, preventPublication)
       .aggregate(benchmark, demo)
 
   lazy val benchmark =
     Project("benchmark", file("benchmark"))
       .enablePlugins(ScalaJSPlugin)
-      .configure(commonSettings, definesMacros)
+      .configure(commonSettings, definesMacros, publicationSettings(ghProject))
       .settings(
         libraryDependencies ++= Seq(
           "com.github.japgolly.scalajs-react" %%% "core"          % Ver.ScalaJsReact,
@@ -91,7 +91,7 @@ object ScalaJsBenchmark extends Build {
   lazy val demo =
     Project("demo", file("demo"))
       .enablePlugins(ScalaJSPlugin)
-      .configure(commonSettings)
+      .configure(commonSettings, preventPublication)
       .dependsOn(benchmark)
       .settings(
         addCompilerPlugin(macroParadisePlugin),
