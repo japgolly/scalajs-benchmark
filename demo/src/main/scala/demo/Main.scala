@@ -13,12 +13,27 @@ object Main extends scalajs.js.JSApp {
 
     val tgt = document.getElementById("body")
 
-    BenchmarkGUI.renderMenu(tgt)(
+    BenchmarkGUI.renderMenu(tgt, layout = configureLayout)(
       suites.example.Examples.all,
       suites.cats.all,
       suites.scala.all,
       suites.scalaz.all)
+  }
 
-    // BenchmarkGUI.renderSuite(tgt)(suites.example.Examples.oneParam)
+  /*
+   * Customise the layout slightly.
+   *
+   * Optional, of course.
+   */
+  import japgolly.scalajs.benchmark.gui.MenuComp.LayoutCfg
+  import japgolly.scalajs.react._, vdom.prefix_<^._
+  import demo.Util._
+  def configureLayout: LayoutCfg = {
+    def top(view: ReactElement): ReactElement =
+      <.main(
+        <.h1(^.marginBottom := "0.2em", "Benchmark Collection"),
+        <.div(linkToSource(sourceFilename)(^.textAlign.left)),
+        <.main(^.marginTop := "2.6em", view))
+    LayoutCfg.default.copy(topPage = top)
   }
 }

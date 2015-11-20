@@ -13,6 +13,13 @@ import Styles.{Menu => *}
   */
 object MenuComp {
 
+  final case class LayoutCfg(topPage: ReactElement => ReactElement,
+                             suitePage: (TagMod => ReactElement, ReactElement) => ReactElement)
+  object LayoutCfg {
+    def default =
+      LayoutCfg(identity, (nav, page) => <.div(nav(EmptyTag), page))
+  }
+
   final case class UrlFrag(path: String)
   object UrlFrag {
     def from(string: String): UrlFrag =
@@ -47,10 +54,13 @@ object MenuComp {
     MenuFolder(name, uf, c)
   }
 
-  def buildRouter(baseUrl: BaseUrl, options: Options = Options.Default)(m1: MenuItems, mn: MenuItems*): Router[_] = {
+  def buildRouter(baseUrl: BaseUrl,
+                  layout: LayoutCfg = LayoutCfg.default,
+                  options: Options = Options.Default)
+                 (m1: MenuItems, mn: MenuItems*): Router[_] = {
     val mis = m1.toVector ++ mn.flatten
     val mis2 = Internals.convert(mis)
-    val cfg = Internals.routerCfg(mis2, options)
+    val cfg = Internals.routerCfg(mis2, layout, options)
     Router(baseUrl, cfg)
   }
 
@@ -100,7 +110,7 @@ object MenuComp {
       m
     }
 
-    def routerCfg(mis: MenuItems2, options: Options): RouterConfig[Page] = {
+    def routerCfg(mis: MenuItems2, layoutCfg: LayoutCfg, options: Options): RouterConfig[Page] = {
       val idx = index(mis)
 
       RouterConfigDsl[Page].buildConfig { dsl =>
@@ -116,17 +126,17 @@ object MenuComp {
 
         (routes | trimSlashes)
           .notFound(redirectToPage(None)(Redirect.Replace))
-          .renderWith(layout)
+          .renderWith(layout(layoutCfg))
           .verify(None, idx.valuesIterator.map(Some(_)).toList: _*)
       }
     }
 
     val crumbSep = <.span(*.topNavBreadcrumbSep, "/")
 
-    def layout(ctl: RouterCtl, res: Resolution[Page]): ReactElement =
+    def layout(layoutCfg: LayoutCfg)(ctl: RouterCtl, res: Resolution[Page]): ReactElement =
       res.page match {
         case None =>
-          res.render()
+          layoutCfg topPage res.render()
 
         case Some(mi) =>
           def breadcrumb = mi.urlPath
@@ -136,14 +146,14 @@ object MenuComp {
               if (i == 0) x else TagMod(crumbSep, frag)
             }.reduce(_ + _)
 
-          def topNav =
+          def topNav(tm: TagMod): ReactElement =
             <.div(
               *.topNav,
               ctl.link(None)("Home"),
               crumbSep,
               breadcrumb)
 
-          <.div(topNav, res.render())
+          layoutCfg.suitePage(topNav, res.render())
       }
 
     object TOC {
