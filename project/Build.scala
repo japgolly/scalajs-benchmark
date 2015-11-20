@@ -25,7 +25,7 @@ object ScalaJsBenchmark extends Build {
   val commonSettings: PE =
     _.settings(
       organization             := "com.github.japgolly.scalajs-benchmark",
-      version                  := "0.1.0-SNAPSHOT",
+      version                  := "0.1.0",
       homepage                 := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion             := Ver.Scala211,

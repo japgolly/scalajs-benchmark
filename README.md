@@ -8,13 +8,12 @@ Benchmarks: write in Scala or JS, run in your browser.
 See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 <br>The tiny source code is here: [gh-pages/demo](https://github.com/japgolly/scalajs-benchmark/blob/gh-pages/demo/src/main/scala/demo/Main.scala).
 
-## Is this published yet?
-
-The first version will be published within a few days.
-
 ## How do I use it?
 
 1. Include `scalajs-benchmark` as a dependency in your Scala.JS project.
+  ```scala
+  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.1.0"
+  ```
 
 1. You write benchmarks.
   ```scala
