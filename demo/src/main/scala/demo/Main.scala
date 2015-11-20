@@ -15,6 +15,7 @@ object Main extends scalajs.js.JSApp {
 
     BenchmarkGUI.renderMenu(tgt)(
       suites.example.Examples.all,
+      suites.cats.all,
       suites.scala.all,
       suites.scalaz.all)
 
