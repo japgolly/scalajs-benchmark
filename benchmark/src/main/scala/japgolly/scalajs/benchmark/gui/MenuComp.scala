@@ -171,7 +171,7 @@ object MenuComp {
           def go(mi: MenuItem2): ReactTag =
             mi match {
               case s: MenuSuite2  => p.rc.link(Some(s))(s.suite.name)
-              case s: MenuFolder2 => <.div(<.h3(s.name), children(s.children))
+              case s: MenuFolder2 => <.div(<.h3(*.folder, s.name), children(s.children))
             }
 
           children(p.mis)

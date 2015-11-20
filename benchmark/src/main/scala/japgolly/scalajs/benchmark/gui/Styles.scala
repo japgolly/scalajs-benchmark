@@ -141,6 +141,10 @@ object Styles extends StyleSheet.Inline {
     val topNavBreadcrumbSep = style(
       color(c"#888"),
       margin.horizontal(1 ex))
+
+    val folder = style(
+      marginTop(0.6 em),
+      marginBottom(0.3 em))
   }
 
   // ===================================================================================================================
