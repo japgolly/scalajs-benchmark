@@ -102,8 +102,8 @@ object Styles extends StyleSheet.Inline {
 
     val graphOuter = style(
       marginTop(2 em),
-      width(600 px),
-      height(500 px))
+      width(640 px),
+      height(720 px))
 
     import ReactChart._
     def graphInner(d: ScalaBarData): ScalaBarData = {
@@ -141,6 +141,10 @@ object Styles extends StyleSheet.Inline {
     val topNavBreadcrumbSep = style(
       color(c"#888"),
       margin.horizontal(1 ex))
+
+    val folder = style(
+      marginTop(0.6 em),
+      marginBottom(0.3 em))
   }
 
   // ===================================================================================================================

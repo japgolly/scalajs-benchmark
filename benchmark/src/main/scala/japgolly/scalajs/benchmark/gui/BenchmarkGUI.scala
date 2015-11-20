@@ -7,7 +7,7 @@ import japgolly.scalajs.react.extra.router.BaseUrl
 import org.scalajs.dom
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-import MenuComp.MenuItems
+import MenuComp.{LayoutCfg, MenuItems}
 
 object BenchmarkGUI {
 
@@ -22,14 +22,19 @@ object BenchmarkGUI {
   def defaultBaseUrl(): BaseUrl =
     BaseUrl(dom.window.location.href.takeWhile(_ != '#'))
 
-  def renderMenu(container: dom.Node, baseUrl: BaseUrl = defaultBaseUrl(), options: Options = Options.Default)
+  def renderMenu(container: dom.Node,
+                 baseUrl: BaseUrl = defaultBaseUrl(),
+                 layout: LayoutCfg = LayoutCfg.default,
+                 options: Options = Options.Default)
                 (m1: MenuItems, mn: MenuItems*): Unit = {
     initialise()
-    val router = MenuComp.buildRouter(baseUrl, options)(m1, mn: _*)
+    val router = MenuComp.buildRouter(baseUrl, layout, options)(m1, mn: _*)
     ReactDOM.render(router(), container)
   }
 
-  def renderSuite[P](container: dom.Node, options: Options = Options.Default)(s: GuiSuite[P]): Unit = {
+  def renderSuite[P](container: dom.Node,
+                     options: Options = Options.Default)
+                    (s: GuiSuite[P]): Unit = {
     initialise()
     val p = SuiteComp.Props(s, options)
     ReactDOM.render(SuiteComp.Comp(p), container)
