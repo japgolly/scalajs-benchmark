@@ -112,7 +112,7 @@ object Examples {
     val iso = Iso((m: Multi) => Multi.unapply(m).get)((Multi.apply _).tupled)
 
     val param1 = GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)("Size", 5, 10)
-    val param2 = GuiParam(Render.Bool, Editor.Text, Parser.BoolsAsText)("Reverse", true, false)
+    val param2 = GuiParam.boolean("Reverse")
     val params = GuiParams.two(iso, param1, param2)
 
     GuiSuite(suite, params).describe(

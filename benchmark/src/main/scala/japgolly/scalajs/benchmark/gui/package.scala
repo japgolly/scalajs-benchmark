@@ -50,7 +50,10 @@ package object gui {
 
   object Parser {
     @deprecated("Use IntsAsText instead.", "0.2.0") def intsAsText = IntsAsText
-    @deprecated("Use BoolsAsText instead.", "0.2.0") def boolsAsText = BoolsAsText
+    @deprecated("Use GuiParam.boolean instead.", "0.2.0") def boolsAsText = BoolsAsText
+
+    def apply[A, B](f: Vector[A] => B)(g: B => Option[Vector[A]]): Parser[A, B] =
+      Prism[B, Vector[A]](g)(f)
 
     type TextSeparator = Iso[Vector[String], String]
 
@@ -62,12 +65,10 @@ package object gui {
       TextSeparator(_ mkString ", ", r.split(_).toVector)
     }
 
-    val intStringPrism: Prism[String, Int] =
-      Prism[String, Int](s => \/.fromTryCatchNonFatal(s.toInt).toOption)(_.toString)
-
     def listAsText[A](prism: Prism[String, A],
                     sep: TextSeparator = sepTextByCommaOrSpace): Parser[A, String] =
-      Prism[String, Vector[A]](
+      Parser[A, String](
+        va => sep get va.map(prism.reverseGet))(
         sep.reverseGet(_)
           .iterator
           .map(_.trim)
@@ -76,26 +77,23 @@ package object gui {
           .toVector
           // .distinct
           .sequence
-      )(va => sep get va.map(prism.reverseGet))
+      )
 
+    val intStringPrism: Prism[String, Int] =
+      Prism[String, Int](s => \/.fromTryCatchNonFatal(s.toInt).toOption)(_.toString)
 
     val IntsAsText: Parser[Int, String] =
       listAsText(intStringPrism)
 
-    val BoolsAsText: Parser[Boolean, String] =
-      Prism[String, Vector[Boolean]](
-        _.split("[ ,]")
-          .iterator
-          .map(_.trim.toLowerCase)
-          .filter(_.nonEmpty)
-          .map {
-            case "t" | "true" | "yes" | "y" | "1" => Some(true)
-            case "f" | "false" | "no" | "n" | "0" => Some(false)
-            case _ => None
-          }
-          .toVector
-          // .distinct
-          .sequence
-      )(_ mkString ", ")
+    val boolStringPrism: Prism[String, Boolean] =
+      Prism[String, Boolean](_.toLowerCase match {
+        case "t" | "true" | "yes" | "y" | "1" => Some(true)
+        case "f" | "false" | "no" | "n" | "0" => Some(false)
+        case _ => None
+      })(_.toString)
+
+    @deprecated("Use GuiParam.boolean instead.", "0.2.0")
+    def BoolsAsText: Parser[Boolean, String] =
+      listAsText(boolStringPrism)
   }
 }

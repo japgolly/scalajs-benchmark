@@ -85,6 +85,10 @@ object Styles extends StyleSheet.Inline {
     val paramBool = style(
       textAlign.center)
 
+    val paramEnumLabel = style(
+      settingsTableBmLabel,
+      display.block)
+
     val startButton = style(
       &.disabled(color(c"#aaa")))
 
