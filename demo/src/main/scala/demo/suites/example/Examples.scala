@@ -61,7 +61,7 @@ object Examples {
       }
     )
 
-    val param = GuiParam(Render.int, Editor.text, Parser.intsAsText)("Size", 10, 100)
+    val param = GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)("Size", 10, 100)
 
     GuiSuite(suite, param).describe(
       <.div(
@@ -111,8 +111,8 @@ object Examples {
     /** This specifies how to go back and forth between a [[Multi]] and two params. */
     val iso = Iso((m: Multi) => Multi.unapply(m).get)((Multi.apply _).tupled)
 
-    val param1 = GuiParam(Render.int, Editor.text, Parser.intsAsText)("Size", 5, 10)
-    val param2 = GuiParam(Render.bool, Editor.text, Parser.boolsAsText)("Reverse", true, false)
+    val param1 = GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)("Size", 5, 10)
+    val param2 = GuiParam(Render.Bool, Editor.Text, Parser.BoolsAsText)("Reverse", true, false)
     val params = GuiParams.two(iso, param1, param2)
 
     GuiSuite(suite, params).describe(
