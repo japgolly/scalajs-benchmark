@@ -37,15 +37,14 @@ object Benchmark {
     new Benchmark(name, Setup(a => () => f(a)))
 
   def setup[A, B](prepare: A => B): Builder[A, B] =
-    new Builder[A, B](
-      f => Setup { a =>
+    new Builder[A, B](prepare)
+
+  class Builder[A, B](val prepare: A => B) {
+    def apply(name: String)(f: B => Any): Benchmark[A] =
+      new Benchmark(name, Setup { a =>
         val b = prepare(a)
         () => f(b)
-      }
-    )
-
-  class Builder[A, B](g: (B => Any) => SetupFn[A]) {
-    def apply(name: String)(f: B => Any): Benchmark[A] =
-      new Benchmark(name, g(f))
-  }
-}
+      })
+    def map[C](f: B => C): Builder[A, C] =
+      new Builder(f compose prepare)
+  }}
