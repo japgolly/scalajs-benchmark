@@ -113,6 +113,6 @@ object ResultFmt {
     duration(abbrev(t) + "/op", getUnits(t), scoreDP, errorDP)
 
   val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 3, 1)
-  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 1)
-  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 1)
+  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
+  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
 }
