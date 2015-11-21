@@ -3,7 +3,7 @@ package japgolly.scalajs.benchmark.engine
 import scala.concurrent.duration._
 import scala.scalajs.js
 
-final case class Stats(times: Vector[FiniteDuration], outlierTrimPct: Double) {
+final case class Stats(times: Vector[FiniteDuration], o: Options) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
@@ -31,7 +31,9 @@ final case class Stats(times: Vector[FiniteDuration], outlierTrimPct: Double) {
 
   val statsInMicroSec: StatMath = {
     val a = times.map(_.toMicros.toDouble)
-    val b = StatMath.removeHighOutliers(a, outlierTrimPct)
+    // org.scalajs.dom.console.log(a.mkString("[", ", ","]"))
+    val b = if (a.length < o.outlierTrimIfMin) a else
+      StatMath.removeHighOutliers(a, o.outlierTrimPct)
     StatMath(b)
   }
 

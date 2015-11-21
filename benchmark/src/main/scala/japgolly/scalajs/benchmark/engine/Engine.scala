@@ -80,7 +80,7 @@ object Engine {
                 go()
 
                 teardown.run()
-                Stats(rs.times.toVector, options.outlierTrimPct)
+                Stats(rs.times.toVector, options)
               }
 
             progress = progress.copy(runs = progress.runs + 1)
