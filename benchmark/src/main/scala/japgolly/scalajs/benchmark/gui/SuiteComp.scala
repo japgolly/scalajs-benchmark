@@ -126,6 +126,11 @@ object SuiteComp {
       $.modState(State.disabledBMs.modify(s =>
         if (s contains i) s - i else s + i))
 
+    def makeSoleBM(i: Int): Callback =
+      $.props >>= (p =>
+        $.modState(State.disabledBMs.set(
+          p.suite.suite.bms.indices.toSet - i)))
+
     def renderSuitePending(p: Props, s: State): ReactElement = {
       val ev = ExternalVar(s.editors)(updateEditorState)
       val params = p.suite.params
@@ -136,10 +141,11 @@ object SuiteComp {
         def bmCell(bm: Benchmark[P], i: Int) =
           <.label(
             *.settingsTableBm,
+            ^.onDoubleClick --> makeSoleBM(i),
             <.input(
-              ^.`type`    := "checkbox",
-              ^.checked   := !s.disabledBMs.contains(i),
-              ^.onChange --> toggleBM(i)),
+              ^.`type`         := "checkbox",
+              ^.checked        := !s.disabledBMs.contains(i),
+              ^.onChange      --> toggleBM(i)),
             <.span(
               *.settingsTableBmLabel,
               bm.name))
