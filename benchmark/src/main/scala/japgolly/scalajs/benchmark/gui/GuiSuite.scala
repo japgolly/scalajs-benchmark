@@ -9,7 +9,7 @@ import monocle.Lens
   *
   * If you don't need a GUI, then a plain [[Suite]] is all you need.
   */
-final class GuiSuite[P](val suite: Suite[P], val params: Params[P], val desc: Option[ReactElement]) {
+final class GuiSuite[P](val suite: Suite[P], val params: GuiParams[P], val desc: Option[ReactElement]) {
   @inline def name = suite.name
 
   def describe(e: ReactElement): GuiSuite[P] =
@@ -21,8 +21,8 @@ object GuiSuite {
     Lens((_: GuiSuite[P]).suite)(s => g => new GuiSuite(s, g.params, g.desc))
 
   def apply(suite: Suite[Unit]): GuiSuite[Unit] =
-    new GuiSuite(suite, Params.none, None)
+    new GuiSuite(suite, GuiParams.none, None)
 
-  def apply[P](suite: Suite[P], params: Params[P]): GuiSuite[P] =
+  def apply[P](suite: Suite[P], params: GuiParams[P]): GuiSuite[P] =
     new GuiSuite(suite, params, None)
 }

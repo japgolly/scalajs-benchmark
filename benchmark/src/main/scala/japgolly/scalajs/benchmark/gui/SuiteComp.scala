@@ -11,7 +11,7 @@ import monocle.macros.Lenses
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 import scalaz.{-\/, \/-}
-import Params.GenState
+import GuiParams.GenState
 import Styles.{Suite => *}
 
 /**

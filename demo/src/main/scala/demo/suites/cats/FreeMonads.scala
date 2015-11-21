@@ -168,7 +168,7 @@ object FreeMonads {
 
   val suite = Suite("Free Monads")(FreeK.bms ++ Coyo.bms: _*)
 
-  val param = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 50, 500)
+  val param = GuiParam(Render.int, Editor.text, Parser.intsAsText)("Size", 50, 500)
 
   val guiSuite = GuiSuite(suite, param).describe(
     <.div(
