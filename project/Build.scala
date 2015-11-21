@@ -50,8 +50,8 @@ object ScalaJsBenchmark extends Build {
     _.settings(
       scalacOptions += "-language:experimental.macros",
       libraryDependencies ++= Seq(
-        "org.scala-lang" % "scala-reflect" % Ver.Scala211,
-        "org.scala-lang" % "scala-library" % Ver.Scala211,
+        // "org.scala-lang" % "scala-reflect" % Ver.Scala211,
+        // "org.scala-lang" % "scala-library" % Ver.Scala211,
         "org.scala-lang" % "scala-compiler" % Ver.Scala211 % "provided"))
 
   def macroParadisePlugin =
