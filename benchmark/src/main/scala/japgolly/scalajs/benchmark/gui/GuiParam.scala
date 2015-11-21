@@ -73,4 +73,7 @@ object GuiParam {
 
   def boolean(header: Header): GuiParam[Boolean, BitSet] =
     enum(header, true :: false :: Nil)(Render.Bool)
+
+  def int(header: Header, initialValues: Int*): GuiParam[Int, String] =
+    GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)(header, initialValues: _*)
 }

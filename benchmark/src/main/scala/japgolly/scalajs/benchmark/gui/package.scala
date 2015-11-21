@@ -60,13 +60,13 @@ package object gui {
     def TextSeparator(f: Vector[String] => String, g: String => Vector[String]): TextSeparator =
       Iso(f)(g)
 
-    val sepTextByCommaOrSpace: TextSeparator = {
+    val SepTextByCommaOrSpace: TextSeparator = {
       val r = "[ ,]".r
       TextSeparator(_ mkString ", ", r.split(_).toVector)
     }
 
     def listAsText[A](prism: Prism[String, A],
-                    sep: TextSeparator = sepTextByCommaOrSpace): Parser[A, String] =
+                    sep: TextSeparator = SepTextByCommaOrSpace): Parser[A, String] =
       Parser[A, String](
         va => sep get va.map(prism.reverseGet))(
         sep.reverseGet(_)
@@ -79,13 +79,13 @@ package object gui {
           .sequence
       )
 
-    val intStringPrism: Prism[String, Int] =
+    val IntStringPrism: Prism[String, Int] =
       Prism[String, Int](s => \/.fromTryCatchNonFatal(s.toInt).toOption)(_.toString)
 
     val IntsAsText: Parser[Int, String] =
-      listAsText(intStringPrism)
+      listAsText(IntStringPrism)
 
-    val boolStringPrism: Prism[String, Boolean] =
+    val BoolStringPrism: Prism[String, Boolean] =
       Prism[String, Boolean](_.toLowerCase match {
         case "t" | "true" | "yes" | "y" | "1" => Some(true)
         case "f" | "false" | "no" | "n" | "0" => Some(false)
@@ -94,6 +94,6 @@ package object gui {
 
     @deprecated("Use GuiParam.boolean instead.", "0.2.0")
     def BoolsAsText: Parser[Boolean, String] =
-      listAsText(boolStringPrism)
+      listAsText(BoolStringPrism)
   }
 }
