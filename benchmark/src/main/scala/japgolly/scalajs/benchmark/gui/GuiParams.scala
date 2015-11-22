@@ -18,6 +18,9 @@ trait GuiParams[P] {
   def editors: Vector[GenEditor]
 
   def renderParams(p: P): Vector[TagMod]
+
+  def bmNameSuffix(p: P): String =
+    " @ " + p.toString
 }
 
 object GuiParams {
@@ -33,6 +36,7 @@ object GuiParams {
       override def headers                 = Vector.empty
       override def editors                 = Vector.empty
       override def renderParams(p: Unit)   = Vector.empty
+      override def bmNameSuffix(p: Unit)   = ""
       override def parseState(s: GenState) = parseResult
       val parseResult = \/-(Vector(()))
     }

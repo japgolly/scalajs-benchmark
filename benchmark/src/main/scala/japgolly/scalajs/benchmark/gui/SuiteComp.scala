@@ -243,7 +243,7 @@ object SuiteComp {
         val bmsToShow = m.size max 1
 
         val titles = keys.iterator
-            .map(k => s"${k.bm.name} @ ${k.param}")
+            .map(k => k.bm.name + suite.params.bmNameSuffix(k.param))
             .take(bmsToShow)
             .toVector
 
