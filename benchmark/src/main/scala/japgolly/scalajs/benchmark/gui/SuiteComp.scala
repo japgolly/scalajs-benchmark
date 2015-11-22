@@ -329,9 +329,13 @@ object SuiteComp {
   private val __Comp = {
     // TODO Bloody hack. Really need to accommodate this properly in scalajs-react
     type P = Unit
+
+    def initDisabledBMs(bms: Vector[Benchmark[Nothing]]): Set[Int] =
+      bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
+
     val c: Comp[_] =
       ReactComponentB[Props[P]]("SuiteComp")
-        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, Set.empty))
+        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, initDisabledBMs(p.suite.suite.bms)))
         .renderBackend[Backend[P]]
         // TODO handle suite changes - it's all in state atm
         .componentWillUnmount(_.backend.shutdown)

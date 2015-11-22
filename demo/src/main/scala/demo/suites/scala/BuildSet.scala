@@ -47,10 +47,9 @@ object BuildSet {
       b.result()
     },
 
-    // I just want this disabled by default
-//    bm("ListSet.fold")(as =>
-//      as.foldLeft(ListSet.empty[A])(_ + _)
-//    ),
+    bm("ListSet.fold")(as =>
+      as.foldLeft(ListSet.empty[A])(_ + _)
+    ).setDisabledByDefault,
 
     bm("ListSet.newBuilder") { as =>
       val b = ListSet.newBuilder[A]
