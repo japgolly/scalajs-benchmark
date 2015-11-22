@@ -258,8 +258,11 @@ object SuiteComp {
 
         val dataset = ScalaDataset(fmt.header, dataPoints)
         val bardata = ScalaBarData(titles, Vector(dataset))
-        val props = ReactChart.Props(*.graphOuter, *.graphInner(bardata))
-        ReactChart.Comp(props)
+        val props = ReactChart.Props(*.graph, *.graphInner(bardata))
+
+        <.div(*.graphContainer,
+          <.div(*.graphHeader, fmt.graphHeader),
+          ReactChart.Comp(props))
       }
 
       <.div(
@@ -267,8 +270,7 @@ object SuiteComp {
           *.resultTable,
           <.thead(header),
           <.tbody(rows: _*)),
-        <.div(
-          graph))
+        graph)
     }
 
     def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): ReactElement = {
