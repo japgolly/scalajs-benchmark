@@ -41,6 +41,9 @@ object Benchmark {
   def apply[A](name: String, f: A => Any): Benchmark[A] =
     new Benchmark(name, Setup(a => () => f(a)), false)
 
+  def fromFn[A](name: String)(f: A => Fn): Benchmark[A] =
+    new Benchmark(name, Setup(f), false)
+
   def setup[A, B](prepare: A => B): Builder[A, B] =
     new Builder[A, B](prepare)
 
