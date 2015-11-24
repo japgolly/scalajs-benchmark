@@ -12,7 +12,7 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
 1. Include `scalajs-benchmark` as a dependency in your Scala.JS project.
   ```scala
-  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.1.0"
+  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.2.0"
   ```
 
 1. You write benchmarks.
