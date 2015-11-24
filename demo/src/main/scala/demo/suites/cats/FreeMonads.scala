@@ -145,7 +145,7 @@ object FreeMonads {
       addn flatMap (_ => Get)
     }
 
-    val prefix = "Free & CoYoneda → "
+    val prefix = "Free & coYoneda → "
 
     val bmFn0FoldMap =
       bm(prefix + "Fn0 (foldMap)"){ p1 =>
@@ -172,7 +172,7 @@ object FreeMonads {
 
   //======================================================================================================================
 
-  val suite = Suite("Free Monads")(FreeK.bms ++ Coyo.bms: _*)
+  val suite = Suite("Free monads")(FreeK.bms ++ Coyo.bms: _*)
 
   val param = GuiParam.int("Size", 50, 500)
 
