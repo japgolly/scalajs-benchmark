@@ -17,7 +17,8 @@ object Main extends scalajs.js.JSApp {
       suites.example.Examples.all,
       suites.cats.all,
       suites.scala.all,
-      suites.scalaz.all)
+      suites.scalaz.all,
+      suites.shootouts.all)
   }
 
   /*
