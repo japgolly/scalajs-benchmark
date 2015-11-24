@@ -5,5 +5,6 @@ import japgolly.scalajs.benchmark.gui.MenuComp
 package object cats {
 
   lazy val all = MenuComp.folder("Cats")(
-    FreeMonads.guiSuite)
+    FreeMonads.guiSuite,
+    TrampolineBM.guiSuite)
 }
