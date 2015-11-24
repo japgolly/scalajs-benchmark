@@ -65,16 +65,19 @@ object FreeMonads {
     }
 
     val prefix = "Free → "
+
+    val bmFn0FoldMap =
+      bm(prefix + "Fn0 (foldMap)"){ p1 =>
+        val p2: Function0[Int] = p1.foldMap(CmdToFn0(new TheRealDeal))
+        val r: Int = p2()
+      }
+
     val bms = Vector[Benchmark[Int]](
+      bmFn0FoldMap,
 
       bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
         val p2: Free[Function0, Int] = p1.mapSuspension(CmdToFn0(new TheRealDeal))
         val r: Int = p2.run
-      },
-
-      bm(prefix + "Fn0 (foldMap)"){ p1 =>
-        val p2: Function0[Int] = p1.foldMap(CmdToFn0(new TheRealDeal))
-        val r: Int = p2()
       },
 
       bm(prefix + "Reader[Fn0]"){ p1 =>
@@ -143,13 +146,16 @@ object FreeMonads {
     }
 
     val prefix = "Free & CoYoneda → "
-    val bms = Vector[Benchmark[Int]](
 
+    val bmFn0FoldMap =
       bm(prefix + "Fn0 (foldMap)"){ p1 =>
         val nt = liftTF(CmdToFn0(new TheRealDeal))
         val p2: Function0[Int] = p1.foldMap(nt)
         val r: Int = p2()
-      },
+      }
+
+    val bms = Vector[Benchmark[Int]](
+      bmFn0FoldMap,
 
       bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
         val nt = liftTF(CmdToFn0(new TheRealDeal))

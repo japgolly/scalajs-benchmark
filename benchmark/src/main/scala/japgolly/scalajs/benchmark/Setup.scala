@@ -3,7 +3,10 @@ package japgolly.scalajs.benchmark
 /**
   * Given a `A`, set a `B` up and provide a [[Teardown]].
   */
-final class Setup[-A, +B](val run: A => (B, Teardown)) extends AnyVal
+final class Setup[-A, +B](val run: A => (B, Teardown)) extends AnyVal {
+  def cmap[C](f: C => A): Setup[C, B] =
+    new Setup(f andThen run)
+}
 
 object Setup {
   def empty[A]: Setup[A, A] =
@@ -21,6 +24,9 @@ object Setup {
 
   def andTeardown[A, B](f: A => (B, Teardown)): Setup[A, B] =
     new Setup(f)
+
+  def derive[A, B, C](f: A => Setup[B, C])(b: A => B): Setup[A, C] =
+    new Setup(a => f(a) run b(a))
 }
 
 /**

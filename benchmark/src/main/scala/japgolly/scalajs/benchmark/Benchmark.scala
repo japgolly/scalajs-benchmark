@@ -15,6 +15,15 @@ final class Benchmark[-P](val name: String, val setup: SetupFn[P], val isDisable
   // It only makes sense for the GUI package, no?
   def setDisabledByDefault: Benchmark[P] =
     new Benchmark(name, setup, true)
+
+  def prefix(prefix: String): Benchmark[P] =
+    rename(prefix + _)
+
+  def rename(modName: String => String): Benchmark[P] =
+    rename(modName(name))
+
+  def rename(newName: String): Benchmark[P] =
+    new Benchmark(newName, setup, isDisabledByDefault)
 }
 
 object Benchmark {
@@ -43,6 +52,9 @@ object Benchmark {
 
   def fromFn[A](name: String)(f: A => Fn): Benchmark[A] =
     new Benchmark(name, Setup(f), false)
+
+  def derive[A, B](name: String, f: A => Benchmark[B])(b: A => B): Benchmark[A] =
+    new Benchmark(name, Setup.derive(f(_: A).setup)(b), false)
 
   def setup[A, B](prepare: A => B): Builder[A, B] =
     new Builder[A, B](prepare)
