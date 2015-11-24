@@ -85,6 +85,10 @@ object Styles extends StyleSheet.Inline {
     val paramBool = style(
       textAlign.center)
 
+    val paramEnumLabel = style(
+      settingsTableBmLabel,
+      display.block)
+
     val startButton = style(
       &.disabled(color(c"#aaa")))
 
@@ -100,9 +104,23 @@ object Styles extends StyleSheet.Inline {
 
     def resetButton = abortButton
 
-    val graphOuter = style(
-      marginTop(2 em),
-      width(640 px),
+    private def graphWidth = 640 px
+
+    val graphContainer = style(
+      marginTop(3 em),
+      // padding(1 em),
+      // border(solid, 1 px, c"#d4d4d4"),
+      width(graphWidth))
+
+    val graphHeader = style(
+      width(graphWidth),
+      textAlign.center,
+      color(c"#555"),
+      fontFamily := "sans-serif",
+      fontSize(0.9 em))
+
+    val graph = style(
+      width(graphWidth),
       height(720 px))
 
     import ReactChart._

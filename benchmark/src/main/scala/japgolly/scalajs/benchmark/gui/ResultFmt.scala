@@ -72,7 +72,15 @@ object ValueFmt {
   * @param score Formatter for the score itself.
   * @param error Formatter for the error in (score ± error).
   */
-case class ResultFmt(header: String, score: ValueFmt[Stats], error: ValueFmt[Stats])
+final case class ResultFmt(header: String, score: ValueFmt[Stats], error: ValueFmt[Stats], lowerIsBetter: Boolean) {
+  def higherIsBetter = !lowerIsBetter
+
+  def whichIsBetter: String =
+    (if (lowerIsBetter) "lower" else "higher") + " is better"
+
+  val graphHeader: String =
+    s"$header ($whichIsBetter)"
+}
 
 object ResultFmt {
 
@@ -98,21 +106,22 @@ object ResultFmt {
       case TimeUnit.DAYS         => _.toSeconds.toDouble / (3660 * 24)
     }
 
-  def duration(header: String, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): ResultFmt =
+  def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): ResultFmt =
     ResultFmt(
       header,
       ValueFmt.averageDuration(getUnits, scoreDP),
-      ValueFmt.error          (getUnits, errorDP))
+      ValueFmt.error          (getUnits, errorDP),
+      lowerIsBetter)
 
   def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt = {
     val one = FiniteDuration(1, t)
-    duration("ops/" + abbrev(t), one / _, scoreDP, errorDP)
+    duration("ops/" + abbrev(t), false, one / _, scoreDP, errorDP)
   }
 
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt =
-    duration(abbrev(t) + "/op", getUnits(t), scoreDP, errorDP)
+    duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
   val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 3, 1)
-  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 1)
-  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 1)
+  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
+  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
 }

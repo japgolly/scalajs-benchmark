@@ -5,9 +5,9 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.{Iso, Lens}
 import scalaz.{\/-, \/}
 import scalaz.std.option.optionSyntax._
-import Params._
+import GuiParams._
 
-trait Params[P] {
+trait GuiParams[P] {
 
   def initialState: GenState
 
@@ -18,26 +18,30 @@ trait Params[P] {
   def editors: Vector[GenEditor]
 
   def renderParams(p: P): Vector[TagMod]
+
+  def bmNameSuffix(p: P): String =
+    " @ " + p.toString
 }
 
-object Params {
+object GuiParams {
   type GenState = Vector[Any]
   type GenEditor = Editor[GenState]
   type ParseResult[P] = Header \/ Vector[P]
 
   import Internals._
 
-  val none: Params[Unit] =
-    new Params[Unit] {
+  val none: GuiParams[Unit] =
+    new GuiParams[Unit] {
       override def initialState            = Vector.empty
       override def headers                 = Vector.empty
       override def editors                 = Vector.empty
       override def renderParams(p: Unit)   = Vector.empty
+      override def bmNameSuffix(p: Unit)   = ""
       override def parseState(s: GenState) = parseResult
       val parseResult = \/-(Vector(()))
     }
 
-  def one[P, E](param: Param[P, E]): Params[P] = {
+  def one[P, E](param: GuiParam[P, E]): GuiParams[P] = {
     val p = SubParam(0, param, Lens.id[P])
     val ps = Vector(p)
 
@@ -47,7 +51,7 @@ object Params {
     }
   }
 
-  def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: Param[P1, E1], param2: Param[P2, E2]): Params[P] = {
+  def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: GuiParam[P1, E1], param2: GuiParam[P2, E2]): GuiParams[P] = {
     import monocle.function.{first, second}
     import monocle.std.tuple2._
 
@@ -80,7 +84,7 @@ object Params {
       type A
       type B
       val lens: Lens[P, A]
-      val param: Param[A, B]
+      val param: GuiParam[A, B]
       val key: Key[B]
 
       val editor: GenEditor =
@@ -93,7 +97,7 @@ object Params {
     object SubParam {
       type Aux[P, X, Y] = SubParam[P] {type A = X; type B = Y}
 
-      def apply[P, X, Y](stateIndex: Int, p: Param[X, Y], _lens: Lens[P, X]): Aux[P, X, Y] =
+      def apply[P, X, Y](stateIndex: Int, p: GuiParam[X, Y], _lens: Lens[P, X]): Aux[P, X, Y] =
         new SubParam[P] {
           override type A = X
           override type B = Y
@@ -108,7 +112,7 @@ object Params {
       *
       * TODO Use a HList
       */
-    abstract class MostlyGenericParams[P](ps: Vector[SubParam[P]]) extends Params[P] {
+    abstract class MostlyGenericParams[P](ps: Vector[SubParam[P]]) extends GuiParams[P] {
       override final def initialState: GenState =
         ps.foldLeft(emptyState(ps.length))((m, p) =>
           p.key.set(p.param.parser reverseGet p.param.initValues)(m))

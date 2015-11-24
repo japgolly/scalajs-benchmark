@@ -34,8 +34,8 @@ object MenuComp {
   implicit def autoLiftGuiSuite(s: GuiSuite[_]): MenuSuite =
     MenuSuite(UrlFrag from s.name, s)
 
-  implicit def autoSoleMenuItem(s: MenuItem): MenuItems =
-    s :: Nil
+  implicit def autoSoleMenuItem[T](t: T)(implicit f: T => MenuItem): MenuItems =
+    f(t) :: Nil
 
   def folder(name: String, urlFrag: UrlFrag = null)(c: MenuItem*): MenuFolder = {
     val cs = c.iterator

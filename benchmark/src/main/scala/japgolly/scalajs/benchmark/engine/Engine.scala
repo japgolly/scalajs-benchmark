@@ -49,10 +49,18 @@ object Engine {
       small || large
     }
 
+    var broadcastFinishOnAbort = false
+    var progress = Progress(plan, 0)
+
+    def finish(): Unit = {
+      hnd.value = js.undefined
+      broadcastFinishOnAbort = false
+      eventCallback(SuiteFinished(progress)).runNow()
+    }
+
     def runAsync: Unit = {
       val delay = options.delay()
       val clock = options.clock
-      var progress = Progress(plan, 0)
 
       def msg(e: Event[P])(next: => Any): Unit = {
         eventCallback(e).runNow()
@@ -80,7 +88,7 @@ object Engine {
                 go()
 
                 teardown.run()
-                Stats(rs.times.toVector, options.outlierTrimPct)
+                Stats(rs.times.toVector, options)
               }
 
             progress = progress.copy(runs = progress.runs + 1)
@@ -89,15 +97,23 @@ object Engine {
           }
 
         case Nil =>
-          hnd.value = js.undefined
-          eventCallback(SuiteFinished(progress)).runNow()
+          finish()
       }
 
-      msg(SuiteStarting(progress))(go(plan.keys))
+      msg(SuiteStarting(progress)) {
+        broadcastFinishOnAbort = true
+        go(plan.keys)
+      }
     }
 
+    // Schedule to start
     hnd.value = js.timers.setTimeout(options.initialDelay)(runAsync)
-    AbortFn(() => hnd.value foreach js.timers.clearTimeout)
+
+    AbortFn(() => {
+      hnd.value foreach js.timers.clearTimeout
+      if (broadcastFinishOnAbort)
+        finish()
+    })
   }
 
   /**

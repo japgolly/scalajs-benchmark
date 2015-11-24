@@ -3,7 +3,7 @@ package japgolly.scalajs.benchmark
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.vdom.prefix_<^._
-import monocle.Prism
+import monocle.{Iso, Prism}
 import scalacss.ScalaCssReact._
 import scalaz.\/
 import scalaz.std.option._
@@ -19,12 +19,14 @@ package object gui {
   type Render[-A] = A => TagMod
 
   object Render {
-    def int: Render[Int] =
+    @deprecated("Use Int instead.", "0.2.0") def int = Int
+    @deprecated("Use Bool instead.", "0.2.0") def bool = Bool
+
+    val Int: Render[Int] =
       i => TagMod(Styles.Suite.paramInt, i)
 
-    def bool: Render[Boolean] =
+    val Bool: Render[Boolean] =
       b => TagMod(Styles.Suite.paramBool, if (b) "T" else "F")
-
   }
 
   // ===================================================================================================================
@@ -32,7 +34,9 @@ package object gui {
   type Editor[A] = ExternalVar[A] => ReactElement
 
   object Editor {
-    val text: Editor[String] =
+    @deprecated("Use Text instead.", "0.2.0") def text = Text
+
+    val Text: Editor[String] =
       e =>
         <.input(
           ^.`type` := "text",
@@ -45,33 +49,51 @@ package object gui {
   type Parser[A, B] = Prism[B, Vector[A]]
 
   object Parser {
-    val intsAsText: Parser[Int, String] =
-      Prism[String, Vector[Int]](
-        _.split("[ ,]")
+    @deprecated("Use IntsAsText instead.", "0.2.0") def intsAsText = IntsAsText
+    @deprecated("Use GuiParam.boolean instead.", "0.2.0") def boolsAsText = BoolsAsText
+
+    def apply[A, B](f: Vector[A] => B)(g: B => Option[Vector[A]]): Parser[A, B] =
+      Prism[B, Vector[A]](g)(f)
+
+    type TextSeparator = Iso[Vector[String], String]
+
+    def TextSeparator(f: Vector[String] => String, g: String => Vector[String]): TextSeparator =
+      Iso(f)(g)
+
+    val SepTextByCommaOrSpace: TextSeparator = {
+      val r = "[ ,]".r
+      TextSeparator(_ mkString ", ", r.split(_).toVector)
+    }
+
+    def listAsText[A](prism: Prism[String, A],
+                    sep: TextSeparator = SepTextByCommaOrSpace): Parser[A, String] =
+      Parser[A, String](
+        va => sep get va.map(prism.reverseGet))(
+        sep.reverseGet(_)
           .iterator
           .map(_.trim)
           .filter(_.nonEmpty)
-          .map(is => \/.fromTryCatchNonFatal(is.toInt).toOption)
+          .map(prism.getOption)
           .toVector
           // .distinct
           .sequence
-      )(_ mkString ", ")
+      )
 
-    val boolsAsText: Parser[Boolean, String] =
-      Prism[String, Vector[Boolean]](
-        _.split("[ ,]")
-          .iterator
-          .map(_.trim.toLowerCase)
-          .filter(_.nonEmpty)
-          .map {
-            case "t" | "true" | "yes" | "y" | "1" => Some(true)
-            case "f" | "false" | "no" | "n" | "0" => Some(false)
-            case _ => None
-          }
-          .toVector
-          // .distinct
-          .sequence
-      )(_ mkString ", ")
+    val IntStringPrism: Prism[String, Int] =
+      Prism[String, Int](s => \/.fromTryCatchNonFatal(s.toInt).toOption)(_.toString)
+
+    val IntsAsText: Parser[Int, String] =
+      listAsText(IntStringPrism)
+
+    val BoolStringPrism: Prism[String, Boolean] =
+      Prism[String, Boolean](_.toLowerCase match {
+        case "t" | "true" | "yes" | "y" | "1" => Some(true)
+        case "f" | "false" | "no" | "n" | "0" => Some(false)
+        case _ => None
+      })(_.toString)
+
+    @deprecated("Use GuiParam.boolean instead.", "0.2.0")
+    def BoolsAsText: Parser[Boolean, String] =
+      listAsText(BoolStringPrism)
   }
-
 }

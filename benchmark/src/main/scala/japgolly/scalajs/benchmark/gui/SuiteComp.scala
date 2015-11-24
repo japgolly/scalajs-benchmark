@@ -11,7 +11,7 @@ import monocle.macros.Lenses
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 import scalaz.{-\/, \/-}
-import Params.GenState
+import GuiParams.GenState
 import Styles.{Suite => *}
 
 /**
@@ -126,6 +126,11 @@ object SuiteComp {
       $.modState(State.disabledBMs.modify(s =>
         if (s contains i) s - i else s + i))
 
+    def makeSoleBM(i: Int): Callback =
+      $.props >>= (p =>
+        $.modState(State.disabledBMs.set(
+          p.suite.suite.bms.indices.toSet - i)))
+
     def renderSuitePending(p: Props, s: State): ReactElement = {
       val ev = ExternalVar(s.editors)(updateEditorState)
       val params = p.suite.params
@@ -136,10 +141,11 @@ object SuiteComp {
         def bmCell(bm: Benchmark[P], i: Int) =
           <.label(
             *.settingsTableBm,
+            ^.onDoubleClick --> makeSoleBM(i),
             <.input(
-              ^.`type`    := "checkbox",
-              ^.checked   := !s.disabledBMs.contains(i),
-              ^.onChange --> toggleBM(i)),
+              ^.`type`         := "checkbox",
+              ^.checked        := !s.disabledBMs.contains(i),
+              ^.onChange      --> toggleBM(i)),
             <.span(
               *.settingsTableBmLabel,
               bm.name))
@@ -236,8 +242,14 @@ object SuiteComp {
         val fmt = resultFmts.head
         val bmsToShow = m.size max 1
 
+        val bmFullName: PlanKey[P] => String =
+          if (progress.plan.params.length > 2)
+            k => k.bm.name + suite.params.bmNameSuffix(k.param)
+          else
+            _.bm.name
+
         val titles = keys.iterator
-            .map(k => s"${k.bm.name} @ ${k.param}")
+            .map(bmFullName)
             .take(bmsToShow)
             .toVector
 
@@ -252,8 +264,11 @@ object SuiteComp {
 
         val dataset = ScalaDataset(fmt.header, dataPoints)
         val bardata = ScalaBarData(titles, Vector(dataset))
-        val props = ReactChart.Props(*.graphOuter, *.graphInner(bardata))
-        ReactChart.Comp(props)
+        val props = ReactChart.Props(*.graph, *.graphInner(bardata))
+
+        <.div(*.graphContainer,
+          <.div(*.graphHeader, fmt.graphHeader),
+          ReactChart.Comp(props))
       }
 
       <.div(
@@ -261,8 +276,7 @@ object SuiteComp {
           *.resultTable,
           <.thead(header),
           <.tbody(rows: _*)),
-        <.div(
-          graph))
+        graph)
     }
 
     def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): ReactElement = {
@@ -321,9 +335,13 @@ object SuiteComp {
   private val __Comp = {
     // TODO Bloody hack. Really need to accommodate this properly in scalajs-react
     type P = Unit
+
+    def initDisabledBMs(bms: Vector[Benchmark[Nothing]]): Set[Int] =
+      bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
+
     val c: Comp[_] =
       ReactComponentB[Props[P]]("SuiteComp")
-        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, Set.empty))
+        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, initDisabledBMs(p.suite.suite.bms)))
         .renderBackend[Backend[P]]
         // TODO handle suite changes - it's all in state atm
         .componentWillUnmount(_.backend.shutdown)

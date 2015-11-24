@@ -117,7 +117,7 @@ object IntSet {
     }
   )
 
-  val param = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 1000)
+  val param = GuiParam.int("Size", 1000)
 
   val guiSuite = GuiSuite(suite, param).describe(
     <.div(

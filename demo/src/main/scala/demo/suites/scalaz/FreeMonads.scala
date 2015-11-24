@@ -96,16 +96,19 @@ object FreeMonads {
     }
 
     val prefix = "Free → "
+
+    val bmFn0FoldMap =
+      bm(prefix + "Fn0 (foldMap)"){ p1 =>
+        val p2: Function0[Int] = p1.foldMap(CmdToFn0(new TheRealDeal))
+        val r: Int = p2()
+      }
+
     val bms = Vector[Benchmark[Int]](
+      bmFn0FoldMap,
 
       bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
         val p2: Free[Function0, Int] = p1.mapSuspension(CmdToFn0(new TheRealDeal))
         val r: Int = p2.run
-      },
-
-      bm(prefix + "Fn0 (foldMap)"){ p1 =>
-        val p2: Function0[Int] = p1.foldMap(CmdToFn0(new TheRealDeal))
-        val r: Int = p2()
       },
 
       bm(prefix + "Reader[Fn0]"){ p1 =>
@@ -207,14 +210,17 @@ object FreeMonads {
       addn >>= (_ => Get)
     }
 
-    val prefix = "Free & CoYoneda → "
-    val bms = Vector[Benchmark[Int]](
+    val prefix = "Free & coYoneda → "
 
+    val bmFn0FoldMap =
       bm(prefix + "Fn0 (foldMap)"){ p1 =>
         val nt = liftTF(CmdToFn0(new TheRealDeal))
         val p2: Function0[Int] = p1.foldMap(nt)
         val r: Int = p2()
-      },
+      }
+
+    val bms = Vector[Benchmark[Int]](
+      bmFn0FoldMap,
 
       bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
         val nt = liftTF(CmdToFn0(new TheRealDeal))
@@ -253,9 +259,9 @@ object FreeMonads {
 
   //======================================================================================================================
 
-  val suite = Suite("Free Monads")(FreeK.bms ++ Coyo.bms: _*)
+  val suite = Suite("Free monads")(FreeK.bms ++ Coyo.bms: _*)
 
-  val param = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 50, 500)
+  val param = GuiParam.int("Size", 50, 500)
 
   val guiSuite = GuiSuite(suite, param).describe(
     <.div(

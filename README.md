@@ -8,18 +8,17 @@ Benchmarks: write in Scala or JS, run in your browser.
 See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 <br>The tiny source code is here: [gh-pages/demo](https://github.com/japgolly/scalajs-benchmark/blob/gh-pages/demo/src/main/scala/demo/Main.scala).
 
-## Is this published yet?
-
-The first version will be published within a few days.
-
 ## How do I use it?
 
 1. Include `scalajs-benchmark` as a dependency in your Scala.JS project.
+  ```scala
+  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.2.0"
+  ```
 
 1. You write benchmarks.
   ```scala
   import japgolly.scalajs.benchmark._, gui._
-  
+
   object Example {
     val suite = GuiSuite(
       Suite("Example Benchmarks")(
@@ -39,7 +38,7 @@ The first version will be published within a few days.
     )
   }
   ```
-  
+
   *(Hey, can you make that `1 to 100` configurable in the GUI? [You sure can.](https://github.com/japgolly/scalajs-benchmark/blob/master/demo/src/main/scala/demo/suites/example/Examples.scala))*
 
 1. Add a tiny loader HTML [like this](demo/index.html).
@@ -47,21 +46,22 @@ The first version will be published within a few days.
 1. Create a `JSApp` and point `scalajs-benchmark` at your suite of benchmarks.
 
   ```scala
+  import org.scalajs.dom.document
   import japgolly.scalajs.benchmark.gui.BenchmarkGUI
-  
+
   object Main extends scalajs.js.JSApp {
+
     def main() = {
-      val body = org.scalajs.dom.document getElementById "body"
-      
+      val body = document getElementById "body"
       BenchmarkGUI.renderSuite(body)(Example.suite)
     }
   }
   ```
-  
+
   If you have a library of different benchmarks, instead of using `renderSuite`,
   you use `renderMenu` to create an app that lets the user navigate the library and
   run benchmarks.
-  
+
   Example:
 
   ```scala

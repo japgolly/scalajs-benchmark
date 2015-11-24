@@ -271,6 +271,8 @@ case class StatMath(sample: Traversable[Double]) {
   // relative margin of error.
   // val rme = (marginOfError / mean) * 100.0
 
-  // org.scalajs.dom.console.log(s"mean: $mean, var: $variance, sd: $stddev, moe: $marginOfError, rme: $rme\n", scalajs.js.Array[Double](sample.toSeq.sorted.reverse: _*))
-  // println(s"mean: $mean, var: $variance, sd: $stddev, moe: $marginOfError, rme: $rme")
+//  org.scalajs.dom.console.log(
+//    s"mean: %.2f, var: %.2f, σ: %.2f, 2σ: %.2f, 2σ/μ: %.1f%%\n".format(mean, variance, stddev, sigma2, relSigma2),
+//    sample.mkString("[", ", ","]"))
+    // scalajs.js.Array[Double](sample.toSeq.sorted.reverse: _*))
 }

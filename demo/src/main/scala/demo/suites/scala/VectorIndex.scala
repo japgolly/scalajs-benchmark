@@ -46,9 +46,9 @@ object VectorIndex {
 
   val iso = Iso((m: Cfg) => Cfg.unapply(m).get)((Cfg.apply _).tupled)
 
-  val param1 = Param(Render.int, Editor.text, Parser.intsAsText)("Size", 50)
-  val param2 = Param(Render.int, Editor.text, Parser.intsAsText)("Index", 0, 100)
-  val params = Params.two(iso, param1, param2)
+  val param1 = GuiParam.int("Size", 50)
+  val param2 = GuiParam.int("Index", 0, 100)
+  val params = GuiParams.two(iso, param1, param2)
 
   val guiSuite = GuiSuite(suite, params).describe(
     <.div(<.div(^.marginBottom := "0.8em",
