@@ -243,7 +243,7 @@ object SuiteComp {
         val bmsToShow = m.size max 1
 
         val bmFullName: PlanKey[P] => String =
-          if (progress.plan.params.length > 2)
+          if (progress.plan.params.length > 1)
             k => k.bm.name + suite.params.bmNameSuffix(k.param)
           else
             _.bm.name

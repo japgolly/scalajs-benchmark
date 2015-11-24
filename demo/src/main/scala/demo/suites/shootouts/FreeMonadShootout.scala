@@ -26,7 +26,7 @@ object FreeMonadShootout {
   }
 
   case class Params(lib: Lib, size: Int) {
-    override def toString = s"$lib @ $size"
+    override def toString = s"${lib.name} @ $size"
   }
 
   val param1 = GuiParam.enum[Lib]("Library", Cats, Scalaz)(_.name)
