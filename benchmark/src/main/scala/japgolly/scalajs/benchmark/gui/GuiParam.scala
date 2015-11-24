@@ -22,7 +22,7 @@ object GuiParam {
   implicit def autoSingleParam[A, B](p: GuiParam[A, B]): GuiParams[A] =
     GuiParams.one(p)
 
-  def enum[A](header: Header, values: TraversableOnce[A])
+  def enum[A](header: Header, values: A*)
              (resultLabel: Render[A],
               editorLabel: A => ReactElement = null,
               initialValues: Seq[A] = null): GuiParam[A, BitSet] = {
@@ -72,7 +72,7 @@ object GuiParam {
   }
 
   def boolean(header: Header): GuiParam[Boolean, BitSet] =
-    enum(header, true :: false :: Nil)(Render.Bool)
+    enum(header, true, false)(Render.Bool)
 
   def int(header: Header, initialValues: Int*): GuiParam[Int, String] =
     GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)(header, initialValues: _*)

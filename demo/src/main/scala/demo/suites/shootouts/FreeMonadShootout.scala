@@ -29,7 +29,7 @@ object FreeMonadShootout {
     override def toString = s"$lib @ $size"
   }
 
-  val param1 = GuiParam.enum[Lib]("Library", Seq(Cats, Scalaz))(_.name)
+  val param1 = GuiParam.enum[Lib]("Library", Cats, Scalaz)(_.name)
   val param2 = GuiParam.int("Size", 500)
 
   val iso = Iso((m: Params) => Params.unapply(m).get)((Params.apply _).tupled)
