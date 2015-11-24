@@ -328,7 +328,7 @@ object LensShooutout {
   def bm(name: String, lb: LensBench): Benchmark[Params] =
     setup.map(_(lb))(name)(f => f(input))
 
-  val suite = Suite[Params]("Lens")(
+  val suite = Suite[Params]("Lens libraries")(
     bm("Lens-less",        StdLensBench),
     bm("Monocle",          MonocleLensBench),
     bm("Monocle macro",    MonocleMacroLensBench),
