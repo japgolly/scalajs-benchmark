@@ -242,8 +242,14 @@ object SuiteComp {
         val fmt = resultFmts.head
         val bmsToShow = m.size max 1
 
+        val bmFullName: PlanKey[P] => String =
+          if (progress.plan.params.length > 2)
+            k => k.bm.name + suite.params.bmNameSuffix(k.param)
+          else
+            _.bm.name
+
         val titles = keys.iterator
-            .map(k => k.bm.name + suite.params.bmNameSuffix(k.param))
+            .map(bmFullName)
             .take(bmsToShow)
             .toVector
 
