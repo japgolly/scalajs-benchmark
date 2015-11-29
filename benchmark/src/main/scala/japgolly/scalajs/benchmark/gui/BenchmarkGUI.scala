@@ -20,7 +20,7 @@ object BenchmarkGUI {
     }
 
   def defaultBaseUrl(): BaseUrl =
-    BaseUrl(dom.window.location.href.takeWhile(_ != '#'))
+    BaseUrl.until_#
 
   def renderMenu(container: dom.Node,
                  baseUrl: BaseUrl = defaultBaseUrl(),

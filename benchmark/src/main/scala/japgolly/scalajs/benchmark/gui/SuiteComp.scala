@@ -8,6 +8,7 @@ import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle._
 import monocle.macros.Lenses
+import org.scalajs.dom.document
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 import scalaz.{-\/, \/-}
@@ -23,11 +24,20 @@ object SuiteComp {
   case class Props[P](suite: GuiSuite[P], options: Options = Options.Default)
 
   @Lenses
-  case class State[A](status: SuiteStatus[A], editors: GenState, disabledBMs: Set[Int])
+  case class State[A](status     : SuiteStatus[A],
+                      editors    : GenState,
+                      disabledBMs: Set[Int],
+                      oldTitle   : Option[String])
 
   object State {
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
       status ^|-? SuiteStatus.at[A](k)
+
+    def initDisabledBMs(bms: Vector[Benchmark[Nothing]]): Set[Int] =
+      bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
+
+    def init[P](p: Props[P]): State[P] =
+      State[P](SuitePending, p.suite.params.initialState, initDisabledBMs(p.suite.suite.bms), None)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -323,26 +333,41 @@ object SuiteComp {
         inner)
     }
 
-    def shutdown: Callback =
-      $.state.map(_.status) >>= {
+    def preMount: Callback = {
+      def storeCurrentTitle =
+        CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].set
+
+      def setNewTitle =
+        $.props.map(p => document.title = p.suite.name)
+
+      storeCurrentTitle >>= ($.modState(_, setNewTitle))
+    }
+
+    def shutdown: Callback = {
+      def abortIfRunning: SuiteStatus[P] => Callback = {
         case r: SuiteRunning => r.abortFn.callback
         case _: SuiteDone
            | SuitePending
            | SuiteWillStart  => Callback.empty
       }
+
+      def restoreTitle(o: Option[String]): Callback =
+        o.fold(Callback.empty)(t => Callback(document.title = t))
+
+      $.state >>= (s =>
+        abortIfRunning(s.status) >> restoreTitle(s.oldTitle))
+    }
   }
 
   private val __Comp = {
     // TODO Bloody hack. Really need to accommodate this properly in scalajs-react
     type P = Unit
 
-    def initDisabledBMs(bms: Vector[Benchmark[Nothing]]): Set[Int] =
-      bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
-
     val c: Comp[_] =
       ReactComponentB[Props[P]]("SuiteComp")
-        .initialState_P[State[P]](p => State[P](SuitePending, p.suite.params.initialState, initDisabledBMs(p.suite.suite.bms)))
+        .initialState_P(State.init)
         .renderBackend[Backend[P]]
+        .componentWillMount(_.backend.preMount)
         // TODO handle suite changes - it's all in state atm
         .componentWillUnmount(_.backend.shutdown)
         .build
