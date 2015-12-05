@@ -10,7 +10,7 @@ object ScalaJsBenchmark extends Build {
 
   object Ver {
     final val Scala211      = "2.11.7"
-    final val MacroParadise = "2.0.1"
+    final val MacroParadise = "2.1.0"
     final val Monocle       = "1.1.1"
     final val ScalaCss      = "0.3.1"
     final val ScalaJsReact  = "0.10.2"
