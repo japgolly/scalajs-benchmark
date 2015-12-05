@@ -5,10 +5,9 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 
-import cats.{~>, Functor}
+import cats.~>
 import cats.data.{Kleisli, ReaderT}
 import cats.free.Free
-//import cats.effect.IO
 import cats.std.function.function0Instance
 
 object FreeMonads {
@@ -22,157 +21,66 @@ object FreeMonads {
     def get(): Int = ai
   }
 
-  //======================================================================================================================
+  trait Cmd[A]
+  case class Add(b: Int) extends Cmd[Unit]
+  case object Get extends Cmd[Int]
 
-  object FreeK {
-    trait Cmd[Next]
-    case class Add[Next](b: Int, k: () => Next) extends Cmd[Next]
-    case class Get[Next](k: Int => Next) extends Cmd[Next]
+  type FreeCmd[A] = Free[Cmd, A]
+  implicit def autoLiftCmd[A](c: Cmd[A]): FreeCmd[A] = Free.liftF(c)
 
-    implicit object CmdFunctor extends Functor[Cmd] {
-      override def map[A, B](fa: Cmd[A])(f: A => B): Cmd[B] = fa match {
-        case Add(b, k) => Add(b, () => f(k()))
-        case Get(k)    => Get(f compose k)
-      }
+  type ReaderF[A] = ReaderT[Function0, TheRealDeal, A]
+  implicit object CmdToReaderF extends (Cmd ~> ReaderF) {
+    def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => () => f(rd))
+    override def apply[A](ta: Cmd[A]): ReaderF[A] = ta match {
+      case Add(n) => io{ _.add(n) }
+      case Get    => io{ _.get }
     }
-
-    type FreeCmd[A] = Free[Cmd, A]
-    def addCmd(b: Int): FreeCmd[Unit] = Free.liftF(Add(b, () => ()))
-    val getCmd: FreeCmd[Int] = Free.liftF(Get(identity))
-
-    type ReaderF[A] = ReaderT[Function0, TheRealDeal, A]
-    implicit object CmdToReaderF extends (Cmd ~> ReaderF) {
-      def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => () => f(rd))
-      override def apply[A](ta: Cmd[A]): ReaderF[A] = ta match {
-        case Add(n, k) => io{ rd => rd.add(n); k() }
-        case Get(k)    => io{ rd => k(rd.get) }
-      }
-    }
-
-    def CmdToFn0(rd: TheRealDeal): Cmd ~> Function0 = new (Cmd ~> Function0) {
-      override def apply[A](m: Cmd[A]): () => A = m match {
-        case Add(n, k) => () => { rd.add(n); k() }
-        case Get(k)    => () => { k(rd.get) }
-      }
-    }
-
-    val bm = Benchmark.setup[Int, FreeCmd[Int]] { size =>
-      val add1: FreeCmd[Unit] = addCmd(1)
-      val addn = Iterator.continually(add1)
-        .take(size - 2) // -1 for the foldLeft(z), -1 for the final bind to Get
-        .foldLeft(add1)((a, b) => a flatMap (_ => b))
-      addn flatMap (_ => getCmd)
-    }
-
-    val prefix = "Free → "
-
-    val bmFn0FoldMap =
-      bm(prefix + "Fn0 (foldMap)"){ p1 =>
-        val p2: Function0[Int] = p1.foldMap(CmdToFn0(new TheRealDeal))
-        val r: Int = p2()
-      }
-
-    val bms = Vector[Benchmark[Int]](
-      bmFn0FoldMap,
-
-      bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
-        val p2: Free[Function0, Int] = p1.mapSuspension(CmdToFn0(new TheRealDeal))
-        val r: Int = p2.run
-      },
-
-      bm(prefix + "Reader[Fn0]"){ p1 =>
-        val p2: ReaderF[Int] = p1.foldMap(CmdToReaderF)
-        val r: Int = p2.run(new TheRealDeal)()
-      }
-    )
   }
 
-  //======================================================================================================================
-
-  object Coyo {
-    import cats.free.Coyoneda
-
-    type CoyonedaF[F[_]] = ({type A[α] = Coyoneda[F, α]})
-    type FreeC[S[_], A] = Free[({type f[x] = Coyoneda[S, x]})#f, A]
-    def liftFC[S[_], A](s: S[A]): FreeC[S, A] = Free.liftF[CoyonedaF[S]#A, A](Coyoneda lift s)
-
-    /** Turns a natural transformation F ~> G into CF ~> CG */
-    def liftT[F[_], G[_]](fg: F ~> G): CoyonedaF[F]#A ~> CoyonedaF[G]#A =
-      new (CoyonedaF[F]#A ~> CoyonedaF[G]#A) {
-        def apply[A](c: Coyoneda[F, A]) = c.transform(fg)
-      }
-
-    /** Turns a natural transformation F ~> G into CF ~> G */
-    def liftTF[F[_], G[_]: Functor](fg: F ~> G): CoyonedaF[F]#A ~> G = {
-      type CF[A] = Coyoneda[F, A]
-      type CG[A] = Coyoneda[G, A]
-      val m: (CF ~> CG) = liftT(fg)
-      val n: (CG ~> G) = new (CG ~> G) {
-        def apply[A](fa: CG[A]): G[A] = fa.run
-      }
-      n compose m
+  def CmdToFn0(rd: TheRealDeal): Cmd ~> Function0 = new (Cmd ~> Function0) {
+    override def apply[A](m: Cmd[A]): () => A = m match {
+      case Add(n) => () => rd.add(n)
+      case Get    => () => rd.get
     }
-
-    trait Cmd[A]
-    case class Add(b: Int) extends Cmd[Unit]
-    case object Get extends Cmd[Int]
-
-    type FreeCmd[A] = FreeC[Cmd, A]
-    implicit def autoLiftCmd[A](c: Cmd[A]) = liftFC(c)
-
-    type ReaderF[A] = ReaderT[Function0, TheRealDeal, A]
-    implicit object CmdToReaderF extends (Cmd ~> ReaderF) {
-      def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => () => f(rd))
-      override def apply[A](ta: Cmd[A]): ReaderF[A] = ta match {
-        case Add(n) => io{ _.add(n) }
-        case Get    => io{ _.get }
-      }
-    }
-    val CmdToReaderF_ = liftTF(CmdToReaderF)
-
-    def CmdToFn0(rd: TheRealDeal): Cmd ~> Function0 = new (Cmd ~> Function0) {
-      override def apply[A](m: Cmd[A]): () => A = m match {
-        case Add(n) => () => rd.add(n)
-        case Get    => () => rd.get
-      }
-    }
-
-    val bm = Benchmark.setup[Int, FreeCmd[Int]] { size =>
-      val add1: FreeCmd[Unit] = Add(1)
-      val addn = Iterator.continually(add1)
-        .take(size - 2) // -1 for the foldLeft(z), -1 for the final bind to Get
-        .foldLeft(add1)((a, b) => a flatMap (_ => b))
-      addn flatMap (_ => Get)
-    }
-
-    val prefix = "Free & coYoneda → "
-
-    val bmFn0FoldMap =
-      bm(prefix + "Fn0 (foldMap)"){ p1 =>
-        val nt = liftTF(CmdToFn0(new TheRealDeal))
-        val p2: Function0[Int] = p1.foldMap(nt)
-        val r: Int = p2()
-      }
-
-    val bms = Vector[Benchmark[Int]](
-      bmFn0FoldMap,
-
-      bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
-        val nt = liftTF(CmdToFn0(new TheRealDeal))
-        val p2: Free[Function0, Int] = p1.mapSuspension(nt)
-        val r: Int = p2.run
-      },
-
-      bm(prefix + "Reader[Fn0]"){ p1 =>
-        val p2: ReaderF[Int] = p1.foldMap(CmdToReaderF_)
-        val r: Int = p2.run(new TheRealDeal)()
-      }
-    )
   }
 
+  val makeRealFn0 = CmdToFn0(new TheRealDeal)
+
+  val bm = Benchmark.setup[Int, FreeCmd[Int]] { size =>
+    val add1: FreeCmd[Unit] = Add(1)
+    val addn = Iterator.continually(add1)
+      .take(size - 2) // -1 for the foldLeft(z), -1 for the final bind to Get
+      .foldLeft(add1)((a, b) => a flatMap (_ => b))
+    addn flatMap (_ => Get)
+  }
+
+  val prefix = "Free → "
+
+  val bmFn0FoldMap =
+    bm(prefix + "Fn0 (foldMap)"){ p1 =>
+      val p2: Function0[Int] = p1.foldMap(makeRealFn0)
+      val r: Int = p2()
+    }
+
+  val bmFn0MapSuspension =
+    bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
+      val p2: Free[Function0, Int] = p1.mapSuspension(makeRealFn0)
+      val r: Int = p2.run
+    }
+
+  val bms = Vector[Benchmark[Int]](
+    bmFn0FoldMap,
+    bmFn0MapSuspension,
+
+    bm(prefix + "Reader[Fn0]"){ p1 =>
+      val p2: ReaderF[Int] = p1.foldMap(CmdToReaderF)
+      val r: Int = p2.run(new TheRealDeal)()
+    }
+  )
+
   //======================================================================================================================
 
-  val suite = Suite("Free monads")(FreeK.bms ++ Coyo.bms: _*)
+  val suite = Suite("Free monads")(bms: _*)
 
   val param = GuiParam.int("Size", 50, 500)
 
