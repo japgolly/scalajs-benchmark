@@ -5,7 +5,7 @@ import demo.suites
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
-import monocle.Iso
+import monocle.macros.GenIso
 
 object FreeMonadShootout {
 
@@ -32,7 +32,7 @@ object FreeMonadShootout {
   val param1 = GuiParam.enum[Lib]("Library", Cats, Scalaz)(_.name)
   val param2 = GuiParam.int("Size", 500)
 
-  val iso = Iso((m: Params) => Params.unapply(m).get)((Params.apply _).tupled)
+  val iso = GenIso.fields[Params]
   val params = GuiParams.two(iso, param1, param2)
 
   val suite = Suite[Params]("Free monads")(

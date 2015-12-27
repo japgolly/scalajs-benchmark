@@ -4,7 +4,7 @@ import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import monocle.Iso
+import monocle.macros.GenIso
 import scala.collection.mutable
 
 object Examples {
@@ -109,7 +109,7 @@ object Examples {
     )
 
     /** This specifies how to go back and forth between a [[Multi]] and two params. */
-    val iso = Iso((m: Multi) => Multi.unapply(m).get)((Multi.apply _).tupled)
+    val iso = GenIso.fields[Multi]
 
     val param1 = GuiParam.int("Size", 5, 10)
     val param2 = GuiParam.boolean("Reverse")

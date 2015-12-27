@@ -52,7 +52,8 @@ object GuiParams {
   }
 
   def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: GuiParam[P1, E1], param2: GuiParam[P2, E2]): GuiParams[P] = {
-    import monocle.function.{first, second}
+    import monocle.function.Field1.first
+    import monocle.function.Field2.second
     import monocle.std.tuple2._
 
     val p1 = SubParam(0, param1, iso ^|-> first)

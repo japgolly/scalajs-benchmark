@@ -4,7 +4,7 @@ import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import monocle.Iso
+import monocle.macros.GenIso
 import scalaz.Maybe
 import scala.util.Random
 import scalaz.IMap
@@ -338,7 +338,7 @@ object LensShooutout {
   val param1 = GuiParam.enum[Op]("Op", Get, Set, Modify)(_.toString, initialValues = Seq(Modify))
   val param2 = GuiParam.enum[Size]("Size", Size0, Size3, Size6)(_.size, initialValues = Seq(Size6))
 
-  val iso = Iso((m: Params) => Params.unapply(m).get)((Params.apply _).tupled)
+  val iso = GenIso.fields[Params]
   val params = GuiParams.two(iso, param1, param2)
 
   val guiSuite = GuiSuite(suite, params).describe(

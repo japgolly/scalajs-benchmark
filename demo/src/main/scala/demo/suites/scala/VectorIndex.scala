@@ -4,7 +4,7 @@ import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import monocle.Iso
+import monocle.macros.GenIso
 import scala.collection.immutable._
 
 object VectorIndex {
@@ -44,7 +44,7 @@ object VectorIndex {
     ))
   )
 
-  val iso = Iso((m: Cfg) => Cfg.unapply(m).get)((Cfg.apply _).tupled)
+  val iso = GenIso.fields[Cfg]
 
   val param1 = GuiParam.int("Size", 50)
   val param2 = GuiParam.int("Index", 0, 100)
