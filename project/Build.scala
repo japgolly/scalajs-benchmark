@@ -10,11 +10,11 @@ object ScalaJsBenchmark extends Build {
 
   object Ver {
     final val Scala211      = "2.11.7"
-    final val MacroParadise = "2.0.1"
-    final val Monocle       = "1.1.1"
+    final val MacroParadise = "2.1.0"
+    final val Monocle       = "1.2.0"
     final val ScalaCss      = "0.3.1"
-    final val ScalaJsReact  = "0.10.2"
-    final val React         = "0.14.2"
+    final val ScalaJsReact  = "0.10.3"
+    final val React         = "0.14.3"
     final val ChartJs       = "1.0.2"
   }
 
@@ -25,7 +25,7 @@ object ScalaJsBenchmark extends Build {
   val commonSettings: PE =
     _.settings(
       organization             := "com.github.japgolly.scalajs-benchmark",
-      version                  := "0.2.1-SNAPSHOT",
+      version                  := "0.2.3-SNAPSHOT",
       homepage                 := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion             := Ver.Scala211,
@@ -77,10 +77,23 @@ object ScalaJsBenchmark extends Build {
           "com.github.japgolly.scalacss"      %%% "ext-react"     % Ver.ScalaCss,
           "com.github.japgolly.fork.monocle"  %%% "monocle-core"  % Ver.Monocle,
           "com.github.japgolly.fork.monocle"  %%% "monocle-macro" % Ver.Monocle),
+
         jsDependencies ++= Seq(
-          "org.webjars.npm" % "react"     % Ver.React   / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
-          "org.webjars.npm" % "react-dom" % Ver.React   / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
-          "org.webjars"     % "chartjs"   % Ver.ChartJs / "Chart.js"                                     minified "Chart.min.js"),
+          "org.webjars.bower" % "react" % Ver.React
+            /        "react-with-addons.js"
+            minified "react-with-addons.min.js"
+            commonJSName "React",
+
+          "org.webjars.bower" % "react" % Ver.React
+            /         "react-dom.js"
+            minified  "react-dom.min.js"
+            dependsOn "react-with-addons.js"
+            commonJSName "ReactDOM",
+
+          "org.webjars" % "chartjs" % Ver.ChartJs
+            /        "Chart.js"
+            minified "Chart.min.js"),
+
         addCompilerPlugin(macroParadisePlugin))
 
   object Demo {

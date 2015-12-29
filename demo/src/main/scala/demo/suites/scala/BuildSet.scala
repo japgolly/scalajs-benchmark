@@ -4,7 +4,7 @@ import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import monocle.Iso
+import monocle.macros.GenIso
 import scala.collection.immutable._
 
 object BuildSet {
@@ -58,7 +58,7 @@ object BuildSet {
     }
   )
 
-  val iso = Iso((m: Params) => Params.unapply(m).get)((Params.apply _).tupled)
+  val iso = GenIso.fields[Params]
 
   val param1 = GuiParam.int("Unique elements", 1000)
   val param2 = GuiParam.int("Duplicates", 0, 100)
