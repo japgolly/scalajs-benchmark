@@ -236,7 +236,10 @@ object SuiteComp {
             case BMDone(-\/(err)) =>
               Vector[ReactTag](
                 runsCellNone, // Hmmmmm.........
-                resultTD(resultBlockAll, "ERROR", ^.onDoubleClick --> Callback{throw err; ()}))
+                resultTD(
+                  resultBlockAll,
+                  <.span(^.color.red, Option(err.toString).filter(_.nonEmpty).getOrElse[String]("ERROR.")),
+                  ^.onDoubleClick --> Callback{throw err; ()}))
             case BMDone(\/-(r)) =>
               runsCell(r.runs) +:
               resultFmts.flatMap(f => Vector(
