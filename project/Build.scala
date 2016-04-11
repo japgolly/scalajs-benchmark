@@ -9,13 +9,13 @@ object ScalaJsBenchmark extends Build {
   private val ghProject = "scalajs-benchmark"
 
   object Ver {
-    final val Scala211      = "2.11.7"
-    final val MacroParadise = "2.1.0"
-    final val Monocle       = "1.2.0"
-    final val ScalaCss      = "0.3.1"
-    final val ScalaJsReact  = "0.10.4"
-    final val React         = "0.14.7"
     final val ChartJs       = "1.0.2"
+    final val MacroParadise = "2.1.0"
+    final val Monocle       = "1.2.0-2"
+    final val React         = "15.0.1"
+    final val Scala211      = "2.11.8"
+    final val ScalaCss      = "0.4.1"
+    final val ScalaJsReact  = "0.11.0"
   }
 
   def scalacFlags = Seq(
@@ -94,12 +94,14 @@ object ScalaJsBenchmark extends Build {
             /        "Chart.js"
             minified "Chart.min.js"),
 
-        addCompilerPlugin(macroParadisePlugin))
+        addCompilerPlugin(macroParadisePlugin),
+        test := ())
 
   object Demo {
-    val outputJS  = "output.js"
-    val catsVer   = "0.4.0"
-    val scalazVer = "7.2.0"
+    val outputJS     = "output.js"
+    val catsVer      = "0.4.1"
+    val scalazVer    = "7.2.2"
+    val shapelessVer = "2.3.0"
   }
   lazy val demo =
     Project("demo", file("demo"))
@@ -109,10 +111,12 @@ object ScalaJsBenchmark extends Build {
       .settings(
         addCompilerPlugin(macroParadisePlugin),
         libraryDependencies ++= Seq(
-          "com.github.japgolly.fork.scalaz" %%% "scalaz-core"       % Demo.scalazVer,
-          "com.github.japgolly.fork.scalaz" %%% "scalaz-effect"     % Demo.scalazVer,
-          "org.typelevel"                   %%% "cats"              % Demo.catsVer),
+          "org.scalaz"    %%% "scalaz-core"       % Demo.scalazVer,
+          "org.scalaz"    %%% "scalaz-effect"     % Demo.scalazVer,
+          "org.typelevel" %%% "cats"              % Demo.catsVer,
+          "com.chuusai"   %%% "shapeless"         % Demo.shapelessVer),
         skip in packageJSDependencies := false,
         artifactPath in (Compile, fastOptJS) := ((target in Compile).value / Demo.outputJS),
-        artifactPath in (Compile, fullOptJS) := ((target in Compile).value / Demo.outputJS))
+        artifactPath in (Compile, fullOptJS) := ((target in Compile).value / Demo.outputJS),
+        test := ())
 }
