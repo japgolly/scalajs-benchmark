@@ -6,7 +6,7 @@ package object scala {
 
   lazy val all = MenuComp.folder("Scala")(
     MapBuilding.guiSuite,
-    BuildSet.guiSuite,
+    SetBuilding.guiSuite,
     Flatmap.guiSuite,
     IntSet.guiSuite,
     VectorIndex.guiSuite)
