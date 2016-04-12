@@ -7,7 +7,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros.GenIso
 import scala.collection.immutable._
 
-object BuildSet {
+object SetBuilding {
 
   case class Params(uniq: Int, dups: Int)
 

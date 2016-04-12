@@ -5,7 +5,8 @@ import japgolly.scalajs.benchmark.gui.MenuComp
 package object scala {
 
   lazy val all = MenuComp.folder("Scala")(
-    BuildSet.guiSuite,
+    MapBuilding.guiSuite,
+    SetBuilding.guiSuite,
     Flatmap.guiSuite,
     IntSet.guiSuite,
     VectorIndex.guiSuite)
