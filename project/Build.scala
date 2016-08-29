@@ -11,11 +11,11 @@ object ScalaJsBenchmark extends Build {
   object Ver {
     final val ChartJs       = "1.0.2"
     final val MacroParadise = "2.1.0"
-    final val Monocle       = "1.2.0-2"
-    final val React         = "15.0.1"
+    final val Monocle       = "1.2.2"
+    final val React         = "15.3.1"
     final val Scala211      = "2.11.8"
     final val ScalaCss      = "0.4.1"
-    final val ScalaJsReact  = "0.11.0"
+    final val ScalaJsReact  = "0.11.1"
   }
 
   def scalacFlags = Seq(
@@ -25,7 +25,7 @@ object ScalaJsBenchmark extends Build {
   val commonSettings: PE =
     _.settings(
       organization             := "com.github.japgolly.scalajs-benchmark",
-      version                  := "0.2.3",
+      version                  := "0.2.4-SNAPSHOT",
       homepage                 := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion             := Ver.Scala211,
@@ -75,8 +75,8 @@ object ScalaJsBenchmark extends Build {
           "com.github.japgolly.scalajs-react" %%% "ext-monocle"   % Ver.ScalaJsReact,
           "com.github.japgolly.scalacss"      %%% "core"          % Ver.ScalaCss,
           "com.github.japgolly.scalacss"      %%% "ext-react"     % Ver.ScalaCss,
-          "com.github.japgolly.fork.monocle"  %%% "monocle-core"  % Ver.Monocle,
-          "com.github.japgolly.fork.monocle"  %%% "monocle-macro" % Ver.Monocle),
+          "com.github.julien-truffaut"        %%% "monocle-core"  % Ver.Monocle,
+          "com.github.julien-truffaut"        %%% "monocle-macro" % Ver.Monocle),
 
         jsDependencies ++= Seq(
           "org.webjars.bower" % "react" % Ver.React
@@ -99,9 +99,9 @@ object ScalaJsBenchmark extends Build {
 
   object Demo {
     val outputJS     = "output.js"
-    val catsVer      = "0.4.1"
-    val scalazVer    = "7.2.2"
-    val shapelessVer = "2.3.0"
+    val catsVer      = "0.7.0"
+    val scalazVer    = "7.2.5"
+    val shapelessVer = "2.3.2"
   }
   lazy val demo =
     Project("demo", file("demo"))

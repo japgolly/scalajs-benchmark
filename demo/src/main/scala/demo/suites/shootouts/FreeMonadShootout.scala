@@ -17,7 +17,7 @@ object FreeMonadShootout {
 
   object Cats extends Lib("Cats") {
     override def freeFoldMap       = suites.cats.FreeMonads.bmFn0FoldMap
-    override def freeMapSuspension = suites.cats.FreeMonads.bmFn0MapSuspension
+    override def freeMapSuspension = suites.cats.FreeMonads.bmFn0Compile
   }
 
   object Scalaz extends Lib("Scalaz") {
