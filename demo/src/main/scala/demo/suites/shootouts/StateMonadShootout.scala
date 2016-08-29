@@ -1,5 +1,6 @@
 package demo.suites.shootouts
 
+import demo.Libraries
 import demo.Util._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.benchmark._
@@ -16,7 +17,7 @@ object StateMonadShootout {
 
   // ===================================================================================================================
 
-  object Cats extends Lib("Cats") {
+  object Cats extends Lib(Libraries.Cats.fullName) {
     import cats.data.State
 
     val setup = Benchmark.setup[Int, State[Int, Unit]] { size =>
@@ -29,7 +30,7 @@ object StateMonadShootout {
 
   // ===================================================================================================================
 
-  object Scalaz extends Lib("Scalaz") {
+  object Scalaz extends Lib(Libraries.Scalaz.fullName) {
     import scalaz.State
 
     val setup = Benchmark.setup[Int, State[Int, Unit]] { size =>
@@ -42,7 +43,7 @@ object StateMonadShootout {
 
   // ===================================================================================================================
 
-  object ScalazTramp extends Lib("Scalaz (trampolined)") {
+  object ScalazTramp extends Lib(Libraries.Scalaz.fullName + " (trampolined)") {
     import scalaz.{StateT, Trampoline}
     import scalaz.Free.Trampoline
 

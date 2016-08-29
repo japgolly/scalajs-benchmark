@@ -1,5 +1,6 @@
 package demo.suites.shootouts
 
+import demo.Libraries
 import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
@@ -329,11 +330,11 @@ object LensShooutout {
     setup.map(_(lb))(name)(f => f(input))
 
   val suite = Suite[Params]("Lens libraries")(
-    bm("Lens-less",        StdLensBench),
-    bm("Monocle",          MonocleLensBench),
-    bm("Monocle macro",    MonocleMacroLensBench),
-    bm("Scalaz",           ScalazLensBench),
-    bm("Shapeless",        ShapelessLensBench))
+    bm("No lenses; plain Scala"             , StdLensBench),
+    bm(Libraries.Monocle.fullName           , MonocleLensBench),
+    bm(Libraries.Monocle.fullName + " macro", MonocleMacroLensBench),
+    bm(Libraries.Scalaz.fullName            , ScalazLensBench),
+    bm(Libraries.Shapeless.fullName         , ShapelessLensBench))
 
   val param1 = GuiParam.enum[Op]("Op", Get, Set, Modify)(_.toString, initialValues = Seq(Modify))
   val param2 = GuiParam.enum[Size]("Size", Size0, Size3, Size6)(_.size, initialValues = Seq(Size6))
