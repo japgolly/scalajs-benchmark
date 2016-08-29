@@ -32,9 +32,19 @@ object Main extends scalajs.js.JSApp {
   def configureLayout: LayoutCfg = {
     def top(view: ReactElement): ReactElement =
       <.main(
-        <.h1(^.marginBottom := "0.2em", "Benchmark Collection"),
-        <.div(linkToSource(sourceFilename)(^.textAlign.left)),
-        <.main(^.marginTop := "2.6em", view))
+        <.h1(
+          ^.marginBottom := "0.2em",
+          "Benchmark Collection"),
+        <.div(
+          ^.marginBottom := "0.5ex",
+          ^.fontSize := "0.8em",
+          ^.fontFamily := "monospace",
+          s"Generated with ${Libraries.ScalaJs.fullName}."),
+        <.div(
+          linkToSource(sourceFilename)(^.textAlign.left)),
+        <.main(
+          ^.marginTop := "2.6em",
+          view))
     LayoutCfg.default.copy(topPage = top)
   }
 }
