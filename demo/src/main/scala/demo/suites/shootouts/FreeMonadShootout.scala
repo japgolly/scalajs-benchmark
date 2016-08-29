@@ -1,7 +1,7 @@
 package demo.suites.shootouts
 
 import demo.Util._
-import demo.suites
+import demo.{Libraries, suites}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
@@ -15,12 +15,12 @@ object FreeMonadShootout {
     def freeMapSuspension: BM
   }
 
-  object Cats extends Lib("Cats") {
+  object Cats extends Lib(Libraries.Cats.fullName) {
     override def freeFoldMap       = suites.cats.FreeMonads.bmFn0FoldMap
     override def freeMapSuspension = suites.cats.FreeMonads.bmFn0Compile
   }
 
-  object Scalaz extends Lib("Scalaz") {
+  object Scalaz extends Lib(Libraries.Scalaz.fullName) {
     override def freeFoldMap       = suites.scalaz.FreeMonads.bmFn0FoldMap
     override def freeMapSuspension = suites.scalaz.FreeMonads.bmFn0MapSuspension
   }

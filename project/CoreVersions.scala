@@ -1,0 +1,1 @@
+../benchmark/src/main/scala/japgolly/scalajs/benchmark/Versions.scala
