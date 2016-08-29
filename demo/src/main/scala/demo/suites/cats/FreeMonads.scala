@@ -8,7 +8,7 @@ import japgolly.scalajs.benchmark.gui._
 import cats.~>
 import cats.data.{Kleisli, ReaderT}
 import cats.free.Free
-import cats.std.function.function0Instance
+import cats.instances.function._
 
 object FreeMonads {
 
@@ -62,15 +62,15 @@ object FreeMonads {
       val r: Int = p2()
     }
 
-  val bmFn0MapSuspension =
-    bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
-      val p2: Free[Function0, Int] = p1.mapSuspension(makeRealFn0)
+  val bmFn0Compile =
+    bm(prefix + "Fn0 (compile)"){ p1 =>
+      val p2: Free[Function0, Int] = p1.compile(makeRealFn0)
       val r: Int = p2.run
     }
 
   val bms = Vector[Benchmark[Int]](
     bmFn0FoldMap,
-    bmFn0MapSuspension,
+    bmFn0Compile,
 
     bm(prefix + "Reader[Fn0]"){ p1 =>
       val p2: ReaderF[Int] = p1.foldMap(CmdToReaderF)
