@@ -6,6 +6,6 @@ object Versions {
   val Monocle       = "1.2.2"
   val React         = "15.3.1"
   val Scala211      = "2.11.8"
-  val ScalaCss      = "0.4.1"
+  val ScalaCss      = "0.5.0"
   val ScalaJsReact  = "0.11.1"
 }
