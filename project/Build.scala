@@ -98,7 +98,6 @@ object ScalaJsBenchmark {
         test := ())
 
   object Demo {
-    val outputJS = "output.js"
     val Cats      = "0.8.1"
     val Scalaz    = "7.2.7"
     val Shapeless = "2.3.2"
@@ -134,7 +133,5 @@ object ScalaJsBenchmark {
           "com.chuusai"   %%% "shapeless"         % Demo.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
         skip in packageJSDependencies := false,
-        artifactPath in (Compile, fastOptJS) := ((target in Compile).value / Demo.outputJS),
-        artifactPath in (Compile, fullOptJS) := ((target in Compile).value / Demo.outputJS),
-        test := ())
+        test := { (compile in Test).value; () })
 }
