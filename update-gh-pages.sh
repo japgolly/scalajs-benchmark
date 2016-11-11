@@ -1,20 +1,16 @@
 #!/bin/bash
 cd "$(dirname "$0")" || exit 1
 
-depS=demo/target/scala-2.11/demo-jsdeps.min.js
-outS=demo/target/output.js
+set -e
 
-depT=res/jsdeps.js
-outT=res/main.js
-deps="$depT $outT"
-
-rm -f $deps
-
-sbt clean demo/fullOptJS \
-&& echo \
-&& cp -v $depS $depT \
-&& cp -v $outS $outT \
-&& git add $deps \
-&& git st \
-&& echo "git commit -m 'Refresh gh-pages' && git push && git checkout master" && echo
+[ -e res ] && rm -rf res
+mkdir res
+cp -v demo/*.html res
+sed -e 's!target/!!' -i res/*.html
+sbt +clean +demo/fastOptJS +demo/fullOptJS
+echo
+for v in 2.11 2.12; do mkdir res/scala-$v; cp -v demo/target/scala-$v/demo-* res/scala-$v; done
+git add res
+git st
+echo "git commit -m 'Refresh gh-pages' && git push && git checkout master" && echo
 
