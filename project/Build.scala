@@ -31,6 +31,7 @@ object ScalaJsBenchmark {
       scalaVersion             := Ver.Scala211,
       crossScalaVersions       := Seq(Ver.Scala211, Ver.Scala212),
       scalacOptions           ++= scalacFlags,
+      scalacOptions           ++= byScalaVer(Seq.empty[String], Seq("-opt:l:method")).value,
       shellPrompt in ThisBuild := ((s: State) => Project.extract(s).currentRef.project + "> "),
       triggeredMessage         := Watched.clearWhenTriggered,
       incOptions               := incOptions.value.withNameHashing(true),

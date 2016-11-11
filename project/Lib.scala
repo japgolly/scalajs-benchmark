@@ -9,6 +9,9 @@ import ScalaJSPlugin.autoImport._
 object Lib {
   type PE = Project => Project
 
+  def byScalaVer[A](for211: => A, for212: => A) =
+    Def.setting(if (scalaVersion.value startsWith "2.11") for211 else for212)
+
   def addCommandAliases(m: (String, String)*): PE = {
     val s = m.map(p => addCommandAlias(p._1, p._2)).reduce(_ ++ _)
     _.settings(s: _*)
