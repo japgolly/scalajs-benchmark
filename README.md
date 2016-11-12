@@ -1,7 +1,7 @@
 scalajs-benchmark
 =================
 
-[![Build Status](https://travis-ci.org/japgolly/scalajs-react.svg?branch=master)](https://travis-ci.org/japgolly/scalajs-benchmark)
+[![Build Status](https://travis-ci.org/japgolly/scalajs-benchmark.svg?branch=master)](https://travis-ci.org/japgolly/scalajs-benchmark)
 
 Benchmarks: write in Scala or JS, run in your browser.
 
