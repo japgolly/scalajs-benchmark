@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.react._, vdom.prefix_<^._
+import japgolly.scalajs.react._, vdom.html_<^._
 import scala.collection.immutable.BitSet
 import scalacss.ScalaCssReact._
 import Styles.{Suite => *}
@@ -24,7 +24,7 @@ object GuiParam {
 
   def enum[A](header: Header, values: A*)
              (resultLabel: Render[A],
-              editorLabel: A => ReactElement = null,
+              editorLabel: A => VdomElement = null,
               initialValues: Seq[A] = null): GuiParam[A, BitSet] = {
 
     val vs = values.toVector
@@ -40,16 +40,16 @@ object GuiParam {
         vi.iterator.filter(bs contains _._2).map(_._1).toVector
       ))
 
-    val renderInEditor: A => ReactElement =
+    val renderInEditor: A => VdomElement =
       Option(editorLabel) getOrElse (a => <.div(^.display.inline, resultLabel(a)))
 
     val editor: Editor[BitSet] =
       e => {
         def toggleBM(i: Int): Callback =
-          e.mod(s => if (s contains i) s - i else s + i)
+          e.modState(s => if (s contains i) s - i else s + i)
 
         def makeSoleBM(i: Int): Callback =
-          e.set(BitSet.empty + i)
+          e.setState(BitSet.empty + i)
 
         <.div(
           vi.iterator.map { case (a,i) =>
@@ -62,7 +62,7 @@ object GuiParam {
                 ^.checked        := e.value.contains(i),
                 ^.onChange      --> toggleBM(i)),
               renderInEditor(a))
-          }.toReactNodeArray)
+          }.toVdomArray)
       }
 
     val init: Seq[A] =

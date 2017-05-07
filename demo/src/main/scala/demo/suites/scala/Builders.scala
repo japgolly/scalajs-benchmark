@@ -3,7 +3,7 @@ package demo.suites.scala
 import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import scala.collection.immutable._
 import scala.collection.mutable
 

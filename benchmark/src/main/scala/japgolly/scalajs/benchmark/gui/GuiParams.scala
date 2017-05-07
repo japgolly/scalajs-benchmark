@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.extra.StateSnapshot
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Lens}
 import scalaz.{\/-, \/}
 import scalaz.std.option.optionSyntax._
@@ -89,7 +89,7 @@ object GuiParams {
       val key: Key[B]
 
       val editor: GenEditor =
-        e => param editor ExternalVar(key get e.value)(b => e.set(key.set(b)(e.value)))
+        e => param editor StateSnapshot(key get e.value)(b => e.setState(key.set(b)(e.value)))
 
       def parse(b: B): Option[Vector[A]] =
         param.parser.getOption(b)

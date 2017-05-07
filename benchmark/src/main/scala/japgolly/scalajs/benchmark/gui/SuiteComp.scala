@@ -5,7 +5,7 @@ import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle._
 import monocle.macros.Lenses
 import org.scalajs.dom.document
@@ -19,7 +19,7 @@ import Styles.{Suite => *}
   * React component that provides the GUI over a [[GuiSuite]].
   */
 object SuiteComp {
-  type Comp[P] = ReactComponentC.ReqProps[Props[P], State[P], Backend[P], TopNode]
+  type Comp[P] = ScalaComponent[Props[P], State[P], Backend[P], CtorType.Props]
 
   case class Props[P](suite: GuiSuite[P], options: Options = Options.Default)
 
@@ -81,8 +81,8 @@ object SuiteComp {
   private val PlusMinusCell = resultTD("±")
 
   private val runsCellNone = resultTD
-  private val whenBMPending = Vector[ReactTag](runsCellNone, resultTD(resultBlockAll))
-  private val whenBMRunning = Vector[ReactTag](runsCellNone, resultTD(resultBlockAll, "Running…"))
+  private val whenBMPending = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll))
+  private val whenBMRunning = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, "Running…"))
 
   private def formatTotalTime(fd: FiniteDuration): String =
     ValueFmt.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
@@ -141,8 +141,8 @@ object SuiteComp {
         $.modState(State.disabledBMs.set(
           p.suite.suite.bms.indices.toSet - i)))
 
-    def renderSuitePending(p: Props, s: State): ReactElement = {
-      val ev = ExternalVar(s.editors)(updateEditorState)
+    def renderSuitePending(p: Props, s: State): VdomElement = {
+      val ev = StateSnapshot(s.editors)(updateEditorState)
       val params = p.suite.params
       val th = <.th(*.settingsTableHeader)
       val td = <.td(*.settingsTableData)
@@ -172,7 +172,7 @@ object SuiteComp {
 
       def paramRows: TagMod =
         if (params.headers.isEmpty)
-          EmptyTag
+          EmptyVdom
         else
           TagMod(params.headers.indices.map(paramRow): _*)
 
@@ -208,12 +208,12 @@ object SuiteComp {
         startButton)
     }
 
-    def renderResultTable(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P]): ReactElement = {
+    def renderResultTable(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P]): VdomElement = {
       val keys = progress.plan.keys
 
       def header = {
         val th = <.th(*.resultHeader)
-        var hs = Vector.empty[ReactTag]
+        var hs = Vector.empty[VdomTag]
         hs :+= th("Benchmark")
         hs ++= suite.params.headers.map(th(_))
         hs :+= th("Runs")
@@ -227,14 +227,14 @@ object SuiteComp {
       def rows =
         keys.map { k =>
           val status = m.getOrElse(k, BMPending)
-          var hs = Vector.empty[ReactTag]
+          var hs = Vector.empty[VdomTag]
           hs :+= resultTD(k.bm.name)
           hs ++= suite.params.renderParams(k.param).map(resultTD(_))
           hs ++= (status match {
             case BMPending        => whenBMPending
             case BMRunning        => whenBMRunning
             case BMDone(-\/(err)) =>
-              Vector[ReactTag](
+              Vector[VdomTag](
                 runsCellNone, // Hmmmmm.........
                 resultTD(
                   resultBlockAll,
@@ -292,7 +292,7 @@ object SuiteComp {
         graph)
     }
 
-    def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): ReactElement = {
+    def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
       def abortButton =
         <.button(
           *.abortButton,
@@ -306,7 +306,7 @@ object SuiteComp {
         renderResultTable(p.suite, r.progess, r.bm))
     }
 
-    def renderSuiteDone(p: Props, s: State, r: SuiteDone): ReactElement = {
+    def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
       def resetButton =
         <.button(
           *.resetButton,
@@ -320,11 +320,11 @@ object SuiteComp {
         renderResultTable(p.suite, r.progess, r.bm))
     }
 
-    def renderDesc(e: ReactElement) =
+    def renderDesc(e: VdomElement) =
       <.div(*.suiteDesc, e)
 
-    def render(p: Props, s: State): ReactElement = {
-      val inner: ReactElement = s.status match {
+    def render(p: Props, s: State): VdomElement = {
+      val inner: VdomElement = s.status match {
         case r: SuiteRunning => renderSuiteRunning(p, s, r)
         case r: SuiteDone    => renderSuiteDone(p, s, r)
         case SuitePending    => renderSuitePending(p, s)
@@ -332,7 +332,7 @@ object SuiteComp {
       }
       <.div(
         <.h2(*.suiteName, p.suite.name),
-        p.suite.desc.map(renderDesc),
+        p.suite.desc.whenDefined(renderDesc),
         inner)
     }
 
@@ -367,8 +367,8 @@ object SuiteComp {
     type P = Unit
 
     val c: Comp[_] =
-      ReactComponentB[Props[P]]("SuiteComp")
-        .initialState_P(State.init)
+      ScalaComponent.builder[Props[P]]("SuiteComp")
+        .initialStateFromProps(State.init)
         .renderBackend[Backend[P]]
         .componentWillMount(_.backend.preMount)
         // TODO handle suite changes - it's all in state atm
