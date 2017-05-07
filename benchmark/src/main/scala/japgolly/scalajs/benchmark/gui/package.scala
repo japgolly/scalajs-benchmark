@@ -1,8 +1,8 @@
 package japgolly.scalajs.benchmark
 
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.extra.StateSnapshot
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Prism}
 import scalacss.ScalaCssReact._
 import scalaz.\/
@@ -11,6 +11,8 @@ import scalaz.std.vector._
 import scalaz.syntax.traverse._
 
 package object gui {
+
+  val CssSettings = scalacss.devOrProdDefaults
 
   type Header = String
 
@@ -31,17 +33,16 @@ package object gui {
 
   // ===================================================================================================================
 
-  type Editor[A] = ExternalVar[A] => ReactElement
+  type Editor[A] = StateSnapshot[A] => VdomElement
 
   object Editor {
     @deprecated("Use Text instead.", "0.2.0") def text = Text
 
     val Text: Editor[String] =
       e =>
-        <.input(
-          ^.`type` := "text",
+        <.input.text(
           ^.value := e.value,
-          ^.onChange ==> ((i: ReactEventI) => e.set(i.target.value)))
+          ^.onChange ==> ((i: ReactEventFromInput) => e.setState(i.target.value)))
   }
 
   // ===================================================================================================================

@@ -3,8 +3,7 @@ package japgolly.scalajs.benchmark.gui
 import java.util.concurrent.TimeUnit
 
 import japgolly.scalajs.benchmark.engine.Stats
-import japgolly.scalajs.react.ReactElement
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scalacss.ScalaCssReact._
 
@@ -13,7 +12,7 @@ import scalacss.ScalaCssReact._
   *
   * Eg. 32.456 sec
   */
-case class ValueFmt[-I](getDouble: I => Option[Double], render: I => ReactElement) {
+case class ValueFmt[-I](getDouble: I => Option[Double], render: I => VdomElement) {
   def cmap[A](f: A => I): ValueFmt[A] =
     ValueFmt(getDouble compose f, render compose f)
 }
@@ -41,7 +40,7 @@ object ValueFmt {
         addThousandSeps(fmt format d)))
   }
 
-  def optionalNumber(dp: Int, default: ReactElement): ValueFmt[Option[Double]] = {
+  def optionalNumber(dp: Int, default: VdomElement): ValueFmt[Option[Double]] = {
     val n = number(dp)
     ValueFmt(identity, {
       case Some(d) => n render d

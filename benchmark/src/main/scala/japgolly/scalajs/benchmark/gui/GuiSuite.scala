@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark._
-import japgolly.scalajs.react.ReactElement
+import japgolly.scalajs.react.vdom.VdomElement
 import monocle.Lens
 
 /**
@@ -9,10 +9,10 @@ import monocle.Lens
   *
   * If you don't need a GUI, then a plain [[Suite]] is all you need.
   */
-final class GuiSuite[P](val suite: Suite[P], val params: GuiParams[P], val desc: Option[ReactElement]) {
+final class GuiSuite[P](val suite: Suite[P], val params: GuiParams[P], val desc: Option[VdomElement]) {
   @inline def name = suite.name
 
-  def describe(e: ReactElement): GuiSuite[P] =
+  def describe(e: VdomElement): GuiSuite[P] =
     new GuiSuite(suite, params, Some(e))
 }
 

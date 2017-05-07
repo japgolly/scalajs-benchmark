@@ -2,7 +2,8 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.vendor.chartjs._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.internal.JsUtil
+import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Canvas
 import scalajs.js
 
@@ -84,8 +85,8 @@ object ReactChart {
       <.canvas(p.style)
 
     private def newChart(p: Props): CallbackTo[BarChart] =
-      CallbackTo {
-        val canvas = $.getDOMNode().domCast[Canvas]
+      $.getDOMNode.map { domNode =>
+        val canvas = domNode.domCast[Canvas]
         val c = new Chart(canvas.getContext("2d")).Bar(p.data.toJs, p.options)
         // js.Dynamic.global.ccc = c
         c
@@ -123,7 +124,7 @@ object ReactChart {
 
         np.fx.foreach(applyFx(c, _, np.data).runNow())
 
-        c.scale.xLabels = np.data.labels.toJsArray
+        c.scale.xLabels = JsUtil.jsArrayFromTraversable(np.data.labels)
         c.scale.calculateXLabelRotation()
         c.update()
       }
@@ -159,12 +160,11 @@ object ReactChart {
       } yield ()
   }
 
-  val Comp = ReactComponentB[Props]("ReactChart")
+  val Comp = ScalaComponent.builder[Props]("ReactChart")
     .initialState[State](None)
     .renderBackend[Backend]
-    .domType[Canvas]
     .componentDidMount(_.backend.mount)
     .componentWillUnmount(_.backend.unmount)
-    .componentWillReceiveProps(x => x.$.backend.update(x.nextProps))
+    .componentWillReceiveProps(x => x.backend.update(x.nextProps))
     .build
 }

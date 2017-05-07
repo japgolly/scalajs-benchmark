@@ -1,7 +1,7 @@
 package demo.suites.cats
 
 import demo.Util._
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 

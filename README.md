@@ -1,20 +1,20 @@
 scalajs-benchmark
 =================
 
-[![Build Status](https://travis-ci.org/japgolly/scalajs-react.svg?branch=master)](https://travis-ci.org/japgolly/scalajs-benchmark)
+[![Build Status](https://travis-ci.org/japgolly/scalajs-benchmark.svg?branch=master)](https://travis-ci.org/japgolly/scalajs-benchmark)
 
 Benchmarks: write in Scala or JS, run in your browser.
 
 See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 <br>The tiny source code is here: [gh-pages/demo](https://github.com/japgolly/scalajs-benchmark/blob/gh-pages/demo/src/main/scala/demo/Main.scala).
 
-[Changelogs](doc/changelog) — [Latest: 0.2.3](doc/changelog/0.2.3.md).
+[Changelogs](doc/changelog) — [Latest: 0.2.4](doc/changelog/0.2.4.md).
 
 ## How do I use it?
 
 1. Include `scalajs-benchmark` as a dependency in your Scala.JS project.
   ```scala
-  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.2.3"
+  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.2.4"
   ```
 
 1. You write benchmarks.
@@ -43,7 +43,7 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
   *(Hey, can you make that `1 to 100` configurable in the GUI? [You sure can.](https://github.com/japgolly/scalajs-benchmark/blob/master/demo/src/main/scala/demo/suites/example/Examples.scala))*
 
-1. Add a tiny loader HTML [like this](demo/index.html).
+1. Add a tiny loader HTML [like this](demo/scala212-full.html).
 
 1. Create a `JSApp` and point `scalajs-benchmark` at your suite of benchmarks.
 

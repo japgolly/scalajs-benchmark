@@ -2,7 +2,7 @@ package demo.suites.shootouts
 
 import demo.Util._
 import demo.{Libraries, suites}
-import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import monocle.macros.GenIso

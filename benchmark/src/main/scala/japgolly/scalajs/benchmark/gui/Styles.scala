@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import scalacss.Defaults._
+import CssSettings._
 import scalacss.ScalaCssReact._
 
 object Styles extends StyleSheet.Inline {

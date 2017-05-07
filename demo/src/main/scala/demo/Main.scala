@@ -27,10 +27,10 @@ object Main extends scalajs.js.JSApp {
    * Optional, of course.
    */
   import japgolly.scalajs.benchmark.gui.MenuComp.LayoutCfg
-  import japgolly.scalajs.react._, vdom.prefix_<^._
+  import japgolly.scalajs.react._, vdom.html_<^._
   import demo.Util._
   def configureLayout: LayoutCfg = {
-    def top(view: ReactElement): ReactElement =
+    def top(view: VdomElement): VdomElement =
       <.main(
         <.h1(
           ^.marginBottom := "0.2em",

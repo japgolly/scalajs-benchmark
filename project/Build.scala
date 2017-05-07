@@ -11,12 +11,12 @@ object ScalaJsBenchmark {
   object Ver {
     val ChartJs       = "1.0.2"
     val MacroParadise = "2.1.0"
-    val Monocle       = "1.3.2"
-    val React         = "15.3.2"
-    val Scala211      = "2.11.8"
-    val Scala212      = "2.12.0"
-    val ScalaCss      = "0.5.1"
-    val ScalaJsReact  = "0.11.3"
+    val Monocle       = "1.4.0"
+    val React         = "15.5.4"
+    val Scala211      = "2.11.11"
+    val Scala212      = "2.12.2"
+    val ScalaCss      = "0.5.3"
+    val ScalaJsReact  = "1.0.0"
   }
 
   def scalacFlags = Seq(
@@ -28,13 +28,13 @@ object ScalaJsBenchmark {
       organization             := "com.github.japgolly.scalajs-benchmark",
       homepage                 := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion             := Ver.Scala211,
+      scalaVersion             := Ver.Scala212,
       crossScalaVersions       := Seq(Ver.Scala211, Ver.Scala212),
       scalacOptions           ++= scalacFlags,
       scalacOptions           ++= byScalaVer(Seq.empty[String], Seq("-opt:l:method")).value,
       shellPrompt in ThisBuild := ((s: State) => Project.extract(s).currentRef.project + "> "),
       triggeredMessage         := Watched.clearWhenTriggered,
-      incOptions               := incOptions.value.withNameHashing(true),
+      incOptions               := incOptions.value.withNameHashing(true).withLogRecompileOnMacro(false),
       updateOptions            := updateOptions.value.withCachedResolution(true))
     .configure(
       addCommandAliases(
@@ -98,8 +98,8 @@ object ScalaJsBenchmark {
         test := ())
 
   object Demo {
-    val Cats      = "0.8.1"
-    val Scalaz    = "7.2.7"
+    val Cats      = "0.9.0"
+    val Scalaz    = "7.2.12"
     val Shapeless = "2.3.2"
 
     def librariesFileTask = Def.task {

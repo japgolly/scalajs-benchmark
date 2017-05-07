@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.engine.Options
-import japgolly.scalajs.react._, vdom.prefix_<^._
+import japgolly.scalajs.react._, vdom.html_<^._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.router.{RouterCtl => RouterCtl_, _}
 import org.scalajs.dom
@@ -13,11 +13,11 @@ import Styles.{Menu => *}
   */
 object MenuComp {
 
-  final case class LayoutCfg(topPage: ReactElement => ReactElement,
-                             suitePage: (TagMod => ReactElement, ReactElement) => ReactElement)
+  final case class LayoutCfg(topPage: VdomElement => VdomElement,
+                             suitePage: (TagMod => VdomElement, VdomElement) => VdomElement)
   object LayoutCfg {
     def default =
-      LayoutCfg(identity, (nav, page) => <.div(nav(EmptyTag), page))
+      LayoutCfg(identity, (nav, page) => <.div(nav(EmptyVdom), page))
   }
 
   final case class UrlFrag(path: String)
@@ -133,7 +133,7 @@ object MenuComp {
 
     val crumbSep = <.span(*.topNavBreadcrumbSep, "/")
 
-    def layout(layoutCfg: LayoutCfg)(ctl: RouterCtl, res: Resolution[Page]): ReactElement =
+    def layout(layoutCfg: LayoutCfg)(ctl: RouterCtl, res: Resolution[Page]): VdomElement =
       res.page match {
         case None =>
           layoutCfg topPage res.render()
@@ -141,12 +141,12 @@ object MenuComp {
         case Some(mi) =>
           def breadcrumb = mi.urlPath
             .dropWhile { case '#' | '/' => true; case _ => false }.split('/')
-            .iterator.zipWithIndex.map[TagMod] { case (frag, i) =>
+            .iterator.zipWithIndex.toTagMod { case (frag, i) =>
               val x = <.span(frag)
               if (i == 0) x else TagMod(crumbSep, frag)
-            }.reduce(_ + _)
+            }
 
-          def topNav(tm: TagMod): ReactElement =
+          def topNav(tm: TagMod): VdomElement =
             <.div(
               *.topNav,
               ctl.link(None)("Home"),
@@ -162,13 +162,13 @@ object MenuComp {
       class Backend($: BackendScope[Props, Unit]) {
         def render(p: Props) = {
 
-          def children(mis: MenuItems2): ReactTag =
+          def children(mis: MenuItems2): VdomTag =
             <.ul(
               mis.toIterator.zipWithIndex.map(x =>
                 <.li(^.key := x._2, go(x._1))
-              ).toReactNodeArray)
+              ).toVdomArray)
 
-          def go(mi: MenuItem2): ReactTag =
+          def go(mi: MenuItem2): VdomTag =
             mi match {
               case s: MenuSuite2  => p.rc.link(Some(s))(s.suite.name)
               case s: MenuFolder2 => <.div(<.h3(*.folder, s.name), children(s.children))
@@ -179,7 +179,7 @@ object MenuComp {
       }
 
       val Comp =
-        ReactComponentB[Props]("ToC")
+        ScalaComponent.builder[Props]("ToC")
           .renderBackend[Backend]
           .build
     }

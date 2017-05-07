@@ -1,4 +1,4 @@
-version in ThisBuild := "0.2.4-SNAPSHOT"
+version in ThisBuild := "0.2.5-SNAPSHOT"
 
 val root      = ScalaJsBenchmark.root
 val benchmark = ScalaJsBenchmark.benchmark
