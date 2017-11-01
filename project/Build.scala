@@ -98,8 +98,8 @@ object ScalaJsBenchmark {
         test := ())
 
   object Demo {
-    val Cats      = "0.9.0"
-    val Scalaz    = "7.2.12"
+    val Cats      = "1.0.0-RC1"
+    val Scalaz    = "7.2.16"
     val Shapeless = "2.3.2"
 
     def librariesFileTask = Def.task {
@@ -129,7 +129,8 @@ object ScalaJsBenchmark {
         libraryDependencies ++= Seq(
           "org.scalaz"    %%% "scalaz-core"       % Demo.Scalaz,
           "org.scalaz"    %%% "scalaz-effect"     % Demo.Scalaz,
-          "org.typelevel" %%% "cats"              % Demo.Cats,
+          "org.typelevel" %%% "cats-core"         % Demo.Cats,
+          "org.typelevel" %%% "cats-free"         % Demo.Cats,
           "com.chuusai"   %%% "shapeless"         % Demo.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
         skip in packageJSDependencies := false,
