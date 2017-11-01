@@ -10,13 +10,13 @@ object ScalaJsBenchmark {
 
   object Ver {
     val ChartJs       = "1.0.2"
-    val MacroParadise = "2.1.0"
+    val MacroParadise = "2.1.1"
     val Monocle       = "1.4.0"
     val React         = "15.5.4"
     val Scala211      = "2.11.11"
-    val Scala212      = "2.12.2"
+    val Scala212      = "2.12.4"
     val ScalaCss      = "0.5.3"
-    val ScalaJsReact  = "1.0.0"
+    val ScalaJsReact  = "1.1.1"
   }
 
   def scalacFlags = Seq(
@@ -98,8 +98,8 @@ object ScalaJsBenchmark {
         test := ())
 
   object Demo {
-    val Cats      = "0.9.0"
-    val Scalaz    = "7.2.12"
+    val Cats      = "1.0.0-RC1"
+    val Scalaz    = "7.2.16"
     val Shapeless = "2.3.2"
 
     def librariesFileTask = Def.task {
@@ -129,7 +129,8 @@ object ScalaJsBenchmark {
         libraryDependencies ++= Seq(
           "org.scalaz"    %%% "scalaz-core"       % Demo.Scalaz,
           "org.scalaz"    %%% "scalaz-effect"     % Demo.Scalaz,
-          "org.typelevel" %%% "cats"              % Demo.Cats,
+          "org.typelevel" %%% "cats-core"         % Demo.Cats,
+          "org.typelevel" %%% "cats-free"         % Demo.Cats,
           "com.chuusai"   %%% "shapeless"         % Demo.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
         skip in packageJSDependencies := false,
