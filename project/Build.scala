@@ -4,6 +4,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin
 import ScalaJSPlugin.autoImport._
 import com.typesafe.sbt.pgp.PgpKeys
 import sbtrelease.ReleasePlugin.autoImport._
+import xerial.sbt.Sonatype.autoImport._
 import Lib._
 
 object ScalaJsBenchmark {
@@ -40,6 +41,7 @@ object ScalaJsBenchmark {
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
       releaseVcsSign                := true,
+      sonatypeProfileName           := "com.github.japgolly",
       triggeredMessage              := Watched.clearWhenTriggered)
     .configure(
       addCommandAliases(
