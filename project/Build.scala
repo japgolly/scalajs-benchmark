@@ -2,6 +2,8 @@ import sbt._
 import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import ScalaJSPlugin.autoImport._
+import com.typesafe.sbt.pgp.PgpKeys
+import sbtrelease.ReleasePlugin.autoImport._
 import Lib._
 
 object ScalaJsBenchmark {
@@ -25,17 +27,20 @@ object ScalaJsBenchmark {
 
   val commonSettings: PE =
     _.settings(
-      organization             := "com.github.japgolly.scalajs-benchmark",
-      homepage                 := Some(url("https://github.com/japgolly/" + ghProject)),
-      licenses                 += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion             := Ver.Scala212,
-      crossScalaVersions       := Seq(Ver.Scala211, Ver.Scala212),
-      scalacOptions           ++= scalacFlags,
-      scalacOptions           ++= byScalaVer(Seq.empty[String], Seq("-opt:l:method")).value,
-      shellPrompt in ThisBuild := ((s: State) => Project.extract(s).currentRef.project + "> "),
-      triggeredMessage         := Watched.clearWhenTriggered,
-      incOptions               := incOptions.value.withNameHashing(true).withLogRecompileOnMacro(false),
-      updateOptions            := updateOptions.value.withCachedResolution(true))
+      organization                  := "com.github.japgolly.scalajs-benchmark",
+      homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
+      licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
+      scalaVersion                  := Ver.Scala212,
+      crossScalaVersions            := Seq(Ver.Scala211, Ver.Scala212),
+      scalacOptions                ++= scalacFlags,
+      scalacOptions                ++= byScalaVer(Seq.empty[String], Seq("-opt:l:method")).value,
+      shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
+      incOptions                    := incOptions.value.withNameHashing(true).withLogRecompileOnMacro(false),
+      updateOptions                 := updateOptions.value.withCachedResolution(true),
+      releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+      releaseTagComment             := s"v${(version in ThisBuild).value}",
+      releaseVcsSign                := true,
+      triggeredMessage              := Watched.clearWhenTriggered)
     .configure(
       addCommandAliases(
         "/"   -> "project root",

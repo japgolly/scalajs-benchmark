@@ -1,3 +1,5 @@
+name := "scalajs-benchmark"
+
 version in ThisBuild := "0.2.5-SNAPSHOT"
 
 val root      = ScalaJsBenchmark.root
