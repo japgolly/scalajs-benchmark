@@ -74,6 +74,13 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
 1. Compile; run in browser. Done.
 
+
+## Support
+If you like what I do
+—my OSS libraries, my contributions to other OSS libs, [my programming blog](https://japgolly.blogspot.com)—
+and you'd like to support me, more content, more lib maintenance, [please become a patron](https://www.patreon.com/japgolly)!
+I do all my OSS work unpaid so showing your support will make a big difference.
+
 ---
 
 *Note: This is not affiliated with the official [Scala.JS](http://www.scala-js.org/) project; it's just named to be informative rather than interesting.*
