@@ -89,7 +89,7 @@ object GuiParams {
       val key: Key[B]
 
       val editor: GenEditor =
-        e => param editor StateSnapshot(key get e.value)(b => e.setState(key.set(b)(e.value)))
+        e => param editor StateSnapshot(key get e.value)((ob, cb) => e.setStateOption(ob.map(key.set(_)(e.value)), cb))
 
       def parse(b: B): Option[Vector[A]] =
         param.parser.getOption(b)

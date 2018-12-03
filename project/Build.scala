@@ -1,10 +1,9 @@
 import sbt._
 import Keys._
-import org.scalajs.sbtplugin.ScalaJSPlugin
-import ScalaJSPlugin.autoImport._
 import com.typesafe.sbt.pgp.PgpKeys
+import org.scalajs.sbtplugin.ScalaJSPlugin, ScalaJSPlugin.autoImport._
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
-import xerial.sbt.Sonatype.autoImport._
 import Lib._
 
 object ScalaJsBenchmark {
@@ -14,12 +13,12 @@ object ScalaJsBenchmark {
   object Ver {
     val ChartJs       = "1.0.2"
     val MacroParadise = "2.1.1"
-    val Monocle       = "1.4.0"
-    val React         = "15.5.4"
-    val Scala211      = "2.11.11"
-    val Scala212      = "2.12.4"
-    val ScalaCss      = "0.5.3"
-    val ScalaJsReact  = "1.1.1"
+    val Monocle       = "1.5.0"
+    val React         = "16.5.1"
+    val Scala211      = "2.11.12"
+    val Scala212      = "2.12.6"
+    val ScalaCss      = "0.5.5"
+    val ScalaJsReact  = "1.3.1"
   }
 
   def scalacFlags = Seq(
@@ -36,24 +35,12 @@ object ScalaJsBenchmark {
       scalacOptions                ++= scalacFlags,
       scalacOptions                ++= byScalaVer(Seq.empty[String], Seq("-opt:l:method")).value,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
-      incOptions                    := incOptions.value.withNameHashing(true).withLogRecompileOnMacro(false),
+      incOptions                    := incOptions.value.withLogRecompileOnMacro(false),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
       releaseVcsSign                := true,
-      sonatypeProfileName           := "com.github.japgolly",
       triggeredMessage              := Watched.clearWhenTriggered)
-    .configure(
-      addCommandAliases(
-        "/"   -> "project root",
-        "C"   -> "root/clean",
-        "T"   -> ";root/clean;root/test",
-        "c"   -> "compile",
-        "tc"  -> "test:compile",
-        "t"   -> "test",
-        "cc"  -> ";clean;compile",
-        "ctc" -> ";clean;test:compile",
-        "ct"  -> ";clean;test"))
 
   def definesMacros: Project => Project =
     _.settings(
@@ -85,16 +72,18 @@ object ScalaJsBenchmark {
           "com.github.julien-truffaut"        %%% "monocle-core"  % Ver.Monocle,
           "com.github.julien-truffaut"        %%% "monocle-macro" % Ver.Monocle),
 
+        dependencyOverrides += "org.webjars.npm" % "js-tokens" % "3.0.2", // https://github.com/webjars/webjars/issues/1789
+
         jsDependencies ++= Seq(
-          "org.webjars.bower" % "react" % Ver.React
-            /        "react-with-addons.js"
-            minified "react-with-addons.min.js"
+          "org.webjars.npm" % "react" % Ver.React
+            /        "umd/react.development.js"
+            minified "umd/react.production.min.js"
             commonJSName "React",
 
-          "org.webjars.bower" % "react" % Ver.React
-            /         "react-dom.js"
-            minified  "react-dom.min.js"
-            dependsOn "react-with-addons.js"
+          "org.webjars.npm" % "react-dom" % Ver.React
+            /         "umd/react-dom.development.js"
+            minified  "umd/react-dom.production.min.js"
+            dependsOn "umd/react.development.js"
             commonJSName "ReactDOM",
 
           "org.webjars" % "chartjs" % Ver.ChartJs
@@ -102,11 +91,11 @@ object ScalaJsBenchmark {
             minified "Chart.min.js"),
 
         addCompilerPlugin(macroParadisePlugin),
-        test := ())
+        test := {})
 
   object Demo {
-    val Cats      = "1.0.0-RC1"
-    val Scalaz    = "7.2.16"
+    val Cats      = "1.5.0"
+    val Scalaz    = "7.2.27"
     val Shapeless = "2.3.2"
 
     def librariesFileTask = Def.task {
@@ -134,11 +123,11 @@ object ScalaJsBenchmark {
       .settings(
         addCompilerPlugin(macroParadisePlugin),
         libraryDependencies ++= Seq(
-          "org.scalaz"    %%% "scalaz-core"       % Demo.Scalaz,
-          "org.scalaz"    %%% "scalaz-effect"     % Demo.Scalaz,
-          "org.typelevel" %%% "cats-core"         % Demo.Cats,
-          "org.typelevel" %%% "cats-free"         % Demo.Cats,
-          "com.chuusai"   %%% "shapeless"         % Demo.Shapeless),
+          "org.scalaz"    %%% "scalaz-core"   % Demo.Scalaz,
+          "org.scalaz"    %%% "scalaz-effect" % Demo.Scalaz,
+          "org.typelevel" %%% "cats-core"     % Demo.Cats,
+          "org.typelevel" %%% "cats-free"     % Demo.Cats,
+          "com.chuusai"   %%% "shapeless"     % Demo.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
         skip in packageJSDependencies := false,
         test := { (compile in Test).value; () })
