@@ -94,7 +94,7 @@ object ScalaJsBenchmark {
         test := {})
 
   object Demo {
-    val Cats      = "1.5.0"
+    val Cats      = "1.6.0"
     val Scalaz    = "7.2.27"
     val Shapeless = "2.3.2"
 
