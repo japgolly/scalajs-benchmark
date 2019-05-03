@@ -18,7 +18,7 @@ object ScalaJsBenchmark {
     val Scala211      = "2.11.12"
     val Scala212      = "2.12.6"
     val ScalaCss      = "0.5.5"
-    val ScalaJsReact  = "1.3.1"
+    val ScalaJsReact  = "1.4.1"
   }
 
   def scalacFlags = Seq(
