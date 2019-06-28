@@ -95,7 +95,7 @@ object ScalaJsBenchmark {
 
   object Demo {
     val Cats      = "1.6.1"
-    val Scalaz    = "7.2.27"
+    val Scalaz    = "7.2.28"
     val Shapeless = "2.3.2"
 
     def librariesFileTask = Def.task {
