@@ -96,7 +96,7 @@ object ScalaJsBenchmark {
   object Demo {
     val Cats      = "1.6.1"
     val Scalaz    = "7.2.28"
-    val Shapeless = "2.3.2"
+    val Shapeless = "2.3.3"
 
     def librariesFileTask = Def.task {
       val file = (sourceManaged in Compile).value / "demo" / "SbtLibraries.scala"
