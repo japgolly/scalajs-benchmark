@@ -42,7 +42,6 @@ object Flatmap {
     bms ++= bm("LazyList", LazyList.fill(_)(_))
     bms ++= bm("List", List.fill(_)(_))
     bms ++= bm("Queue", Queue.fill(_)(_))
-    bms ++= bm("Stream", Stream.fill(_)(_))
     bms ++= bm("Vector", Vector.fill(_)(_))
     Suite("FlatMap")(bms: _*)
   }
