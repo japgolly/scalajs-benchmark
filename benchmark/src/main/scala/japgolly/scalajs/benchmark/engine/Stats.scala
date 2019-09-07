@@ -9,7 +9,7 @@ final case class Stats(times: Vector[FiniteDuration], o: Options) {
     def toOpsPerSec(d: FiniteDuration): Double =
       d.toMicros.toDouble / 1000000L.toDouble
     def fmtD(d: Duration): String =
-      d.toMicros.toInt + "μs"
+      d.toMicros.toInt.toString + "μs"
     val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
     s"${fmtD(average)} ± ${fmtD(marginOfError)} ${marginOfErrorRel.toInt}% /op ($runs runs, Σ $tot)"
   }

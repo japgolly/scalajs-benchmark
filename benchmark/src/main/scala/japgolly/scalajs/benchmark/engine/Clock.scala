@@ -2,7 +2,7 @@ package japgolly.scalajs.benchmark.engine
 
 import scala.concurrent.duration._
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSName
+import scala.scalajs.js.annotation.JSGlobal
 import scala.util.Try
 
 trait Clock {
@@ -40,7 +40,7 @@ object Clock {
     override def duration(a: Time, b: Time) = FiniteDuration(b - a, MILLISECONDS)
   }
 
-  @JSName("chrome.Interval")
+  @JSGlobal("chrome.Interval")
   @js.native
   class ChromeInterval() extends js.Any {
     def start(): Unit = js.native
