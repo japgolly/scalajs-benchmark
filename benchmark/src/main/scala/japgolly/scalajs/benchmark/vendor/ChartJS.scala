@@ -1,12 +1,12 @@
 package japgolly.scalajs.benchmark.vendor.chartjs
 
 import org.scalajs.dom.html.Canvas
-import org.scalajs.dom.raw.CanvasRenderingContext2D
 import scalajs.js
 import scalajs.js.annotation._
 import scalajs.js.{native, Object, |, UndefOr}
 import Chart.{Labels, Value, Values}
 
+@JSGlobal("Chart")
 @native
 class Chart(ctx: js.Dynamic | js.Array[Canvas]) extends Object {
   def Bar(data: BarData, options: Chart.BarOptions = native): BarChart = native
@@ -66,6 +66,7 @@ trait Dataset extends Object {
   var data: Values = native
 }
 
+@JSGlobal("Chart")
 @native
 object Chart extends Object {
   type Value = Double

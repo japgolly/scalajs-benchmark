@@ -2,9 +2,11 @@ package demo
 
 import org.scalajs.dom.document
 import japgolly.scalajs.benchmark.gui.BenchmarkGUI
+import scala.scalajs.js.annotation.JSExportTopLevel
 
-object Main extends scalajs.js.JSApp {
+object Main {
 
+  @JSExportTopLevel("main")
   def main(): Unit = {
 
     // import concurrent.duration._
