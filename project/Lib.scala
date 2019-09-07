@@ -9,17 +9,12 @@ import ScalaJSPlugin.autoImport._
 object Lib {
   type PE = Project => Project
 
-  def byScalaVer[A](for211: => A, for212: => A) =
-    Def.setting(if (scalaVersion.value startsWith "2.11") for211 else for212)
+  def byScalaVersion[A](f: PartialFunction[(Long, Long), Seq[A]]): Def.Initialize[Seq[A]] =
+    Def.setting(CrossVersion.partialVersion(scalaVersion.value).flatMap(f.lift).getOrElse(Nil))
 
   def addCommandAliases(m: (String, String)*): PE = {
     val s = m.map(p => addCommandAlias(p._1, p._2)).reduce(_ ++ _)
     _.settings(s: _*)
-  }
-
-  implicit class CrossProjectExt(val cp: CrossProject) extends AnyVal {
-    def bothConfigure(f: PE): CrossProject =
-      cp.jvmConfigure(f).jsConfigure(f)
   }
 
   def publicationSettings(ghProject: String): PE =
@@ -56,10 +51,10 @@ object Lib {
 
   def preventPublication: PE =
     _.settings(
-      publish            := (),
-      publishLocal       := (),
-      publishSigned      := (),
-      publishLocalSigned := (),
+      publish            := {},
+      publishLocal       := {},
+      publishSigned      := {},
+      publishLocalSigned := {},
       publishArtifact    := false,
       publishTo          := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
       packagedArtifacts  := Map.empty)

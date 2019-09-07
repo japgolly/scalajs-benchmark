@@ -78,7 +78,7 @@ object Styles extends StyleSheet.Inline {
 
     val numericResult = style(
       textAlign.right,
-      fontFamily := "monospace")
+      fontFamily :=! "monospace")
 
     def paramInt = numericResult
 
@@ -116,7 +116,7 @@ object Styles extends StyleSheet.Inline {
       width(graphWidth),
       textAlign.center,
       color(c"#555"),
-      fontFamily := "sans-serif",
+      fontFamily :=! "sans-serif",
       fontSize(0.9 em))
 
     val graph = style(

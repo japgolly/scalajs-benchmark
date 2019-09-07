@@ -5,7 +5,6 @@ import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.collection.immutable._
-import scala.collection.mutable
 
 object Builders {
 
@@ -24,7 +23,7 @@ object Builders {
       b.result()
     }.setDisabledByDefault,
 
-    bm("List var") { is =>
+    bm("List var (append)") { is =>
       var s = List.empty[A]
       for (i <- is) s = s :+ i
       s
@@ -48,7 +47,7 @@ object Builders {
       b.result()
     },
 
-    bm("Seq var") { is =>
+    bm("Seq var (append)") { is =>
       var s = Seq.empty[A]
       for (i <- is) s = s :+ i
       s
@@ -58,7 +57,7 @@ object Builders {
       var s = Seq.empty[A]
       for (i <- is) s = i +: s
       s
-    },
+    }.setDisabledByDefault,
 
     bm("Seq builder") { is =>
       val b = Seq.newBuilder[A]
@@ -66,11 +65,17 @@ object Builders {
       b.result()
     },
 
+    bm("Stream var (append)") { is =>
+      var s = Stream.empty[A]
+      for (i <- is) s = i #:: s
+      s
+    },
+
     bm("Stream var (prepend)") { is =>
       var s = Stream.empty[A]
       for (i <- is) s = i #:: s
       s
-    }.setDisabledByDefault,
+    },
 
     bm("Stream builder") { is =>
       val b = Stream.newBuilder[A]
@@ -78,7 +83,7 @@ object Builders {
       b.result()
     }.setDisabledByDefault,
 
-    bm("Vector var") { is =>
+    bm("Vector var (append)") { is =>
       var s = Vector.empty[A]
       for (i <- is) s = s :+ i
       s

@@ -8,13 +8,13 @@ Benchmarks: write in Scala or JS, run in your browser.
 See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 <br>The tiny source code is here: [gh-pages/demo](https://github.com/japgolly/scalajs-benchmark/blob/gh-pages/demo/src/main/scala/demo/Main.scala).
 
-[Changelogs](doc/changelog) — [Latest: 0.2.4](doc/changelog/0.2.4.md).
+[Changelogs](doc/changelog) — [Latest: 0.2.6](doc/changelog/0.2.6.md).
 
 ## How do I use it?
 
 1. Include `scalajs-benchmark` as a dependency in your Scala.JS project.
   ```scala
-  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.2.4"
+  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.2.6"
   ```
 
 1. You write benchmarks.
@@ -73,6 +73,13 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
   ```
 
 1. Compile; run in browser. Done.
+
+
+## Support
+If you like what I do
+—my OSS libraries, my contributions to other OSS libs, [my programming blog](https://japgolly.blogspot.com)—
+and you'd like to support me, more content, more lib maintenance, [please become a patron](https://www.patreon.com/japgolly)!
+I do all my OSS work unpaid so showing your support will make a big difference.
 
 ---
 

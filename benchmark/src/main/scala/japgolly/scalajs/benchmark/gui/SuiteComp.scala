@@ -95,8 +95,8 @@ object SuiteComp {
 
     val guiSuiteBMs = GuiSuite.suite[P] ^|-> Suite.bms
 
-    val updateEditorState: GenState => Callback =
-      s => $.modState(State.editors set s)
+    val updateEditorState: (Option[GenState], Callback) => Callback =
+      (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
     def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): Callback =
       Callback.byName {
@@ -104,7 +104,7 @@ object SuiteComp {
         // Prepare to start
         val startTime = System.currentTimeMillis()
         val plan = Plan(suite.suite, ps)
-        $.modState(State.status set SuiteWillStart, CallbackTo {
+        $.modState(State.status.set(SuiteWillStart)(_), CallbackTo {
 
           // Actually start
           val abort = Engine.run(plan, options) {
@@ -120,11 +120,11 @@ object SuiteComp {
 
             case SuiteFinished(progress) =>
               val endTime = System.currentTimeMillis()
-              $.modState(State.status.modify { s =>
+              $.modState(State.status.modify { (s: SuiteStatus[P]) =>
                 val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
                 val time = FiniteDuration(endTime - startTime, MILLISECONDS)
                 SuiteDone(suite, progress, bm, time)
-              })
+              }(_))
           }
 
           val running = SuiteRunning[P](suite, Progress(plan, 0), Map.empty, abort)
@@ -134,12 +134,12 @@ object SuiteComp {
 
     def toggleBM(i: Int): Callback =
       $.modState(State.disabledBMs.modify(s =>
-        if (s contains i) s - i else s + i))
+        if (s contains i) s - i else s + i)(_))
 
     def makeSoleBM(i: Int): Callback =
       $.props >>= (p =>
         $.modState(State.disabledBMs.set(
-          p.suite.suite.bms.indices.toSet - i)))
+          p.suite.suite.bms.indices.toSet - i)(_)))
 
     def renderSuitePending(p: Props, s: State): VdomElement = {
       val ev = StateSnapshot(s.editors)(updateEditorState)
@@ -310,7 +310,7 @@ object SuiteComp {
       def resetButton =
         <.button(
           *.resetButton,
-          ^.onClick --> $.modState(State.status set SuitePending),
+          ^.onClick --> $.modState(State.status.set(SuitePending)(_)),
           "Reset")
 
       <.div(

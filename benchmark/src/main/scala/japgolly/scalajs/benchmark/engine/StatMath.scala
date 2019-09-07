@@ -7,9 +7,10 @@ object StatMath {
     */
   def removeHighOutliers(sample: Vector[Double], pct: Double): Vector[Double] = {
     val t = (sample.length.toDouble * pct).toInt
-    if (t > 0)
+    if (t > 0) {
+      // import scala.math.Ordering.Double.TotalOrdering
       sample.sorted.dropRight(t)
-    else
+    } else
       sample
   }
 
@@ -232,7 +233,7 @@ object StatMath {
   }
 }
 
-case class StatMath(sample: Traversable[Double]) {
+case class StatMath(sample: Iterable[Double]) {
   import Math._
 
   val size = sample.size
@@ -241,7 +242,7 @@ case class StatMath(sample: Traversable[Double]) {
   val mean = sample.sum / size
 
   /** Sample variance */
-  val variance = sample.toIterator.map(s => pow(s - mean, 2)).sum / (size - 1)
+  val variance = sample.iterator.map(s => pow(s - mean, 2)).sum / (size - 1)
 
   /** Standard deviation */
   val stddev = sqrt(variance)

@@ -85,8 +85,8 @@ object ReactChart {
       <.canvas(p.style)
 
     private def newChart(p: Props): CallbackTo[BarChart] =
-      $.getDOMNode.map { domNode =>
-        val canvas = domNode.domCast[Canvas]
+      $.getDOMNode.map { dom =>
+        val canvas = dom.asMounted().domCast[Canvas]
         val c = new Chart(canvas.getContext("2d")).Bar(p.data.toJs, p.options)
         // js.Dynamic.global.ccc = c
         c
