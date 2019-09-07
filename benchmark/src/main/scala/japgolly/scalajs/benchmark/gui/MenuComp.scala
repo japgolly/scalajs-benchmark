@@ -29,7 +29,7 @@ object MenuComp {
   sealed trait MenuItem
   final case class MenuSuite(urlFrag: UrlFrag, suite: GuiSuite[_]) extends MenuItem
   final case class MenuFolder(name: String, urlFrag: UrlFrag, children: MenuItems) extends MenuItem
-  type MenuItems = Traversable[MenuItem]
+  type MenuItems = Iterable[MenuItem]
 
   implicit def autoLiftGuiSuite(s: GuiSuite[_]): MenuSuite =
     MenuSuite(UrlFrag from s.name, s)
@@ -71,7 +71,7 @@ object MenuComp {
   private object Internals {
 
     sealed trait MenuItem2
-    type MenuItems2 = Traversable[MenuItem2]
+    type MenuItems2 = Iterable[MenuItem2]
     case class MenuSuite2(urlPath: String, suite: GuiSuite[_]) extends MenuItem2
     case class MenuFolder2(name: String, children: MenuItems2) extends MenuItem2
 
@@ -164,7 +164,7 @@ object MenuComp {
 
           def children(mis: MenuItems2): VdomTag =
             <.ul(
-              mis.toIterator.zipWithIndex.map(x =>
+              mis.iterator.zipWithIndex.map(x =>
                 <.li(^.key := x._2, go(x._1))
               ).toVdomArray)
 

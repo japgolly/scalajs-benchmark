@@ -43,7 +43,7 @@ object LensShooutout {
     case class Point3(x: Int, y: Int, z: Int)
     val p = Point3(2, 10, 24)
 
-    val iMap = IMap.fromList(Stream.from(1).take(200).map(_ -> 5).toList)
+    val iMap = IMap.fromList((1 to 200).iterator.map(_ -> 5).toList)
 
     case class IntWrapper0(i: Int)
     case class IntWrapper1(i: Int)

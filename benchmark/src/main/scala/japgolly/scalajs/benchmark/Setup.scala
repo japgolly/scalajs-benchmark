@@ -39,5 +39,5 @@ object Teardown {
     new Teardown(() => f)
 
   val empty: Teardown =
-    Teardown(() => ())
+    new Teardown(() => ())
 }

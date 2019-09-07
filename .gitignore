@@ -15,8 +15,9 @@ target
 *.out
 *.err
 
-.idea
-.idea_modules
+.idea*
 .cache
 .classpath
 .metadata
+.bloop
+.metals

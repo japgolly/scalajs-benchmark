@@ -1,20 +1,22 @@
 language: scala
 
 scala:
-  - 2.11.12
-  - 2.12.6
+  - 2.13.0
+  - 2.12.9
 
 jdk:
-  - oraclejdk8
-
-sudo: false
-cache:
-  directories:
-    - $HOME/.sbt
-    - $HOME/.ivy2/cache
+  - openjdk8
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION test
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.sbt -name "*.lock" -exec rm {} +
-  - find $HOME/.ivy2 -name "ivydata-*.properties" -exec rm {} +
+
+before_cache:
+  - rm -f $HOME/.ivy2/.sbt.ivy.lock
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+cache:
+  directories:
+    - $HOME/.coursier
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
