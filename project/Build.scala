@@ -23,7 +23,7 @@ object ScalaJsBenchmark {
     val Scalaz          = "7.2.28"
 
     // Demo only
-    val Cats      = "2.0.0-RC2"
+    val Cats      = "2.0.0"
     val Shapeless = "2.3.3"
   }
 
