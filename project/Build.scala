@@ -19,7 +19,7 @@ object ScalaJsBenchmark {
     val Scala213        = "2.13.0"
     val ScalaCollCompat = "2.1.2"
     val ScalaCss        = "0.6.0-RC1"
-    val ScalaJsReact    = "1.5.0-RC1"
+    val ScalaJsReact    = "1.5.0"
     val Scalaz          = "7.2.28"
 
     // Demo only
