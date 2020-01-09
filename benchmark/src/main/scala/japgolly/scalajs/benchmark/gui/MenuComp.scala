@@ -125,7 +125,7 @@ object MenuComp {
           }
 
         (routes | trimSlashes)
-          .notFound(redirectToPage(None)(Redirect.Replace))
+          .notFound(redirectToPage(None)(SetRouteVia.HistoryReplace))
           .renderWith(layout(layoutCfg))
           .verify(None, idx.valuesIterator.map(Some(_)).toList: _*)
       }

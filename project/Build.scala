@@ -15,15 +15,15 @@ object ScalaJsBenchmark {
     val MacroParadise   = "2.1.1"
     val Monocle         = "1.6.0"
     val React           = "16.7.0"
-    val Scala212        = "2.12.9"
-    val Scala213        = "2.13.0"
-    val ScalaCollCompat = "2.1.2"
-    val ScalaCss        = "0.6.0-RC1"
-    val ScalaJsReact    = "1.5.0-RC1"
-    val Scalaz          = "7.2.28"
+    val Scala212        = "2.12.10"
+    val Scala213        = "2.13.1"
+    val ScalaCollCompat = "2.1.3"
+    val ScalaCss        = "0.6.0"
+    val ScalaJsReact    = "1.5.0"
+    val Scalaz          = "7.2.30"
 
     // Demo only
-    val Cats      = "2.0.0-RC2"
+    val Cats      = "2.1.0"
     val Shapeless = "2.3.3"
   }
 
@@ -50,8 +50,7 @@ object ScalaJsBenchmark {
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
-      releaseVcsSign                := true,
-      triggeredMessage              := Watched.clearWhenTriggered)
+      releaseVcsSign                := true)
 
   def definesMacros: Project => Project =
     _.settings(
