@@ -6,17 +6,35 @@
     body {
       text-align: center;
     }
-    a {
-      display: block;
-      font-size: 2em;
-      margin-top: 2em;
+    h1 {
+      margin-top:1.1em;
+      margin-bottom:2.4em;
     }
+    a {
+      color: #00c;
+      display: block;
+      font-size: 1.8em;
+      margin-top: 1.7em;
+    }
+    a:not(:hover) {
+      text-decoration: none;
+    }
+    a span {
+      margin-left:0.15ex;
+      color:#888;
+    }
+    a span::before { content: ' / Scala.JS '; }
+    /*
+    a span::before { content: ' (Scala.JS '; }
+    a span::after { content: ')'; }
+    */
     </style>
 </head>
 <body>
-  <a href="res/scala-2.12.html">Scala 2.11 / Scala.JS 0.6.19</a>
-  <a href="res/scala-2.12.html">Scala 2.12 / Scala.JS 0.6.32</a>
-  <a href="res/scala-2.13.1.html">Scala 2.13.1 / Scala.JS 0.6.32</a>
+  <h1>scalajs-benchmark</h1>
+  <a href="res/scala-2.12.html">Scala 2.11.11<span>0.6.19</span></a>
+  <a href="res/scala-2.12.html">Scala 2.12.11<span>0.6.32</span></a>
+  <a href="res/scala-2.13.1.html">Scala 2.13.1<span>0.6.32</span></a>
   <a href="https://github.com/japgolly/scalajs-benchmark">Github</a>
 </body>
 </html>
