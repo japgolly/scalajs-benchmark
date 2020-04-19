@@ -73,9 +73,10 @@ object SuiteComp {
   case object BMRunning extends BMStatus
   case class BMDone(result: Result) extends BMStatus
 
-  private val resultFmts = Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
-  private val resultBlock1 = ^.colSpan := 3
-  private val resultBlockAll = ^.colSpan := (3 * resultFmts.length)
+  private type ResultFmts    = Vector[ResultFmt]
+  private val resultFmtCount = 2
+  private val resultBlock1   = ^.colSpan := 3
+  private val resultBlockAll = ^.colSpan := (3 * resultFmtCount)
 
   private val resultTD = <.td(*.resultData)
 
@@ -215,6 +216,23 @@ object SuiteComp {
 
     def renderResultTable(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P]): VdomElement = {
       val keys = progress.plan.keys
+
+      val resultFmts: ResultFmts = {
+        val minAvg =
+          keys
+            .iterator
+            .flatMap(m.get)
+            .collect { case BMDone(\/-(s)) => s.average }
+            .reduceOption(_.min(_))
+            .getOrElse(Duration.Zero)
+
+        if (minAvg.toMicros < 1000)
+          Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
+        else if (minAvg.toMillis < 1000)
+          Vector(ResultFmt.MillisPerOp, ResultFmt.OpsPerSec)
+        else
+          Vector(ResultFmt.SecPerOp, ResultFmt.OpsPerSec)
+      }
 
       def header = {
         val th = <.th(*.resultHeader)
