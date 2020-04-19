@@ -233,13 +233,20 @@ object SuiteComp {
           hs ++= (status match {
             case BMPending        => whenBMPending
             case BMRunning        => whenBMRunning
+
             case BMDone(-\/(err)) =>
+              val showError = Callback {
+                err.printStackTrace()
+              }
               Vector[VdomTag](
                 runsCellNone, // Hmmmmm.........
                 resultTD(
                   resultBlockAll,
                   <.span(^.color.red, Option(err.toString).filter(_.nonEmpty).getOrElse[String]("ERROR.")),
-                  ^.onDoubleClick --> Callback{throw err; ()}))
+                  ^.title := "Double-click to print the error to the console",
+                  ^.cursor.pointer,
+                  ^.onDoubleClick --> showError))
+
             case BMDone(\/-(r)) =>
               runsCell(r.runs) +:
               resultFmts.flatMap(f => Vector(
