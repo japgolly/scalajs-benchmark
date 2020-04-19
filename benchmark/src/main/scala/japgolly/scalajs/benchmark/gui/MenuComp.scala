@@ -157,30 +157,30 @@ object MenuComp {
       }
 
     object TOC {
-      case class Props(mis: MenuItems2, rc: RouterCtl)
+      final case class Props(mis: MenuItems2, rc: RouterCtl)
 
-      class Backend($: BackendScope[Props, Unit]) {
-        def render(p: Props) = {
+      private val li = <.li(^.marginBottom := ".6em")
 
-          def children(mis: MenuItems2): VdomTag =
-            <.ul(
-              mis.iterator.zipWithIndex.map(x =>
-                <.li(^.key := x._2, go(x._1))
-              ).toVdomArray)
+      private def render(p: Props) = {
 
-          def go(mi: MenuItem2): VdomTag =
-            mi match {
-              case s: MenuSuite2  => p.rc.link(Some(s))(s.suite.name)
-              case s: MenuFolder2 => <.div(<.h3(*.folder, s.name), children(s.children))
-            }
+        def children(mis: MenuItems2): VdomTag =
+          <.ul(
+            ^.fontSize := "120%",
+            mis.iterator.zipWithIndex.toVdomArray(x =>
+              li(^.key := x._2, go(x._1))))
 
-          children(p.mis)
-        }
+        def go(mi: MenuItem2): VdomTag =
+          mi match {
+            case s: MenuSuite2  => p.rc.link(Some(s))(s.suite.name)
+            case s: MenuFolder2 => <.div(<.h3(*.folder, s.name), children(s.children))
+          }
+
+        children(p.mis)
       }
 
       val Comp =
         ScalaComponent.builder[Props]("ToC")
-          .renderBackend[Backend]
+          .render_P(render)
           .build
     }
   }
