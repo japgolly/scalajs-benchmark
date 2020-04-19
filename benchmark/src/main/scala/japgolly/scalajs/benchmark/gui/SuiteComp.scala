@@ -69,6 +69,7 @@ object SuiteComp {
 
   sealed trait BMStatus
   case object BMPending extends BMStatus
+  case object BMPreparing extends BMStatus
   case object BMRunning extends BMStatus
   case class BMDone(result: Result) extends BMStatus
 
@@ -82,6 +83,7 @@ object SuiteComp {
 
   private val runsCellNone = resultTD
   private val whenBMPending = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll))
+  private val whenBMPreparing = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, "Preparing…"))
   private val whenBMRunning = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, "Running…"))
 
   private def formatTotalTime(fd: FiniteDuration): String =
@@ -109,7 +111,10 @@ object SuiteComp {
           // Actually start
           val abort = Engine.run(plan, options) {
 
-            case BenchmarkStarting(_, k) =>
+            case BenchmarkPreparing(_, k) =>
+              $.modState(State.at(k) set BMPreparing)
+
+            case BenchmarkRunning(_, k) =>
               $.modState(State.at(k) set BMRunning)
 
             case BenchmarkFinished(_, k, r) =>
@@ -232,6 +237,7 @@ object SuiteComp {
           hs ++= suite.params.renderParams(k.param).map(resultTD(_))
           hs ++= (status match {
             case BMPending        => whenBMPending
+            case BMPreparing      => whenBMPreparing
             case BMRunning        => whenBMRunning
 
             case BMDone(-\/(err)) =>
@@ -278,7 +284,8 @@ object SuiteComp {
             case BMDone(\/-(stats)) => fmt.score.getDouble(stats) getOrElse 0
             case BMDone(-\/(_))
                | BMPending
-               | BMRunning => -0.1 // 0 puts a thick bar above the axis which looks like a small result
+               | BMRunning
+               | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
           }
         ).take(bmsToShow).toVector
 

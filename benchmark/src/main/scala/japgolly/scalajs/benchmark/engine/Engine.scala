@@ -2,22 +2,22 @@ package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.react.Callback
-
 import scala.annotation.tailrec
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.timers.SetTimeoutHandle
-import scalaz.\/
+import scalaz.{\/, -\/, \/-}
 
 sealed abstract class Event[P] {
   val progress: Progress[P]
   @inline def plan = progress.plan
 }
 
-final case class SuiteStarting    [P](progress: Progress[P])                                  extends Event[P]
-final case class BenchmarkStarting[P](progress: Progress[P], key: PlanKey[P])                 extends Event[P]
-final case class BenchmarkFinished[P](progress: Progress[P], key: PlanKey[P], result: Result) extends Event[P]
-final case class SuiteFinished    [P](progress: Progress[P]/*, aborted | results, */)         extends Event[P]
+final case class SuiteStarting     [P](progress: Progress[P])                                  extends Event[P]
+final case class BenchmarkPreparing[P](progress: Progress[P], key: PlanKey[P])                 extends Event[P]
+final case class BenchmarkRunning  [P](progress: Progress[P], key: PlanKey[P])                 extends Event[P]
+final case class BenchmarkFinished [P](progress: Progress[P], key: PlanKey[P], result: Result) extends Event[P]
+final case class SuiteFinished     [P](progress: Progress[P]/*, aborted | results, */)         extends Event[P]
 
 final case class Progress[P](plan: Plan[P], runs: Int) {
   def total = plan.totalBenchmarks
@@ -69,32 +69,50 @@ object Engine {
 
       def go(keys: List[PlanKey[P]]): Unit = keys match {
         case key :: next =>
-          msg(BenchmarkStarting(progress, key)) {
-            val result: Result =
+          msg(BenchmarkPreparing(progress, key)) {
+
+            def complete(result: Result): Unit = {
+              progress = progress.copy(runs = progress.runs + 1)
+              msg(BenchmarkFinished(progress, key, result))(
+                go(next))
+            }
+
+            val setupResult =
               \/.fromTryCatchNonFatal {
-                val (fn, teardown) = key.bm.setup.run(key.param)
-                val rs = new Stats.Mutable
-
-                @tailrec
-                def go(): Unit = {
-                  // val localFnAndTeardown = local.run(())
-                  // val t = clock.time(localFnAndTeardown._1())
-                  // localFnAndTeardown._2.run()
-                  val t = clock.time(fn())
-                  rs add t
-                  if (!isEnough(rs))
-                    go()
-                }
-                go()
-
-                teardown.run()
-                Stats(rs.times.toVector, options)
+                key.bm.setup.run(key.param)
               }
 
-            progress = progress.copy(runs = progress.runs + 1)
-            msg(BenchmarkFinished(progress, key, result))(
-              go(next))
-          }
+              setupResult match {
+                case -\/(err) =>
+                  complete(-\/(err))
+
+                case \/-((fn, teardown)) =>
+
+                  msg(BenchmarkRunning(progress, key)) {
+                    val result: Result =
+                      \/.fromTryCatchNonFatal {
+                        val rs = new Stats.Mutable
+
+                        @tailrec
+                        def go(): Unit = {
+                          // val localFnAndTeardown = local.run(())
+                          // val t = clock.time(localFnAndTeardown._1())
+                          // localFnAndTeardown._2.run()
+                          val t = clock.time(fn())
+                          rs add t
+                          if (!isEnough(rs))
+                            go()
+                        }
+                        go()
+
+                        teardown.run()
+                        Stats(rs.times.toVector, options)
+                      }
+
+                    complete(result)
+                  }
+                }
+              }
 
         case Nil =>
           finish()
@@ -132,10 +150,11 @@ object Engine {
     }
 
     run(plan, options) {
-      case SuiteStarting    (p)       => Callback.log("Starting suite: " + p.plan.name)
-      case BenchmarkStarting(p, k)    => Callback.empty
-      case BenchmarkFinished(p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name, k.param, r))
-      case SuiteFinished    (p)       => Callback.log("Suite completed: " + p.plan.name)
+      case SuiteStarting     (p)       => Callback.log("Starting suite: " + p.plan.name)
+      case BenchmarkPreparing(p, k)    => Callback.empty
+      case BenchmarkRunning  (p, k)    => Callback.empty
+      case BenchmarkFinished (p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name, k.param, r))
+      case SuiteFinished     (p)       => Callback.log("Suite completed: " + p.plan.name)
     }
   }
 
