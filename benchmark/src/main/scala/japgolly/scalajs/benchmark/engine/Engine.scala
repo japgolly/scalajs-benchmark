@@ -43,6 +43,7 @@ object Engine {
 
     val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
     var broadcastFinishOnAbort = false
+    var aborted                = false
     var progress               = Progress(plan, 0)
 
     def isEnough(s: Stats.Mutable): Boolean = {
@@ -87,35 +88,52 @@ object Engine {
                 case Left(err) =>
                   complete(Left(err))
 
-                case Right((fn, teardown)) =>
-
+                case Right((bmFn, teardown)) =>
                   msg(BenchmarkRunning(progress, key)) {
-                    val benchmark: AsyncCallback[Stats] =
-                      AsyncCallback.point {
-                        val rs = new Stats.Mutable
 
-                        @tailrec
-                        def go(): Unit = {
-                          // val localFnAndTeardown = local.run(())
-                          // val t = clock.time(localFnAndTeardown._1())
-                          // localFnAndTeardown._2.run()
-                          val t = clock.time(fn())
-                          rs add t
-                          if (!isEnough(rs))
+                    val bm = CallbackTo.lift(bmFn)
+                    val bmTimedUnsafe = clock.time(bm).toScalaFn
+
+                    def runBenchmarks(rs: Stats.Mutable): AsyncCallback[Stats] = {
+                      val bmRound: AsyncCallback[Unit] =
+                        AsyncCallback.point {
+                          val startTime = System.currentTimeMillis()
+                          val delayAfter = startTime + 1000
+                          @inline def needDelay(): Boolean = System.currentTimeMillis() > delayAfter
+
+                          @tailrec
+                          def go(): Unit = {
+                            // val localFnAndTeardown = local.run(())
+                            // val t = clock.time(localFnAndTeardown._1())
+                            // localFnAndTeardown._2.run()
+                            val t = bmTimedUnsafe()
+                            rs add t
+                            if (!isEnough(rs) && !needDelay())
+                              go()
+                          }
+
+                          if (!aborted)
                             go()
                         }
-                        go()
 
-                        Stats(rs.times.toVector, options)
+                      var self: AsyncCallback[Stats] = AsyncCallback.point(???)
+                      self = bmRound >> AsyncCallback.byName {
+                        if (!isEnough(rs) && !aborted)
+                          self.delayMs(1)
+                        else
+                          AsyncCallback.pure(Stats(rs.times.toVector, options))
                       }
+                      self
+                    }
 
-                    benchmark
+                    AsyncCallback.point(new Stats.Mutable)
+                      .flatMap(runBenchmarks)
                       .attempt
                       .finallyRun(teardown.asAsyncCallback)
                       .flatMap(complete)
                   }
-                }
               }
+          }
 
         case Nil =>
           finish
@@ -132,6 +150,7 @@ object Engine {
 
     AbortFn(
       for {
+        _ <- AsyncCallback.point { aborted = true }
         _ <- AsyncCallback.point(hnd.value foreach js.timers.clearTimeout)
         b <- AsyncCallback.point(broadcastFinishOnAbort)
         _ <- finish.when_(b)
