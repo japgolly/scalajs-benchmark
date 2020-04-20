@@ -1,12 +1,11 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark._
-import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo}
 import scala.annotation.tailrec
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.timers.SetTimeoutHandle
-import scalaz.{\/, -\/, \/-}
 
 sealed abstract class Event[P] {
   val progress: Progress[P]
@@ -24,23 +23,27 @@ final case class Progress[P](plan: Plan[P], runs: Int) {
   def remaining = total - runs
 }
 
-final case class AbortFn(run: () => Unit) extends AnyVal {
-  def callback = Callback(run())
+final case class AbortFn(value: AsyncCallback[Unit]) {
+  val callback = value.toCallback
 }
 
 object Engine {
 
   private class Ref[A](var value: A)
 
-  /**
-    * Runs a suite of benchmarks (asynchronously).
+  /** Runs a suite of benchmarks (asynchronously).
     *
     * You are required to handle events in order to extract any meaning.
     *
     * @return A function by which the benchmarks can be aborted.
     */
-  def run[P](plan: Plan[P], options: Options = Options.Default)(eventCallback: Event[P] => Callback): AbortFn = {
-    val hnd = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
+  def run[P](plan   : Plan[P],
+             options: Options = Options.Default)
+            (onEvent: Event[P] => AsyncCallback[Unit]): CallbackTo[AbortFn] = CallbackTo {
+
+    val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
+    var broadcastFinishOnAbort = false
+    var progress               = Progress(plan, 0)
 
     def isEnough(s: Stats.Mutable): Boolean = {
       import options._
@@ -49,48 +52,46 @@ object Engine {
       small || large
     }
 
-    var broadcastFinishOnAbort = false
-    var progress = Progress(plan, 0)
+    val finish: AsyncCallback[Unit] =
+      AsyncCallback.point {
+        hnd.value = js.undefined
+        broadcastFinishOnAbort = false
+        progress
+      }.flatMap(p => onEvent(SuiteFinished(p)))
 
-    def finish(): Unit = {
-      hnd.value = js.undefined
-      broadcastFinishOnAbort = false
-      eventCallback(SuiteFinished(progress)).runNow()
-    }
-
-    def runAsync: Unit = {
+    val runAsync: AsyncCallback[Unit] = {
       val delay = options.delay()
       val clock = options.clock
 
-      def msg(e: Event[P])(next: => Any): Unit = {
-        eventCallback(e).runNow()
-        hnd.value = js.timers.setTimeout(delay)(next)
-      }
+      def schedule(next: AsyncCallback[Unit]): AsyncCallback[Unit] =
+        AsyncCallback.point {
+          hnd.value = js.timers.setTimeout(delay)(next.toCallback.runNow())
+        }
 
-      def go(keys: List[PlanKey[P]]): Unit = keys match {
+      def msg(e: Event[P])(next: AsyncCallback[Unit]): AsyncCallback[Unit] =
+        onEvent(e) >> schedule(next)
+
+      def go(keys: List[PlanKey[P]]): AsyncCallback[Unit] = keys match {
         case key :: next =>
           msg(BenchmarkPreparing(progress, key)) {
 
-            def complete(result: Result): Unit = {
-              progress = progress.copy(runs = progress.runs + 1)
+            def complete(result: Result): AsyncCallback[Unit] =
+              AsyncCallback.point { progress = progress.copy(runs = progress.runs + 1) } >>
               msg(BenchmarkFinished(progress, key, result))(
                 go(next))
-            }
 
-            val setupResult =
-              \/.fromTryCatchNonFatal {
-                key.bm.setup.run(key.param)
-              }
+            val setup =
+              AsyncCallback.point(key.bm.setup.run(key.param))
 
-              setupResult match {
-                case -\/(err) =>
-                  complete(-\/(err))
+              setup.attempt.flatMap {
+                case Left(err) =>
+                  complete(Left(err))
 
-                case \/-((fn, teardown)) =>
+                case Right((fn, teardown)) =>
 
                   msg(BenchmarkRunning(progress, key)) {
-                    val result: Result =
-                      \/.fromTryCatchNonFatal {
+                    val benchmark: AsyncCallback[Stats] =
+                      AsyncCallback.point {
                         val rs = new Stats.Mutable
 
                         @tailrec
@@ -105,17 +106,19 @@ object Engine {
                         }
                         go()
 
-                        teardown.run()
                         Stats(rs.times.toVector, options)
                       }
 
-                    complete(result)
+                    benchmark
+                      .attempt
+                      .finallyRun(teardown.asAsyncCallback)
+                      .flatMap(complete)
                   }
                 }
               }
 
         case Nil =>
-          finish()
+          finish
       }
 
       msg(SuiteStarting(progress)) {
@@ -125,21 +128,22 @@ object Engine {
     }
 
     // Schedule to start
-    hnd.value = js.timers.setTimeout(options.initialDelay)(runAsync)
+    hnd.value = js.timers.setTimeout(options.initialDelay)(runAsync.toCallback.runNow())
 
-    AbortFn(() => {
-      hnd.value foreach js.timers.clearTimeout
-      if (broadcastFinishOnAbort)
-        finish()
-    })
+    AbortFn(
+      for {
+        _ <- AsyncCallback.point(hnd.value foreach js.timers.clearTimeout)
+        b <- AsyncCallback.point(broadcastFinishOnAbort)
+        _ <- finish.when_(b)
+      } yield ()
+    )
   }
 
-  /**
-    * Runs a suite of benchmarks (asynchronously), printing details and results to the console.
+  /** Runs a suite of benchmarks (asynchronously), printing details and results to the console.
     *
     * @return A function by which the benchmarks can be aborted.
     */
-  def runToConsole[P](plan: Plan[P], options: Options = Options.Default): AbortFn = {
+  def runToConsole[P](plan: Plan[P], options: Options = Options.Default): CallbackTo[AbortFn] = {
     val fmt = {
       val prog  = plan.totalBenchmarks.toString.length
       val name  = plan.bms.foldLeft(0)(_ max _.name.length)
@@ -150,11 +154,11 @@ object Engine {
     }
 
     run(plan, options) {
-      case SuiteStarting     (p)       => Callback.log("Starting suite: " + p.plan.name)
-      case BenchmarkPreparing(p, k)    => Callback.empty
-      case BenchmarkRunning  (p, k)    => Callback.empty
-      case BenchmarkFinished (p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name, k.param, r))
-      case SuiteFinished     (p)       => Callback.log("Suite completed: " + p.plan.name)
+      case SuiteStarting     (p)       => Callback.log("Starting suite: " + p.plan.name).asAsyncCallback
+      case BenchmarkPreparing(p, k)    => AsyncCallback.unit
+      case BenchmarkRunning  (p, k)    => AsyncCallback.unit
+      case BenchmarkFinished (p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name, k.param, r)).asAsyncCallback
+      case SuiteFinished     (p)       => Callback.log("Suite completed: " + p.plan.name).asAsyncCallback
     }
   }
 

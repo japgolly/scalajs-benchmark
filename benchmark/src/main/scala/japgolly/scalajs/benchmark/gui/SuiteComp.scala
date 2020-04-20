@@ -11,8 +11,8 @@ import monocle.macros.Lenses
 import org.scalajs.dom.document
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
-import scalaz.{-\/, \/-}
 import GuiParams.GenState
+import ReactTemp._
 import Styles.{Suite => *}
 
 /**
@@ -101,42 +101,41 @@ object SuiteComp {
     val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
-    def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): Callback =
-      Callback.byName {
+    def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): AsyncCallback[Unit] = {
+      val plan = Plan(suite.suite, ps)
 
-        // Prepare to start
-        val startTime = System.currentTimeMillis()
-        val plan = Plan(suite.suite, ps)
-        $.modState(State.status.set(SuiteWillStart)(_), CallbackTo {
+      def actuallyStart(startTime: Long) =
+        Engine.run(plan, options) {
 
-          // Actually start
-          val abort = Engine.run(plan, options) {
+          case BenchmarkPreparing(_, k) =>
+            $.modStateAsync(State.at(k) set BMPreparing)
 
-            case BenchmarkPreparing(_, k) =>
-              $.modState(State.at(k) set BMPreparing)
+          case BenchmarkRunning(_, k) =>
+            $.modStateAsync(State.at(k) set BMRunning)
 
-            case BenchmarkRunning(_, k) =>
-              $.modState(State.at(k) set BMRunning)
+          case BenchmarkFinished(_, k, r) =>
+            $.modStateAsync(State.at(k) set BMDone(r))
 
-            case BenchmarkFinished(_, k, r) =>
-              $.modState(State.at(k) set BMDone(r))
+          case SuiteStarting(_) =>
+            AsyncCallback.unit
 
-            case SuiteStarting(_) =>
-              Callback.empty
+          case SuiteFinished(progress) =>
+            val endTime = System.currentTimeMillis()
+            $.modStateAsync(State.status.modify { (s: SuiteStatus[P]) =>
+              val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
+              val time = FiniteDuration(endTime - startTime, MILLISECONDS)
+              SuiteDone(suite, progress, bm, time)
+            }(_))
+        }
 
-            case SuiteFinished(progress) =>
-              val endTime = System.currentTimeMillis()
-              $.modState(State.status.modify { (s: SuiteStatus[P]) =>
-                val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
-                val time = FiniteDuration(endTime - startTime, MILLISECONDS)
-                SuiteDone(suite, progress, bm, time)
-              }(_))
-          }
-
-          val running = SuiteRunning[P](suite, Progress(plan, 0), Map.empty, abort)
-          $.modState(State.status set running)
-        }.flatten)
-      }
+      for {
+        startTime <- AsyncCallback.point(System.currentTimeMillis())
+        _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
+        abort     <- actuallyStart(startTime).asAsyncCallback
+        running    = SuiteRunning[P](suite, Progress(plan, 0), Map.empty, abort)
+        _         <- $.modStateAsync(State.status set running)
+        } yield ()
+    }
 
     def toggleBM(i: Int): Callback =
       $.modState(State.disabledBMs.modify(s =>
@@ -194,7 +193,7 @@ object SuiteComp {
           bms <- Some(selectedBMs).filter(_.nonEmpty)
         } yield {
           val s2 = guiSuiteBMs.set(bms)(p.suite)
-          start(s2, p.options, ps)
+          start(s2, p.options, ps).toCallback
         }
       }
 
@@ -222,7 +221,7 @@ object SuiteComp {
           keys
             .iterator
             .flatMap(m.get)
-            .collect { case BMDone(\/-(s)) => s.average }
+            .collect { case BMDone(Right(s)) => s.average }
             .reduceOption(_.min(_))
             .getOrElse(Duration.Zero)
 
@@ -258,7 +257,7 @@ object SuiteComp {
             case BMPreparing      => whenBMPreparing
             case BMRunning        => whenBMRunning
 
-            case BMDone(-\/(err)) =>
+            case BMDone(Left(err)) =>
               val showError = Callback {
                 err.printStackTrace()
               }
@@ -271,7 +270,7 @@ object SuiteComp {
                   ^.cursor.pointer,
                   ^.onDoubleClick --> showError))
 
-            case BMDone(\/-(r)) =>
+            case BMDone(Right(r)) =>
               runsCell(r.runs) +:
               resultFmts.flatMap(f => Vector(
                 resultTD(f.score render r),
@@ -299,8 +298,8 @@ object SuiteComp {
 
         val dataPoints = keys.iterator.map[Chart.Value](k =>
           m.getOrElse(k, BMPending) match {
-            case BMDone(\/-(stats)) => fmt.score.getDouble(stats) getOrElse 0
-            case BMDone(-\/(_))
+            case BMDone(Right(stats)) => fmt.score.getDouble(stats) getOrElse 0
+            case BMDone(Left(_))
                | BMPending
                | BMRunning
                | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result

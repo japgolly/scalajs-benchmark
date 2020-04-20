@@ -1,5 +1,7 @@
 package japgolly.scalajs.benchmark
 
+import japgolly.scalajs.react.AsyncCallback
+
 /**
   * Given a `A`, set a `B` up and provide a [[Teardown]].
   */
@@ -32,7 +34,9 @@ object Setup {
 /**
   * Perform some effect to teardown something setup via [[Setup]].
   */
-final class Teardown(val run: () => Unit) extends AnyVal
+final class Teardown(val run: () => Unit) extends AnyVal {
+  def asAsyncCallback: AsyncCallback[Unit] = AsyncCallback.point(run())
+}
 
 object Teardown {
   def apply(f: => Unit): Teardown =
