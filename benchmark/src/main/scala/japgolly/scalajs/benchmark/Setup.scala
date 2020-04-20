@@ -5,27 +5,36 @@ import japgolly.scalajs.react.AsyncCallback
 /**
   * Given a `A`, set a `B` up and provide a [[Teardown]].
   */
-final class Setup[-A, +B](val run: A => (B, Teardown)) extends AnyVal {
-  def cmap[C](f: C => A): Setup[C, B] =
+final case class Setup[-A, B](run: A => AsyncCallback[(B, Teardown)]) {
+  def contramap[C](f: C => A): Setup[C, B] =
     new Setup(f andThen run)
+
+  def map[C](f: B => C): Setup[A, C] =
+    new Setup(run(_).map(x => (f(x._1), x._2)))
+
+  def addTeardown(t: Teardown): Setup[A, B] =
+    new Setup(run(_).map(x => (x._1, x._2 >> t)))
+
+  def toBM[AA <: A]: Benchmark.Builder[AA, B] =
+    new Benchmark.Builder(this)
 }
 
 object Setup {
-  def empty[A]: Setup[A, A] =
-    apply(identity)
+  def passthrough[A]: Setup[A, A] =
+    simple(identity)
 
-  def unit[A](a: A): Setup[Unit, A] =
-    new Setup(Function const ((a, Teardown.empty)))
+  def const[A](a: AsyncCallback[(A, Teardown)]): Setup[Unit, A] =
+    new Setup(_ => a)
+
+  def pure[A](a: A): Setup[Unit, A] =
+    const(AsyncCallback.pure((a, Teardown.empty)))
 
   /** Setup only; no teardown. */
-  def apply[A, B](f: A => B): Setup[A, B] =
-    andTeardown(f, Teardown.empty)
+  def simple[A, B](f: A => B): Setup[A, B] =
+    new Setup[A, B](a => AsyncCallback.point((f(a), Teardown.empty)))
 
-  def andTeardown[A, B](f: A => B, t: Teardown): Setup[A, B] =
-    new Setup(a => (f(a), t))
-
-  def andTeardown[A, B](f: A => (B, Teardown)): Setup[A, B] =
-    new Setup(f)
+  def async[A, B](f: A => AsyncCallback[B]): Setup[A, B] =
+    new Setup[A, B](f(_).map((_, Teardown.empty)))
 
   def derive[A, B, C](f: A => Setup[B, C])(b: A => B): Setup[A, C] =
     new Setup(a => f(a) run b(a))
@@ -34,14 +43,15 @@ object Setup {
 /**
   * Perform some effect to teardown something setup via [[Setup]].
   */
-final class Teardown(val run: () => Unit) extends AnyVal {
-  def asAsyncCallback: AsyncCallback[Unit] = AsyncCallback.point(run())
+final case class Teardown(asAsyncCallback: AsyncCallback[Unit]) {
+  def >>(next: Teardown): Teardown =
+    Teardown(asAsyncCallback >> next.asAsyncCallback)
+
+  @inline def <<(prev: Teardown): Teardown =
+    prev >> this
 }
 
 object Teardown {
-  def apply(f: => Unit): Teardown =
-    new Teardown(() => f)
-
   val empty: Teardown =
-    new Teardown(() => ())
+    apply(AsyncCallback.unit)
 }

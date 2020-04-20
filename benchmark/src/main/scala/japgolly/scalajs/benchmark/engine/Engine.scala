@@ -82,57 +82,58 @@ object Engine {
                 go(next))
 
             val setup =
-              AsyncCallback.point(key.bm.setup.run(key.param))
+              key.bm.setup.run(key.param)
 
-              setup.attempt.flatMap {
-                case Left(err) =>
-                  complete(Left(err))
+            setup.attempt.flatMap {
 
-                case Right((bmFn, teardown)) =>
-                  msg(BenchmarkRunning(progress, key)) {
+              case Right((bmFn, teardown)) =>
+                msg(BenchmarkRunning(progress, key)) {
 
-                    val bm = CallbackTo.lift(bmFn)
-                    val bmTimedUnsafe = clock.time(bm).toScalaFn
+                  val bm = CallbackTo.lift(bmFn)
+                  val bmTimedUnsafe = clock.time(bm).toScalaFn
 
-                    def runBenchmarks(rs: Stats.Mutable): AsyncCallback[Stats] = {
-                      val bmRound: AsyncCallback[Unit] =
-                        AsyncCallback.point {
-                          val startTime = System.currentTimeMillis()
-                          val delayAfter = startTime + 1000
-                          @inline def needDelay(): Boolean = System.currentTimeMillis() > delayAfter
+                  def runBenchmarks(rs: Stats.Mutable): AsyncCallback[Stats] = {
+                    val bmRound: AsyncCallback[Unit] =
+                      AsyncCallback.point {
+                        val startTime = System.currentTimeMillis()
+                        val delayAfter = startTime + 1000
+                        @inline def needDelay(): Boolean = System.currentTimeMillis() > delayAfter
 
-                          @tailrec
-                          def go(): Unit = {
-                            // val localFnAndTeardown = local.run(())
-                            // val t = clock.time(localFnAndTeardown._1())
-                            // localFnAndTeardown._2.run()
-                            val t = bmTimedUnsafe()
-                            rs add t
-                            if (!isEnough(rs) && !needDelay())
-                              go()
-                          }
-
-                          if (!aborted)
+                        @tailrec
+                        def go(): Unit = {
+                          // val localFnAndTeardown = local.run(())
+                          // val t = clock.time(localFnAndTeardown._1())
+                          // localFnAndTeardown._2.run()
+                          val t = bmTimedUnsafe()
+                          rs add t
+                          if (!isEnough(rs) && !needDelay())
                             go()
                         }
 
-                      var self: AsyncCallback[Stats] = AsyncCallback.point(???)
-                      self = bmRound >> AsyncCallback.byName {
-                        if (!isEnough(rs) && !aborted)
-                          self.delayMs(1)
-                        else
-                          AsyncCallback.pure(Stats(rs.times.toVector, options))
+                        if (!aborted)
+                          go()
                       }
-                      self
-                    }
 
-                    AsyncCallback.point(new Stats.Mutable)
-                      .flatMap(runBenchmarks)
-                      .attempt
-                      .finallyRun(teardown.asAsyncCallback)
-                      .flatMap(complete)
+                    var self: AsyncCallback[Stats] = AsyncCallback.point(???)
+                    self = bmRound >> AsyncCallback.byName {
+                      if (!isEnough(rs) && !aborted)
+                        self.delayMs(1)
+                      else
+                        AsyncCallback.pure(Stats(rs.times.toVector, options))
+                    }
+                    self
                   }
-              }
+
+                  AsyncCallback.point(new Stats.Mutable)
+                    .flatMap(runBenchmarks)
+                    .attempt
+                    .finallyRun(teardown.asAsyncCallback)
+                    .flatMap(complete)
+                }
+
+              case Left(err) =>
+                complete(Left(err))
+            }
           }
 
         case Nil =>
