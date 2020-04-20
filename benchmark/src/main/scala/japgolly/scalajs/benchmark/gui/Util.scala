@@ -2,7 +2,7 @@ package japgolly.scalajs.benchmark.gui
 
 object Util {
 
-  private val numberFmt = """^-?(\d,?)+(?:\.\d+)?$""".r
+  private val numberFmt = """^-?(\d,?)+(?:\.\d+)?$""".r.pattern
 
   def formatTable(rows: Iterable[Vector[String]],
                   gap : Int => String = _ => "  "): String = {
@@ -17,7 +17,7 @@ object Util {
           (0 until maxCols)
             .iterator
             .map { i =>
-              rows.iterator.drop(1).map(_.lift(i).getOrElse("")).exists(numberFmt.matches)
+              rows.iterator.drop(1).map(_.lift(i).getOrElse("")).exists(numberFmt.matcher(_).matches)
             }
             .toVector
 

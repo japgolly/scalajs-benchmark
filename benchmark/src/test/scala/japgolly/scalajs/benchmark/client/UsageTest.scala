@@ -13,7 +13,7 @@ class UsageTest {
 
     def suite = GuiSuite(Suite("Nope")())
 
-    def param1 = GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)("Size", 5, 10)
+    def param1 = GuiParam(Render.Int, RenderTxt.Int, Editor.Text, Parser.IntsAsText)("Size", 5, 10)
     def param2 = GuiParam.int("Size", 5, 10)
 
     def folder1 = MenuComp.folder("Folder")(suite)
