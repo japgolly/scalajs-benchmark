@@ -163,6 +163,12 @@ object Styles extends StyleSheet.Inline {
     val folder = style(
       marginTop(0.6 em),
       marginBottom(0.3 em))
+
+    val folderUL = style(
+      marginBottom(1.2 em))
+
+    val folderLI = style(
+      marginBottom(0.3 em))
   }
 
   // ===================================================================================================================
