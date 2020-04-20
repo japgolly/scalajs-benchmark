@@ -1,27 +1,31 @@
 package japgolly.scalajs.benchmark.engine
 
+import japgolly.scalajs.react.{Callback, CallbackTo}
 import scala.concurrent.duration._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal
 import scala.util.Try
 
 trait Clock {
-  def time(f: => Any): FiniteDuration
+  def time(f: CallbackTo[_]): CallbackTo[FiniteDuration]
 }
 
 trait StatelessClock extends Clock {
   type Time
-  def get: Time
+  def unsafeGet(): Time
   def duration(start: Time, end: Time): FiniteDuration
 
   // val bh = new Blackhole
 
-  override def time(f: => Any): FiniteDuration = {
-    val a = get
-    val x = f
-    val b = get
-    // bh.consumeA(x)
-    duration(a, b)
+  override def time(c: CallbackTo[_]): CallbackTo[FiniteDuration] = {
+    val f = c.toScalaFn
+    CallbackTo {
+      val a = unsafeGet()
+      val x = f()
+      val b = unsafeGet()
+      // bh.consumeA(x)
+      duration(a, b)
+    }
   }
 }
 
@@ -29,14 +33,14 @@ object Clock {
   object SysNano extends StatelessClock {
     override def toString = "SysNano"
     override type Time                      = Long
-    override def get                        = System.nanoTime()
+    override def unsafeGet()                = System.nanoTime()
     override def duration(a: Time, b: Time) = FiniteDuration(b - a, NANOSECONDS)
   }
 
   object SysMilli extends StatelessClock {
     override def toString = "SysMilli"
     override type Time                      = Long
-    override def get                        = System.currentTimeMillis()
+    override def unsafeGet()                = System.currentTimeMillis()
     override def duration(a: Time, b: Time) = FiniteDuration(b - a, MILLISECONDS)
   }
 
@@ -52,12 +56,15 @@ object Clock {
     Try(new ChromeInterval()).toOption.map(i =>
       new Clock {
         override def toString = "Chrome"
-        override def time(f: => Any): FiniteDuration = {
-          i.start()
-          val x = f
-          i.stop()
-          // bh.consumeA(x)
-          FiniteDuration(i.microseconds().toLong, MICROSECONDS)
+        override def time(c: CallbackTo[_]): CallbackTo[FiniteDuration] = {
+          val f = c.toScalaFn
+          CallbackTo {
+            i.start()
+            val x = f()
+            i.stop()
+            // bh.consumeA(x)
+            FiniteDuration(i.microseconds().toLong, MICROSECONDS)
+          }
         }
       }
     )

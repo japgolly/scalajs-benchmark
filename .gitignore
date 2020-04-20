@@ -21,3 +21,4 @@ target
 .metadata
 .bloop
 .metals
+project/metals.sbt

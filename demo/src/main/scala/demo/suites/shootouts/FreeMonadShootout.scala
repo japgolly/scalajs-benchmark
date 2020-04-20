@@ -36,8 +36,8 @@ object FreeMonadShootout {
   val params = GuiParams.two(iso, param1, param2)
 
   val suite = Suite[Params]("Free monads")(
-    Benchmark.derive("Free → Fn0 (foldMap)",       (_: Params).lib.freeFoldMap      )(_.size),
-    Benchmark.derive("Free → Fn0 (mapSuspension)", (_: Params).lib.freeMapSuspension)(_.size))
+    Benchmark.derive("Free --> Fn0 (foldMap)",       (_: Params).lib.freeFoldMap      )(_.size),
+    Benchmark.derive("Free --> Fn0 (mapSuspension)", (_: Params).lib.freeMapSuspension)(_.size))
 
   val guiSuite = GuiSuite(suite, params).describe(
     <.div(

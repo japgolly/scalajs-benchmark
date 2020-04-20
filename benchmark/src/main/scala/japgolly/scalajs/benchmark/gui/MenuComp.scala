@@ -110,14 +110,14 @@ object MenuComp {
       m
     }
 
-    def routerCfg(mis: MenuItems2, layoutCfg: LayoutCfg, options: Options): RouterConfig[Page] = {
-      val idx = index(mis)
+    def routerCfg(items: MenuItems2, layoutCfg: LayoutCfg, options: Options): RouterConfig[Page] = {
+      val idx = index(items)
 
       RouterConfigDsl[Page].buildConfig { dsl =>
         import dsl._
 
         val rootRoute: Rule =
-          staticRoute(root, None) ~> renderR(rc => TOC.Comp(TOC.Props(mis, rc)))
+          staticRoute(root, None) ~> renderR(rc => TOC.Comp(TOC.Props(items, rc)))
 
         val routes =
           idx.foldLeft(rootRoute){ case (q, (path, mi)) =>
@@ -157,30 +157,34 @@ object MenuComp {
       }
 
     object TOC {
-      case class Props(mis: MenuItems2, rc: RouterCtl)
+      final case class Props(items      : MenuItems2,
+                             router     : RouterCtl,
+                             headerStyle: TagMod = *.folder,
+                             ulStyle    : TagMod = *.folderUL,
+                             liStyle    : TagMod = *.folderLI,
+                            )
 
-      class Backend($: BackendScope[Props, Unit]) {
-        def render(p: Props) = {
+      private def render(p: Props) = {
+        val li = <.li(p.liStyle)
 
-          def children(mis: MenuItems2): VdomTag =
-            <.ul(
-              mis.iterator.zipWithIndex.map(x =>
-                <.li(^.key := x._2, go(x._1))
-              ).toVdomArray)
+        def children(items: MenuItems2): VdomTag =
+          <.ul(
+            p.ulStyle,
+            items.iterator.zipWithIndex.toVdomArray(x =>
+              li(^.key := x._2, go(x._1))))
 
-          def go(mi: MenuItem2): VdomTag =
-            mi match {
-              case s: MenuSuite2  => p.rc.link(Some(s))(s.suite.name)
-              case s: MenuFolder2 => <.div(<.h3(*.folder, s.name), children(s.children))
-            }
+        def go(mi: MenuItem2): VdomTag =
+          mi match {
+            case s: MenuSuite2  => p.router.link(Some(s))(s.suite.name)
+            case s: MenuFolder2 => <.div(<.h3(p.headerStyle, s.name), children(s.children))
+          }
 
-          children(p.mis)
-        }
+        children(p.items)
       }
 
       val Comp =
         ScalaComponent.builder[Props]("ToC")
-          .renderBackend[Backend]
+          .render_P(render)
           .build
     }
   }

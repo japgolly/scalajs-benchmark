@@ -76,6 +76,12 @@ object Styles extends StyleSheet.Inline {
       resultCell,
       padding(v = 0.2 ex, h = 1 ex))
 
+    val preparing = style(
+      color(c"#33c"))
+
+    val running = style(
+      color(c"#d40000"))
+
     val numericResult = style(
       textAlign.right,
       fontFamily :=! "monospace")
@@ -103,6 +109,19 @@ object Styles extends StyleSheet.Inline {
       runningRow)
 
     def resetButton = abortButton
+
+    val resultFormatRow = style(
+      marginTop(.25 em),
+      marginBottom(.75 em))
+
+    val resultFormat = style(
+      marginRight(1 ex))
+
+    val resultText = style(
+      border(solid, 1 px, c"#111"),
+      backgroundColor(c"#e9e9e9"),
+      padding(1 ex),
+    )
 
     private def graphWidth = 640 px
 
@@ -162,6 +181,12 @@ object Styles extends StyleSheet.Inline {
 
     val folder = style(
       marginTop(0.6 em),
+      marginBottom(0.3 em))
+
+    val folderUL = style(
+      marginBottom(1.2 em))
+
+    val folderLI = style(
       marginBottom(0.3 em))
   }
 

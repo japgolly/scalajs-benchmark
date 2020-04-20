@@ -8,24 +8,30 @@ import Styles.{Suite => *}
 final class GuiParam[A, B](val header    : Header,
                            val initValues: Vector[A],
                            val render    : Render[A],
+                           val renderTxt : RenderTxt[A],
                            val editor    : Editor[B],
                            val parser    : Parser[A, B])
 
 object GuiParam {
 
-  def apply[A, B](render: Render[A],
-                  editor: Editor[B],
-                  parser: Parser[A, B])
-                 (header: Header, initValues: A*): GuiParam[A, B] =
-    new GuiParam(header, initValues.toVector, render, editor, parser)
+  def apply[A, B](render   : Render[A],
+                  renderTxt: RenderTxt[A],
+                  editor   : Editor[B],
+                  parser   : Parser[A, B])
+                 (header   : Header, initValues: A*): GuiParam[A, B] =
+    new GuiParam(header, initValues.toVector, render, renderTxt, editor, parser)
 
   implicit def autoSingleParam[A, B](p: GuiParam[A, B]): GuiParams[A] =
     GuiParams.one(p)
 
   def enum[A](header: Header, values: A*)
-             (resultLabel: Render[A],
-              editorLabel: A => VdomElement = null,
+             (resultTxt    : RenderTxt[A],
+              resultLabel  : Render[A] = null,
+              editorLabel  : A => VdomElement = null,
               initialValues: Seq[A] = null): GuiParam[A, BitSet] = {
+
+    val resultLabel2: Render[A] =
+      Option(resultLabel).getOrElse(resultTxt.andThen(s => s))
 
     val vs = values.toVector
     val vi = vs.zipWithIndex
@@ -41,7 +47,7 @@ object GuiParam {
       ))
 
     val renderInEditor: A => VdomElement =
-      Option(editorLabel) getOrElse (a => <.div(^.display.inline, resultLabel(a)))
+      Option(editorLabel) getOrElse (a => <.div(^.display.inline, resultLabel2(a)))
 
     val editor: Editor[BitSet] =
       e => {
@@ -68,12 +74,12 @@ object GuiParam {
     val init: Seq[A] =
       Option(initialValues) getOrElse vs
 
-    GuiParam(resultLabel, editor, parser)(header, init: _*)
+    GuiParam(resultLabel2, resultTxt, editor, parser)(header, init: _*)
   }
 
   def boolean(header: Header): GuiParam[Boolean, BitSet] =
-    enum(header, true, false)(Render.Bool)
+    enum(header, true, false)(RenderTxt.Bool, Render.Bool)
 
   def int(header: Header, initialValues: Int*): GuiParam[Int, String] =
-    GuiParam(Render.Int, Editor.Text, Parser.IntsAsText)(header, initialValues: _*)
+    GuiParam(Render.Int, RenderTxt.Int, Editor.Text, Parser.IntsAsText)(header, initialValues: _*)
 }

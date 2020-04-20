@@ -42,29 +42,32 @@ object Benchmark {
     * Creates a benchmark that doesn't need any external data.
     */
   def apply(name: String)(f: => Any): Benchmark[Unit] =
-    new Benchmark(name, Setup.unit(() => f), false)
+    new Benchmark(name, Setup.pure(() => f), false)
 
   /**
     * Creates a benchmark that accepts a parameter (without needing transformation or preprocessing).
     */
   def apply[A](name: String, f: A => Any): Benchmark[A] =
-    new Benchmark(name, Setup(a => () => f(a)), false)
+    new Benchmark(name, Setup.simple(a => () => f(a)), false)
 
   def fromFn[A](name: String)(f: A => Fn): Benchmark[A] =
-    new Benchmark(name, Setup(f), false)
+    new Benchmark(name, Setup.simple(f), false)
 
   def derive[A, B](name: String, f: A => Benchmark[B])(b: A => B): Benchmark[A] =
     new Benchmark(name, Setup.derive(f(_: A).setup)(b), false)
 
-  def setup[A, B](prepare: A => B): Builder[A, B] =
-    new Builder[A, B](prepare)
+  def setup[A, B](p: A => B): Builder[A, B] =
+    Setup.simple(p).toBM
 
-  class Builder[A, B](val prepare: A => B) {
-    def apply(name: String)(f: B => Any): Benchmark[A] =
-      new Benchmark(name, Setup { a =>
-        val b = prepare(a)
-        () => f(b)
-      }, false)
+  final class Builder[A, B](private val setup: Setup[A, B]) extends AnyVal {
+
+    def apply(name: String)(f: B => Any): Benchmark[A] = {
+      val setupFn: SetupFn[A] = setup.map(b => () => f(b))
+      new Benchmark(name, setupFn, isDisabledByDefault = false)
+    }
+
     def map[C](f: B => C): Builder[A, C] =
-      new Builder(f compose prepare)
-  }}
+      new Builder(setup.map(f))
+  }
+
+}

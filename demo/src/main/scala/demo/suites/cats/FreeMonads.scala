@@ -54,7 +54,7 @@ object FreeMonads {
     addn flatMap (_ => Get)
   }
 
-  val prefix = "Free → "
+  val prefix = "Free --> "
 
   val bmFn0FoldMap =
     bm(prefix + "Fn0 (foldMap)"){ p1 =>

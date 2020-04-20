@@ -11,16 +11,17 @@ object ScalaJsBenchmark {
   private val ghProject = "scalajs-benchmark"
 
   object Ver {
-    val ChartJs         = "1.0.2"
-    val MacroParadise   = "2.1.1"
-    val Monocle         = "1.6.0"
-    val React           = "16.7.0"
-    val Scala212        = "2.12.11"
-    val Scala213        = "2.13.1"
-    val ScalaCollCompat = "2.1.4"
-    val ScalaCss        = "0.6.0"
-    val ScalaJsReact    = "1.6.0"
-    val Scalaz          = "7.2.30"
+    val BetterMonadicFor = "0.3.1"
+    val ChartJs          = "1.0.2"
+    val MacroParadise    = "2.1.1"
+    val Monocle          = "1.6.0"
+    val React            = "16.7.0"
+    val Scala212         = "2.12.11"
+    val Scala213         = "2.13.1"
+    val ScalaCollCompat  = "2.1.5"
+    val ScalaCss         = "0.6.0"
+    val ScalaJsReact     = "1.6.0"
+    val Scalaz           = "7.2.30"
 
     // Demo only
     val Cats      = "2.1.1"
@@ -50,7 +51,8 @@ object ScalaJsBenchmark {
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
-      releaseVcsSign                := true)
+      releaseVcsSign                := true,
+      addCompilerPlugin(compilerPlugin("com.olegpy" %% "better-monadic-for" % Ver.BetterMonadicFor)))
 
   def definesMacros: Project => Project =
     _.settings(

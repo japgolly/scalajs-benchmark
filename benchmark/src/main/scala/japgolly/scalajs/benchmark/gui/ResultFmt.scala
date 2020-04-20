@@ -12,44 +12,36 @@ import scalacss.ScalaCssReact._
   *
   * Eg. 32.456 sec
   */
-case class ValueFmt[-I](getDouble: I => Option[Double], render: I => VdomElement) {
+final case class ValueFmt[-I](getDouble: I => Option[Double], render: I => VdomElement, toText: I => String) {
   def cmap[A](f: A => I): ValueFmt[A] =
-    ValueFmt(getDouble compose f, render compose f)
+    ValueFmt(getDouble compose f, render compose f, toText compose f)
 }
 
 object ValueFmt {
-
-  private val addThouRegex = """(\d)(?=(\d\d\d)+(?!\d))""".r
-
-  def addThousandSeps(s: String): String = {
-    def go(s: String)= addThouRegex.replaceAllIn(s, "$1,")
-    s.indexOf('.') match {
-      case n if n >= 0 =>
-        val (a,b) = s.splitAt(n)
-        go(a) + b
-      case _ =>
-        go(s)
-    }
-  }
 
   def number(dp: Int): ValueFmt[Double] = {
     val fmt = s"%.${dp}f"
     ValueFmt(Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        addThousandSeps(fmt format d)))
+        Util.addThousandSeps(fmt format d)),
+      fmt.format(_)
+    )
   }
 
-  def optionalNumber(dp: Int, default: VdomElement): ValueFmt[Option[Double]] = {
+  def optionalNumber(dp: Int, default: VdomElement, defaultText: String): ValueFmt[Option[Double]] = {
     val n = number(dp)
     ValueFmt(identity, {
       case Some(d) => n render d
       case None    => default
+    }, {
+      case Some(d) => n toText d
+      case None    => defaultText
     })
   }
 
   def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Duration] =
-    optionalNumber(dp, <.span("∞")).cmap {
+    optionalNumber(dp, <.span("∞"), "∞").cmap {
       case f: FiniteDuration => Some(getUnits(f))
       case _                 => None
     }
@@ -120,7 +112,8 @@ object ResultFmt {
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
-  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 3, 1)
+  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 1, 0)
+  val SecPerOp    = timePerOp(TimeUnit.SECONDS, 2, 1)
   val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
   val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
 }

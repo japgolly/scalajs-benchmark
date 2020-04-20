@@ -19,6 +19,8 @@ trait GuiParams[P] {
 
   def renderParams(p: P): Vector[TagMod]
 
+  def renderParamsToText(p: P): Vector[String]
+
   def bmNameSuffix(p: P): String =
     " @ " + p.toString
 }
@@ -32,12 +34,13 @@ object GuiParams {
 
   val none: GuiParams[Unit] =
     new GuiParams[Unit] {
-      override def initialState            = Vector.empty
-      override def headers                 = Vector.empty
-      override def editors                 = Vector.empty
-      override def renderParams(p: Unit)   = Vector.empty
-      override def bmNameSuffix(p: Unit)   = ""
-      override def parseState(s: GenState) = parseResult
+      override def initialState                = Vector.empty
+      override def headers                     = Vector.empty
+      override def editors                     = Vector.empty
+      override def renderParams(p: Unit)       = Vector.empty
+      override def renderParamsToText(p: Unit) = Vector.empty
+      override def bmNameSuffix(p: Unit)       = ""
+      override def parseState(s: GenState)     = parseResult
       val parseResult = \/-(Vector(()))
     }
 
@@ -126,6 +129,9 @@ object GuiParams {
 
       override final def renderParams(i: P): Vector[TagMod] =
         ps.map(p => p.param render p.lens.get(i))
+
+      override final def renderParamsToText(i: P): Vector[String] =
+        ps.map(p => p.param renderTxt p.lens.get(i))
     }
   }
 }
