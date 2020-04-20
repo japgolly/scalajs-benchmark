@@ -42,9 +42,10 @@ object Engine {
             (onEvent: Event[P] => AsyncCallback[Unit]): CallbackTo[AbortFn] = CallbackTo {
 
     val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
-    var broadcastFinishOnAbort = false
+    var broadcastFinishOnAbort = true
     var aborted                = false
     var progress               = Progress(plan, 0)
+    val setupCtx               = SetupCtx(CallbackTo(aborted))
 
     def isEnough(s: Stats.Mutable): Boolean = {
       import options._
@@ -82,7 +83,7 @@ object Engine {
                 go(next))
 
             val setup =
-              key.bm.setup.run(key.param)
+              key.bm.setup.run(key.param, setupCtx)
 
             setup.attempt.flatMap {
 
@@ -141,7 +142,6 @@ object Engine {
       }
 
       msg(SuiteStarting(progress)) {
-        broadcastFinishOnAbort = true
         go(plan.keys)
       }
     }
