@@ -110,6 +110,19 @@ object Styles extends StyleSheet.Inline {
 
     def resetButton = abortButton
 
+    val resultFormatRow = style(
+      marginTop(.25 em),
+      marginBottom(.75 em))
+
+    val resultFormat = style(
+      marginRight(1 ex))
+
+    val resultText = style(
+      border(solid, 1 px, c"#111"),
+      backgroundColor(c"#e9e9e9"),
+      padding(1 ex),
+    )
+
     private def graphWidth = 640 px
 
     val graphContainer = style(

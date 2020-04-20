@@ -33,6 +33,19 @@ package object gui {
 
   // ===================================================================================================================
 
+  type RenderTxt[-A] = A => String
+
+  object RenderTxt {
+
+    val Int: RenderTxt[Int] =
+      i => Util.addThousandSeps(i.toString)
+
+    val Bool: RenderTxt[Boolean] =
+      b => if (b) "T" else "F"
+  }
+
+  // ===================================================================================================================
+
   type Editor[A] = StateSnapshot[A] => VdomElement
 
   object Editor {

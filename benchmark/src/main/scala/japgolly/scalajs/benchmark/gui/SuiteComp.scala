@@ -23,11 +23,19 @@ object SuiteComp {
 
   case class Props[P](suite: GuiSuite[P], options: Options = Options.Default)
 
+  sealed abstract class ResultFormat(final val label: String)
+  object ResultFormat {
+    case object Table extends ResultFormat("Table")
+    case object Text  extends ResultFormat("Text")
+    val all = Vector[ResultFormat](Table, Text)
+  }
+
   @Lenses
-  case class State[A](status     : SuiteStatus[A],
-                      editors    : GenState,
-                      disabledBMs: Set[Int],
-                      oldTitle   : Option[String])
+  case class State[A](status      : SuiteStatus[A],
+                      editors     : GenState,
+                      disabledBMs : Set[Int],
+                      oldTitle    : Option[String],
+                      resultFormat: ResultFormat)
 
   object State {
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
@@ -37,7 +45,12 @@ object SuiteComp {
       bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
 
     def init[P](p: Props[P]): State[P] =
-      State[P](SuitePending, p.suite.params.initialState, initDisabledBMs(p.suite.suite.bms), None)
+      State[P](
+        status       = SuitePending,
+        editors      = p.suite.params.initialState,
+        disabledBMs  = initDisabledBMs(p.suite.suite.bms),
+        oldTitle     = None,
+        resultFormat = ResultFormat.Table)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -71,7 +84,7 @@ object SuiteComp {
   case object BMPending extends BMStatus
   case object BMPreparing extends BMStatus
   case object BMRunning extends BMStatus
-  case class BMDone(result: Result) extends BMStatus
+  final case class BMDone(result: Result) extends BMStatus
 
   private type ResultFmts    = Vector[ResultFmt]
   private val resultFmtCount = 2
@@ -88,7 +101,7 @@ object SuiteComp {
   private val whenBMRunning   = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, *.running, "Running…"))
 
   private def formatTotalTime(fd: FiniteDuration): String =
-    ValueFmt.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
+    Util.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
 
   final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
     type Props        = SuiteComp.Props[P]
@@ -96,12 +109,12 @@ object SuiteComp {
     type SuiteRunning = SuiteComp.SuiteRunning[P]
     type SuiteDone    = SuiteComp.SuiteDone[P]
 
-    val guiSuiteBMs = GuiSuite.suite[P] ^|-> Suite.bms
+    private val guiSuiteBMs = GuiSuite.suite[P] ^|-> Suite.bms
 
-    val updateEditorState: (Option[GenState], Callback) => Callback =
+    private val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
-    def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): AsyncCallback[Unit] = {
+    private def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): AsyncCallback[Unit] = {
       val plan = Plan(suite.suite, ps)
 
       def actuallyStart(startTime: Long) =
@@ -137,16 +150,16 @@ object SuiteComp {
         } yield ()
     }
 
-    def toggleBM(i: Int): Callback =
+    private def toggleBM(i: Int): Callback =
       $.modState(State.disabledBMs.modify(s =>
         if (s contains i) s - i else s + i)(_))
 
-    def makeSoleBM(i: Int): Callback =
+    private def makeSoleBM(i: Int): Callback =
       $.props >>= (p =>
         $.modState(State.disabledBMs.set(
           p.suite.suite.bms.indices.toSet - i)(_)))
 
-    def renderSuitePending(p: Props, s: State): VdomElement = {
+    private def renderSuitePending(p: Props, s: State): VdomElement = {
       val ev = StateSnapshot(s.editors)(updateEditorState)
       val params = p.suite.params
       val th = <.th(*.settingsTableHeader)
@@ -157,10 +170,9 @@ object SuiteComp {
           <.label(
             *.settingsTableBm,
             ^.onDoubleClick --> makeSoleBM(i),
-            <.input(
-              ^.`type`         := "checkbox",
-              ^.checked        := !s.disabledBMs.contains(i),
-              ^.onChange      --> toggleBM(i)),
+            <.input.checkbox(
+              ^.checked  := !s.disabledBMs.contains(i),
+              ^.onChange --> toggleBM(i)),
             <.span(
               *.settingsTableBmLabel,
               bm.name))
@@ -205,6 +217,7 @@ object SuiteComp {
           "Start")
 
       <.div(
+        renderFormatButtons(s),
         <.table(
           *.settingsTable,
           <.tbody(
@@ -213,25 +226,62 @@ object SuiteComp {
         startButton)
     }
 
-    def renderResultTable(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P]): VdomElement = {
+    private def renderResults(fmt: ResultFormat, suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement =
+      fmt match {
+        case ResultFormat.Table => renderResultTable(suite, progress, m, resultFmts)
+        case ResultFormat.Text  => renderResultText(suite, progress, m, resultFmts)
+      }
+
+    private def renderResultText(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement = {
       val keys = progress.plan.keys
 
-      val resultFmts: ResultFmts = {
-        val minAvg =
-          keys
-            .iterator
-            .flatMap(m.get)
-            .collect { case BMDone(Right(s)) => s.average }
-            .reduceOption(_.min(_))
-            .getOrElse(Duration.Zero)
+      val rowBuilder = List.newBuilder[Vector[String]]
 
-        if (minAvg.toMicros < 1000)
-          Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
-        else if (minAvg.toMillis < 1000)
-          Vector(ResultFmt.MillisPerOp, ResultFmt.OpsPerSec)
-        else
-          Vector(ResultFmt.SecPerOp, ResultFmt.OpsPerSec)
+      def header: Vector[String] =
+        ("Benchmark" +: suite.params.headers :+ "Runs") ++ resultFmts.iterator.flatMap(f => f.header :: "±" :: "error" :: Nil)
+
+      rowBuilder += header
+      rowBuilder += Vector.empty
+
+      for (k <- keys) {
+        var cells = Vector.empty[String]
+        val status = m.getOrElse(k, BMPending)
+
+        cells :+= k.bm.name
+        cells ++= suite.params.renderParamsToText(k.param)
+
+        status match {
+          case BMPending        => ()
+          case BMPreparing      => cells :+= "Preparing..."
+          case BMRunning        => cells :+= "Running..."
+          case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
+          case BMDone(Right(r)) =>
+            cells :+= Util.addThousandSeps(ValueFmt.Integer toText r.runs)
+            for (f <- resultFmts)
+              cells ++= Vector(
+                Util.addThousandSeps(f.score toText r),
+                "±",
+                Util.addThousandSeps(f.error toText r))
+        }
+
+        rowBuilder += cells
       }
+
+      val preResultColumns = suite.params.headers.length + 1
+
+      def gap(i: Int): String =
+        if (i <= preResultColumns || ((i - preResultColumns) % 3) == 0)
+          "     "
+        else
+          " "
+
+      val rows = rowBuilder.result()
+      val text = Util.formatTable(rows, gap)
+      <.pre(*.resultText, text)
+    }
+
+    private def renderResultTable(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement = {
+      val keys = progress.plan.keys
 
       def header = {
         val th = <.th(*.resultHeader)
@@ -280,50 +330,66 @@ object SuiteComp {
           <.tr(hs: _*)
         }
 
-      def graph = {
-        import ReactChart._
-        val fmt = resultFmts.head
-        val bmsToShow = m.size max 1
-
-        val bmFullName: PlanKey[P] => String =
-          if (progress.plan.params.length > 1)
-            k => k.bm.name + suite.params.bmNameSuffix(k.param)
-          else
-            _.bm.name
-
-        val titles = keys.iterator
-            .map(bmFullName)
-            .take(bmsToShow)
-            .toVector
-
-        val dataPoints = keys.iterator.map[Chart.Value](k =>
-          m.getOrElse(k, BMPending) match {
-            case BMDone(Right(stats)) => fmt.score.getDouble(stats) getOrElse 0
-            case BMDone(Left(_))
-               | BMPending
-               | BMRunning
-               | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
-          }
-        ).take(bmsToShow).toVector
-
-        val dataset = ScalaDataset(fmt.header, dataPoints)
-        val bardata = ScalaBarData(titles, Vector(dataset))
-        val props = ReactChart.Props(*.graph, *.graphInner(bardata))
-
-        <.div(*.graphContainer,
-          <.div(*.graphHeader, fmt.graphHeader),
-          ReactChart.Comp(props))
-      }
-
       <.div(
         <.table(
           *.resultTable,
           <.thead(header),
-          <.tbody(rows: _*)),
-        graph)
+          <.tbody(rows: _*)))
     }
 
-    def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
+    private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement = {
+      import ReactChart._
+      val keys = progress.plan.keys
+      val fmt = resultFmts.head
+      val bmsToShow = m.size max 1
+
+      val bmFullName: PlanKey[P] => String =
+        if (progress.plan.params.length > 1)
+          k => k.bm.name + suite.params.bmNameSuffix(k.param)
+        else
+          _.bm.name
+
+      val titles = keys.iterator
+        .map(bmFullName)
+        .take(bmsToShow)
+        .toVector
+
+      val dataPoints = keys.iterator.map[Chart.Value](k =>
+        m.getOrElse(k, BMPending) match {
+          case BMDone(Right(stats)) => fmt.score.getDouble(stats) getOrElse 0
+          case BMDone(Left(_))
+               | BMPending
+               | BMRunning
+               | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
+        }
+      ).take(bmsToShow).toVector
+
+      val dataset = ScalaDataset(fmt.header, dataPoints)
+      val bardata = ScalaBarData(titles, Vector(dataset))
+      val props = ReactChart.Props(*.graph, *.graphInner(bardata))
+
+      <.div(*.graphContainer,
+        <.div(*.graphHeader, fmt.graphHeader),
+        ReactChart.Comp(props))
+    }
+
+    private def renderFormatButtons(s: State) =
+      <.div(
+        *.resultFormatRow,
+        "Result format: ",
+        ResultFormat.all.toTagMod { f =>
+          <.label(
+            *.resultFormat,
+            <.input.radio(
+              ^.checked := (s.resultFormat == f),
+              ^.onChange --> $.modState(_.copy(resultFormat = f))),
+            f.label)
+        }
+      )
+
+    private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
+      val resultFmts = deriveResultFmts(r.progess, r.bm)
+
       def abortButton =
         <.button(
           *.abortButton,
@@ -334,10 +400,14 @@ object SuiteComp {
         <.div(*.runningRow,
           <.span("Benchmark running..."),
           abortButton),
-        renderResultTable(p.suite, r.progess, r.bm))
+        renderFormatButtons(s),
+        renderResults(s.resultFormat, p.suite, r.progess, r.bm, resultFmts),
+        renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
-    def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
+    private def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
+      val resultFmts = deriveResultFmts(r.progess, r.bm)
+
       def resetButton =
         <.button(
           *.resetButton,
@@ -348,11 +418,32 @@ object SuiteComp {
         <.div(*.doneRow,
           <.span(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
           resetButton),
-        renderResultTable(p.suite, r.progess, r.bm))
+        renderFormatButtons(s),
+        renderResults(s.resultFormat, p.suite, r.progess, r.bm, resultFmts),
+        renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
-    def renderDesc(e: VdomElement) =
+    private def renderDesc(e: VdomElement) =
       <.div(*.suiteDesc, e)
+
+    private def deriveResultFmts(progress: Progress[P], m: EachBMStatus[P]): ResultFmts = {
+      val keys = progress.plan.keys
+
+      val minAvg =
+        keys
+          .iterator
+          .flatMap(m.get)
+          .collect { case BMDone(Right(s)) => s.average }
+          .reduceOption(_.min(_))
+          .getOrElse(Duration.Zero)
+
+      if (minAvg.toMicros < 1000)
+        Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
+      else if (minAvg.toMillis < 1000)
+        Vector(ResultFmt.MillisPerOp, ResultFmt.OpsPerSec)
+      else
+        Vector(ResultFmt.SecPerOp, ResultFmt.OpsPerSec)
+    }
 
     def render(p: Props, s: State): VdomElement = {
       val inner: VdomElement = s.status match {
