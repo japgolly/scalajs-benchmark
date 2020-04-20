@@ -76,6 +76,12 @@ object Styles extends StyleSheet.Inline {
       resultCell,
       padding(v = 0.2 ex, h = 1 ex))
 
+    val preparing = style(
+      color(c"#33c"))
+
+    val running = style(
+      color(c"#d40000"))
+
     val numericResult = style(
       textAlign.right,
       fontFamily :=! "monospace")

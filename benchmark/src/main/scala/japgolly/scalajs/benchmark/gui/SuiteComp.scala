@@ -84,8 +84,8 @@ object SuiteComp {
 
   private val runsCellNone    = resultTD
   private val whenBMPending   = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll))
-  private val whenBMPreparing = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, ^.color := "#33c", "Preparing…"))
-  private val whenBMRunning   = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, ^.color := "#d40000", "Running…"))
+  private val whenBMPreparing = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, *.preparing, "Preparing…"))
+  private val whenBMRunning   = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, *.running, "Running…"))
 
   private def formatTotalTime(fd: FiniteDuration): String =
     ValueFmt.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
