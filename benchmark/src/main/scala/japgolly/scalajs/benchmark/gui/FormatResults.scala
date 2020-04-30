@@ -16,7 +16,7 @@ abstract class FormatResults(final val label: String) {
 object FormatResults {
 
   val builtIn: Vector[FormatResults] =
-    Vector(Table, Text, CSV)
+    Vector(Table, Text, CSV(8))
 
   final case class Args[P](suite     : GuiSuite[P],
                            progress  : Progress[P],
@@ -102,9 +102,22 @@ object FormatResults {
   def textTable[P](args               : Args[P],
                    separatePlusMinus  : Boolean,
                    emptyRowAfterHeader: Boolean,
+                   overridePrecision  : Option[Int],
                    modNumber          : String => String,
                   ): Vector[Vector[String]] = {
     import args._
+
+    val decFmt =
+      overridePrecision.map { dp => "%." + dp + "f" }
+
+    def formatNum[A](formatValue: FormatValue[A], value: A): String = {
+      val str =
+        decFmt match {
+          case Some(fmt) => Util.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+          case None      => formatValue.toText(value)
+        }
+      modNumber(str)
+    }
 
     val keys = progress.plan.keys
 
@@ -135,10 +148,10 @@ object FormatResults {
         case BMRunning        => cells :+= "Running..."
         case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
         case BMDone(Right(r)) =>
-          cells :+= modNumber(FormatValue.Integer toText r.runs)
+          cells :+= formatNum(FormatValue.Integer, r.runs)
           for (f <- resultFmts) {
-            val score = modNumber(f.score toText r)
-            val error = modNumber(f.error toText r)
+            val score = formatNum(f.score, r)
+            val error = formatNum(f.error, r)
             val c =
               if (separatePlusMinus)
                 Vector(score, "±", error)
@@ -164,6 +177,7 @@ object FormatResults {
         args                = args,
         separatePlusMinus   = true,
         emptyRowAfterHeader = true,
+        overridePrecision   = None,
         modNumber           = Util.addThousandSeps
       )
 
@@ -183,12 +197,13 @@ object FormatResults {
 
   // ===================================================================================================================
 
-  case object CSV extends FormatResults("CSV") {
+  final case class CSV(decimalPoints: Int) extends FormatResults("CSV") {
     override def render[P](args: Args[P]): VdomElement = {
       val rows = textTable(
         args                = args,
         separatePlusMinus   = false,
         emptyRowAfterHeader = false,
+        overridePrecision   = Some(decimalPoints),
         modNumber           = identity
       )
       val text = Util.formatCSV(rows)

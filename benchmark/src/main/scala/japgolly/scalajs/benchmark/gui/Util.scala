@@ -74,4 +74,6 @@ object Util {
     }
   }
 
+  def removeTrailingZeros(str: String): String =
+    str.replaceFirst("0+$", "").replaceFirst("\\.$", "")
 }

@@ -9,46 +9,67 @@ import scalacss.ScalaCssReact._
   *
   * Eg. 32.456 sec
   */
-final case class FormatValue[-I](getDouble: I => Option[Double], render: I => VdomElement, toText: I => String) {
-  def cmap[A](f: A => I): FormatValue[A] =
-    FormatValue(getDouble compose f, render compose f, toText compose f)
+final case class FormatValue[-I](getDouble: I => Option[Double],
+                                 render   : I => VdomElement,
+                                 toDouble : I => Double,
+                                 toText   : I => String) {
+  def contramap[A](f: A => I): FormatValue[A] =
+    FormatValue(
+      getDouble compose f,
+      render compose f,
+      toDouble compose f,
+      toText compose f)
 }
 
 object FormatValue {
 
   def number(dp: Int): FormatValue[Double] = {
     val fmt = s"%.${dp}f"
-    FormatValue(Some.apply,
+    FormatValue(
+      Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
         Util.addThousandSeps(fmt format d)),
+      identity,
       fmt.format(_)
     )
   }
 
-  def optionalNumber(dp: Int, default: VdomElement, defaultText: String): FormatValue[Option[Double]] = {
+  def optionalNumber(dp: Int, default: VdomElement, defaultDouble: Double, defaultText: String): FormatValue[Option[Double]] = {
     val n = number(dp)
-    FormatValue(identity, {
-      case Some(d) => n render d
-      case None    => default
-    }, {
-      case Some(d) => n toText d
-      case None    => defaultText
-    })
+    FormatValue(
+      identity,
+      {
+        case Some(d) => n render d
+        case None    => default
+      },
+      {
+        case Some(d) => d
+        case None    => defaultDouble
+      },
+      {
+        case Some(d) => n toText d
+        case None    => defaultText
+      })
   }
 
   def duration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Duration] =
-    optionalNumber(dp, <.span("∞"), "∞").cmap {
-      case f: FiniteDuration => Some(getUnits(f))
-      case _                 => None
-    }
+    optionalNumber(
+      dp,
+      <.span("∞"),
+      -1,
+      "∞")
+      .contramap {
+        case f: FiniteDuration => Some(getUnits(f))
+        case _                 => None
+      }
 
   def averageDuration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).cmap(_.average)
+    duration(getUnits, dp).contramap(_.average)
 
   def error(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).cmap(_.marginOfError)
+    duration(getUnits, dp).contramap(_.marginOfError)
 
-  val Integer = number(0).cmap[Int](_.toDouble)
+  val Integer = number(0).contramap[Int](_.toDouble)
 }
 
