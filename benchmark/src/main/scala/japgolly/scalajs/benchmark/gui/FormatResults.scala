@@ -9,16 +9,13 @@ import scalacss.ScalaCssReact._
 
 /** Format for a number of results.
   */
-sealed abstract class FormatResults(final val label: String) {
+abstract class FormatResults(final val label: String) {
   def render[P](args: FormatResults.Args[P]): VdomElement
 }
 
 object FormatResults {
 
-  def default: FormatResults =
-    Table
-
-  val all: Vector[FormatResults] =
+  val builtIn: Vector[FormatResults] =
     Vector(Table, Text)
 
   final case class Args[P](suite     : GuiSuite[P],

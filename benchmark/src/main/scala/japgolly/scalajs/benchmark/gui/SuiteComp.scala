@@ -45,7 +45,7 @@ object SuiteComp {
         editors       = p.suite.params.initialState,
         disabledBMs   = initDisabledBMs(p.suite.suite.bms),
         oldTitle      = None,
-        formatResults = FormatResults.default)
+        formatResults = p.guiOptions.formatResultsDefault)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -200,7 +200,7 @@ object SuiteComp {
           "Start")
 
       <.div(
-        renderFormatButtons(s),
+        renderFormatButtons(p, s),
         <.table(
           *.settingsTable,
           <.tbody(
@@ -248,11 +248,11 @@ object SuiteComp {
         ReactChart.Comp(props))
     }
 
-    private def renderFormatButtons(s: State) =
+    private def renderFormatButtons(p: Props, s: State) =
       <.div(
         *.resultFormatRow,
         "Result format: ",
-        FormatResults.all.toTagMod { f =>
+        p.guiOptions.formatResults.toTagMod { f =>
           <.label(
             *.resultFormat,
             <.input.radio(
@@ -275,7 +275,7 @@ object SuiteComp {
         <.div(*.runningRow,
           <.span("Benchmark running..."),
           abortButton),
-        renderFormatButtons(s),
+        renderFormatButtons(p, s),
         renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
         renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
@@ -293,7 +293,7 @@ object SuiteComp {
         <.div(*.doneRow,
           <.span(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
           resetButton),
-        renderFormatButtons(s),
+        renderFormatButtons(p, s),
         renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
         renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
