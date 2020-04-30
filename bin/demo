@@ -1,7 +1,0 @@
-#!/bin/bash
-cd "$(dirname "$(readlink -e "$0"/..)")" || exit 1
-
-google-chrome-stable --incognito --user-data-dir=/tmp/chrome-session --enable-benchmarking http://localhost:4000/demo/scala213-full.html &
-
-exec python -m http.server 4000
-

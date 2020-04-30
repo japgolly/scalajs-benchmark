@@ -149,6 +149,7 @@ object ScalaJsBenchmark {
           "org.typelevel" %%% "cats-free"     % Ver.Cats,
           "com.chuusai"   %%% "shapeless"     % Ver.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
+        emitSourceMaps := true,
         skip in packageJSDependencies := false,
         test := { (compile in Test).value; () })
 }
