@@ -21,8 +21,9 @@ import Styles.{Suite => *}
 object SuiteComp {
   type Comp[P] = ScalaComponent[Props[P], State[P], Backend[P], CtorType.Props]
 
-  final case class Props[P](suite  : GuiSuite[P],
-                            options: EngineOptions = EngineOptions.default)
+  final case class Props[P](suite        : GuiSuite[P],
+                            engineOptions: EngineOptions = EngineOptions.default,
+                            guiOptions   : GuiOptions    = GuiOptions.default)
 
   @Lenses
   final case class State[A](status       : SuiteStatus[A],
@@ -187,7 +188,7 @@ object SuiteComp {
           bms <- Some(selectedBMs).filter(_.nonEmpty)
         } yield {
           val s2 = guiSuiteBMs.set(bms)(p.suite)
-          start(s2, p.options, ps).toCallback
+          start(s2, p.engineOptions, ps).toCallback
         }
       }
 
