@@ -17,7 +17,7 @@ object ScalaJsBenchmark {
     val Monocle          = "1.6.3"
     val React            = "16.7.0"
     val Scala212         = "2.12.11"
-    val Scala213         = "2.13.1"
+    val Scala213         = "2.13.2"
     val ScalaCollCompat  = "2.1.6"
     val ScalaCss         = "0.6.0"
     val ScalaJsReact     = "1.6.0"
