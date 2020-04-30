@@ -115,7 +115,8 @@ object Styles extends StyleSheet.Inline {
       marginBottom(.75 em))
 
     val resultFormat = style(
-      marginRight(1 ex))
+      cursor.pointer,
+      marginLeft(1.5 ex))
 
     val resultText = style(
       border(solid, 1 px, c"#111"),
