@@ -22,7 +22,7 @@ object SuiteComp {
   type Comp[P] = ScalaComponent[Props[P], State[P], Backend[P], CtorType.Props]
 
   final case class Props[P](suite  : GuiSuite[P],
-                            options: Options = Options.Default)
+                            options: EngineOptions = EngineOptions.default)
 
   @Lenses
   final case class State[A](status       : SuiteStatus[A],
@@ -96,7 +96,7 @@ object SuiteComp {
     private val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
-    private def start(suite: GuiSuite[P], options: Options, ps: Vector[P]): AsyncCallback[Unit] = {
+    private def start(suite: GuiSuite[P], options: EngineOptions, ps: Vector[P]): AsyncCallback[Unit] = {
       val plan = Plan(suite.suite, ps)
 
       def actuallyStart(startTime: Long) =

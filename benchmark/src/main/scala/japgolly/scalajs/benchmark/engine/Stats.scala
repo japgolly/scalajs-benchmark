@@ -3,7 +3,7 @@ package japgolly.scalajs.benchmark.engine
 import scala.concurrent.duration._
 import scala.scalajs.js
 
-final case class Stats(times: Vector[FiniteDuration], o: Options) {
+final case class Stats(times: Vector[FiniteDuration], o: EngineOptions) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =

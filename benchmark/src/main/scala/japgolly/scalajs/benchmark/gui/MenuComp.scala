@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.Options
+import japgolly.scalajs.benchmark.engine.EngineOptions
 import japgolly.scalajs.react._, vdom.html_<^._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.router.{RouterCtl => RouterCtl_, _}
@@ -56,7 +56,7 @@ object MenuComp {
 
   def buildRouter(baseUrl: BaseUrl,
                   layout: LayoutCfg = LayoutCfg.default,
-                  options: Options = Options.Default)
+                  options: EngineOptions = EngineOptions.default)
                  (m1: MenuItems, mn: MenuItems*): Router[_] = {
     val mis = m1.toVector ++ mn.flatten
     val mis2 = Internals.convert(mis)
@@ -110,7 +110,7 @@ object MenuComp {
       m
     }
 
-    def routerCfg(items: MenuItems2, layoutCfg: LayoutCfg, options: Options): RouterConfig[Page] = {
+    def routerCfg(items: MenuItems2, layoutCfg: LayoutCfg, options: EngineOptions): RouterConfig[Page] = {
       val idx = index(items)
 
       RouterConfigDsl[Page].buildConfig { dsl =>
