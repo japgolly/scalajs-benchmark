@@ -16,7 +16,7 @@ abstract class FormatResults(final val label: String) {
 object FormatResults {
 
   val builtIn: Vector[FormatResults] =
-    Vector(Table, Text)
+    Vector(Table, Text, CSV)
 
   final case class Args[P](suite     : GuiSuite[P],
                            progress  : Progress[P],
@@ -99,43 +99,73 @@ object FormatResults {
 
   // ===================================================================================================================
 
+  def textTable[P](args               : Args[P],
+                   separatePlusMinus  : Boolean,
+                   emptyRowAfterHeader: Boolean,
+                   modNumber          : String => String,
+                  ): Vector[Vector[String]] = {
+    import args._
+
+    val keys = progress.plan.keys
+
+    val rowBuilder = Vector.newBuilder[Vector[String]]
+
+    def header: Vector[String] =
+      ("Benchmark" +: suite.params.headers :+ "Runs") ++ resultFmts.iterator.flatMap(f =>
+        if (separatePlusMinus)
+          f.header :: "±" :: "error" :: Nil
+        else
+          f.header :: "± error" :: Nil)
+
+    rowBuilder += header
+
+    if (emptyRowAfterHeader)
+      rowBuilder += Vector.empty
+
+    for (k <- keys) {
+      var cells = Vector.empty[String]
+      val status = results.getOrElse(k, BMPending)
+
+      cells :+= k.bm.name
+      cells ++= suite.params.renderParamsToText(k.param)
+
+      status match {
+        case BMPending        => ()
+        case BMPreparing      => cells :+= "Preparing..."
+        case BMRunning        => cells :+= "Running..."
+        case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
+        case BMDone(Right(r)) =>
+          cells :+= modNumber(FormatValue.Integer toText r.runs)
+          for (f <- resultFmts) {
+            val score = modNumber(f.score toText r)
+            val error = modNumber(f.error toText r)
+            val c =
+              if (separatePlusMinus)
+                Vector(score, "±", error)
+              else
+                Vector(score, error)
+            cells ++= c
+          }
+      }
+
+      rowBuilder += cells
+    }
+
+    rowBuilder.result()
+  }
+
+  // ===================================================================================================================
+
   case object Text extends FormatResults("Text") {
     override def render[P](args: Args[P]): VdomElement = {
       import args._
 
-      val keys = progress.plan.keys
-
-      val rowBuilder = List.newBuilder[Vector[String]]
-
-      def header: Vector[String] =
-        ("Benchmark" +: suite.params.headers :+ "Runs") ++ resultFmts.iterator.flatMap(f => f.header :: "±" :: "error" :: Nil)
-
-      rowBuilder += header
-      rowBuilder += Vector.empty
-
-      for (k <- keys) {
-        var cells = Vector.empty[String]
-        val status = results.getOrElse(k, BMPending)
-
-        cells :+= k.bm.name
-        cells ++= suite.params.renderParamsToText(k.param)
-
-        status match {
-          case BMPending        => ()
-          case BMPreparing      => cells :+= "Preparing..."
-          case BMRunning        => cells :+= "Running..."
-          case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
-          case BMDone(Right(r)) =>
-            cells :+= Util.addThousandSeps(FormatValue.Integer toText r.runs)
-            for (f <- resultFmts)
-              cells ++= Vector(
-                Util.addThousandSeps(f.score toText r),
-                "±",
-                Util.addThousandSeps(f.error toText r))
-        }
-
-        rowBuilder += cells
-      }
+      val rows = textTable(
+        args                = args,
+        separatePlusMinus   = true,
+        emptyRowAfterHeader = true,
+        modNumber           = Util.addThousandSeps
+      )
 
       val preResultColumns = suite.params.headers.length + 1
 
@@ -145,8 +175,23 @@ object FormatResults {
         else
           " "
 
-      val rows = rowBuilder.result()
       val text = Util.formatTable(rows, gap)
+
+      <.pre(*.resultText, text)
+    }
+  }
+
+  // ===================================================================================================================
+
+  case object CSV extends FormatResults("CSV") {
+    override def render[P](args: Args[P]): VdomElement = {
+      val rows = textTable(
+        args                = args,
+        separatePlusMinus   = false,
+        emptyRowAfterHeader = false,
+        modNumber           = identity
+      )
+      val text = Util.formatCSV(rows)
       <.pre(*.resultText, text)
     }
   }

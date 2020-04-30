@@ -44,6 +44,23 @@ object Util {
     }
   }
 
+  def formatCSV(rows: Iterable[Vector[String]]): String = {
+    def quote(s: String): String = {
+      val needQuote = s.exists {
+        case ' ' | ',' | '"' => true
+        case c               => c < 32
+      }
+      if (needQuote)
+        "\"" + s.replace("\"", "\"\"") + "\""
+      else
+        s
+    }
+    rows
+      .iterator
+      .map(_.iterator.map(quote).mkString(","))
+      .mkString("\n")
+  }
+
   private val addThouRegex = """(\d)(?=(\d\d\d)+(?!\d))""".r
 
   def addThousandSeps(s: String): String = {
