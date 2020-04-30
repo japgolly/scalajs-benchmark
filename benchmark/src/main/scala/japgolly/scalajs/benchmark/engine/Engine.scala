@@ -38,7 +38,7 @@ object Engine {
     * @return A function by which the benchmarks can be aborted.
     */
   def run[P](plan   : Plan[P],
-             options: Options = Options.Default)
+             options: EngineOptions = EngineOptions.default)
             (onEvent: Event[P] => AsyncCallback[Unit]): CallbackTo[AbortFn] = CallbackTo {
 
     val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
@@ -163,7 +163,7 @@ object Engine {
     *
     * @return A function by which the benchmarks can be aborted.
     */
-  def runToConsole[P](plan: Plan[P], options: Options = Options.Default): CallbackTo[AbortFn] = {
+  def runToConsole[P](plan: Plan[P], options: EngineOptions = EngineOptions.default): CallbackTo[AbortFn] = {
     val fmt = {
       val prog  = plan.totalBenchmarks.toString.length
       val name  = plan.bms.foldLeft(0)(_ max _.name.length)

@@ -1,0 +1,43 @@
+#!/bin/bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+src="$(pwd)"
+
+tgt=/tmp/scalajs-benchmark-demo
+[ ! -e $tgt ] && mkdir $tgt
+cd $tgt
+
+function link {
+  f="$(basename "$1")"
+  if [ $# -eq 2 ]; then
+    d="$2"
+    mkdir -p "$d"
+    f="$d/$f"
+  fi
+  rm -f "$f"
+  ln -s "$1" "$f"
+}
+
+py="$(basename "$0").py"
+link "$src/bin/$py"
+
+for f in "$src/demo/"*.html; do
+  link "$f"
+done
+
+for scalaVer in 2.12 2.13; do
+
+  link "$src/demo/target/scala-$scalaVer/demo-jsdeps.js"      "target/scala-$scalaVer"
+  link "$src/demo/target/scala-$scalaVer/demo-fastopt.js"     "target/scala-$scalaVer"
+  link "$src/demo/target/scala-$scalaVer/demo-fastopt.js.map" "target/scala-$scalaVer"
+  link "$src/demo/target/scala-$scalaVer/demo-jsdeps.min.js"  "target/scala-$scalaVer"
+  link "$src/demo/target/scala-$scalaVer/demo-opt.js"         "target/scala-$scalaVer"
+  link "$src/demo/target/scala-$scalaVer/demo-opt.js.map"     "target/scala-$scalaVer"
+done
+
+tree "$tgt" || echo "Target: $tgt"
+
+nohup google-chrome-stable --incognito --user-data-dir=/tmp/chrome-session --enable-benchmarking http://localhost:4040/ & >/dev/null
+
+exec python3 "$py"

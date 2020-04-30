@@ -14,11 +14,11 @@ object ScalaJsBenchmark {
     val BetterMonadicFor = "0.3.1"
     val ChartJs          = "1.0.2"
     val MacroParadise    = "2.1.1"
-    val Monocle          = "1.6.0"
+    val Monocle          = "1.6.3"
     val React            = "16.7.0"
     val Scala212         = "2.12.11"
-    val Scala213         = "2.13.1"
-    val ScalaCollCompat  = "2.1.5"
+    val Scala213         = "2.13.2"
+    val ScalaCollCompat  = "2.1.6"
     val ScalaCss         = "0.6.0"
     val ScalaJsReact     = "1.6.0"
     val Scalaz           = "7.2.30"
@@ -149,6 +149,7 @@ object ScalaJsBenchmark {
           "org.typelevel" %%% "cats-free"     % Ver.Cats,
           "com.chuusai"   %%% "shapeless"     % Ver.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
+        emitSourceMaps := true,
         skip in packageJSDependencies := false,
         test := { (compile in Test).value; () })
 }
