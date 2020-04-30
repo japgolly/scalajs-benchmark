@@ -5,6 +5,7 @@ cd "$(dirname "$0")"
 vers=(
   2.12.11
   2.13.1
+  2.13.2
 )
 
 for v in "${vers[@]}"; do
