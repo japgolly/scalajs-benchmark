@@ -1,69 +1,21 @@
 package japgolly.scalajs.benchmark.gui
 
 import java.util.concurrent.TimeUnit
-
 import japgolly.scalajs.benchmark.engine.Stats
-import japgolly.scalajs.react.vdom.html_<^._
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scalacss.ScalaCssReact._
 
-/**
-  * Format for a single value.
-  *
-  * Eg. 32.456 sec
-  */
-final case class ValueFmt[-I](getDouble: I => Option[Double], render: I => VdomElement, toText: I => String) {
-  def cmap[A](f: A => I): ValueFmt[A] =
-    ValueFmt(getDouble compose f, render compose f, toText compose f)
-}
-
-object ValueFmt {
-
-  def number(dp: Int): ValueFmt[Double] = {
-    val fmt = s"%.${dp}f"
-    ValueFmt(Some.apply,
-      d => <.div(
-        Styles.Suite.numericResult,
-        Util.addThousandSeps(fmt format d)),
-      fmt.format(_)
-    )
-  }
-
-  def optionalNumber(dp: Int, default: VdomElement, defaultText: String): ValueFmt[Option[Double]] = {
-    val n = number(dp)
-    ValueFmt(identity, {
-      case Some(d) => n render d
-      case None    => default
-    }, {
-      case Some(d) => n toText d
-      case None    => defaultText
-    })
-  }
-
-  def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Duration] =
-    optionalNumber(dp, <.span("∞"), "∞").cmap {
-      case f: FiniteDuration => Some(getUnits(f))
-      case _                 => None
-    }
-
-  def averageDuration(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Stats] =
-    duration(getUnits, dp).cmap(_.average)
-
-  def error(getUnits: FiniteDuration => Double, dp: Int): ValueFmt[Stats] =
-    duration(getUnits, dp).cmap(_.marginOfError)
-
-  val Integer = number(0).cmap[Int](_.toDouble)
-}
-
-/**
-  * Format for a result derived from [[Stats]].
+/** Format for a result derived from [[Stats]].
   *
   * Eg. ops/sec: 2058.8 ± 8.1
   *
   * @param score Formatter for the score itself.
   * @param error Formatter for the error in (score ± error).
   */
-final case class ResultFmt(header: String, score: ValueFmt[Stats], error: ValueFmt[Stats], lowerIsBetter: Boolean) {
+final case class FormatResult(header       : String,
+                              score        : FormatValue[Stats],
+                              error        : FormatValue[Stats],
+                              lowerIsBetter: Boolean) {
+
   def higherIsBetter = !lowerIsBetter
 
   def whichIsBetter: String =
@@ -73,7 +25,7 @@ final case class ResultFmt(header: String, score: ValueFmt[Stats], error: ValueF
     s"$header ($whichIsBetter)"
 }
 
-object ResultFmt {
+object FormatResult {
 
   def abbrev(t: TimeUnit): String =
     t match {
@@ -97,19 +49,19 @@ object ResultFmt {
       case TimeUnit.DAYS         => _.toSeconds.toDouble / (3660 * 24)
     }
 
-  def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): ResultFmt =
-    ResultFmt(
+  def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): FormatResult =
+    FormatResult(
       header,
-      ValueFmt.averageDuration(getUnits, scoreDP),
-      ValueFmt.error          (getUnits, errorDP),
+      FormatValue.averageDuration(getUnits, scoreDP),
+      FormatValue.error          (getUnits, errorDP),
       lowerIsBetter)
 
-  def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt = {
+  def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult = {
     val one = FiniteDuration(1, t)
     duration("ops/" + abbrev(t), false, one / _, scoreDP, errorDP)
   }
 
-  def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): ResultFmt =
+  def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
   val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 1, 0)
@@ -118,7 +70,7 @@ object ResultFmt {
   val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
   val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
 
-  def choose(minDur: Duration): ResultFmt =
+  def choose(minDur: Duration): FormatResult =
     if (minDur.toMicros < 1000)
       MicrosPerOp
     else if (minDur.toMillis < 1000)
@@ -127,5 +79,4 @@ object ResultFmt {
       SecPerOp3
     else
       SecPerOp2
-
 }

@@ -21,21 +21,15 @@ import Styles.{Suite => *}
 object SuiteComp {
   type Comp[P] = ScalaComponent[Props[P], State[P], Backend[P], CtorType.Props]
 
-  case class Props[P](suite: GuiSuite[P], options: Options = Options.Default)
-
-  sealed abstract class ResultFormat(final val label: String)
-  object ResultFormat {
-    case object Table extends ResultFormat("Table")
-    case object Text  extends ResultFormat("Text")
-    val all = Vector[ResultFormat](Table, Text)
-  }
+  final case class Props[P](suite : GuiSuite[P],
+                            options: Options = Options.Default)
 
   @Lenses
-  case class State[A](status      : SuiteStatus[A],
-                      editors     : GenState,
-                      disabledBMs : Set[Int],
-                      oldTitle    : Option[String],
-                      resultFormat: ResultFormat)
+  final case class State[A](status       : SuiteStatus[A],
+                            editors      : GenState,
+                            disabledBMs  : Set[Int],
+                            oldTitle     : Option[String],
+                            formatResults: FormatResults)
 
   object State {
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
@@ -46,11 +40,11 @@ object SuiteComp {
 
     def init[P](p: Props[P]): State[P] =
       State[P](
-        status       = SuitePending,
-        editors      = p.suite.params.initialState,
-        disabledBMs  = initDisabledBMs(p.suite.suite.bms),
-        oldTitle     = None,
-        resultFormat = ResultFormat.Table)
+        status        = SuitePending,
+        editors       = p.suite.params.initialState,
+        disabledBMs   = initDisabledBMs(p.suite.suite.bms),
+        oldTitle      = None,
+        formatResults = FormatResults.default)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -59,11 +53,17 @@ object SuiteComp {
   case object SuitePending   extends SuiteStatus[Nothing]
   case object SuiteWillStart extends SuiteStatus[Nothing]
 
-  case class SuiteRunning[P](suite: GuiSuite[P], progess: Progress[P], bm: EachBMStatus[P], abortFn: AbortFn) extends SuiteStatus[P] {
+  final case class SuiteRunning[P](suite  : GuiSuite[P],
+                                   progess: Progress[P],
+                                   bm     : EachBMStatus[P],
+                                   abortFn: AbortFn) extends SuiteStatus[P] {
     @inline def plan = progess.plan
   }
 
-  case class SuiteDone[P](suite: GuiSuite[P], progess: Progress[P], bm: EachBMStatus[P], totalTime: FiniteDuration) extends SuiteStatus[P] {
+  final case class SuiteDone[P](suite    : GuiSuite[P],
+                                progess  : Progress[P],
+                                bm       : EachBMStatus[P],
+                                totalTime: FiniteDuration) extends SuiteStatus[P] {
     @inline def plan = progess.plan
   }
 
@@ -86,7 +86,7 @@ object SuiteComp {
   case object BMRunning extends BMStatus
   final case class BMDone(result: Result) extends BMStatus
 
-  private type ResultFmts    = Vector[ResultFmt]
+  private type ResultFmts    = Vector[FormatResult]
   private val resultFmtCount = 2
   private val resultBlock1   = ^.colSpan := 3
   private val resultBlockAll = ^.colSpan := (3 * resultFmtCount)
@@ -101,7 +101,7 @@ object SuiteComp {
   private val whenBMRunning   = Vector[VdomTag](runsCellNone, resultTD(resultBlockAll, *.running, "Running…"))
 
   private def formatTotalTime(fd: FiniteDuration): String =
-    Util.addThousandSeps("%.2f" format ResultFmt.getUnits(SECONDS)(fd)) + " seconds"
+    Util.addThousandSeps("%.2f" format FormatResult.getUnits(SECONDS)(fd)) + " seconds"
 
   final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
     type Props        = SuiteComp.Props[P]
@@ -226,10 +226,10 @@ object SuiteComp {
         startButton)
     }
 
-    private def renderResults(fmt: ResultFormat, suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement =
+    private def renderResults(fmt: FormatResults, suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement =
       fmt match {
-        case ResultFormat.Table => renderResultTable(suite, progress, m, resultFmts)
-        case ResultFormat.Text  => renderResultText(suite, progress, m, resultFmts)
+        case FormatResults.Table => renderResultTable(suite, progress, m, resultFmts)
+        case FormatResults.Text  => renderResultText(suite, progress, m, resultFmts)
       }
 
     private def renderResultText(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement = {
@@ -256,7 +256,7 @@ object SuiteComp {
           case BMRunning        => cells :+= "Running..."
           case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
           case BMDone(Right(r)) =>
-            cells :+= Util.addThousandSeps(ValueFmt.Integer toText r.runs)
+            cells :+= Util.addThousandSeps(FormatValue.Integer toText r.runs)
             for (f <- resultFmts)
               cells ++= Vector(
                 Util.addThousandSeps(f.score toText r),
@@ -294,7 +294,7 @@ object SuiteComp {
       }
 
       def runsCell(runs: Int) =
-        resultTD(ValueFmt.Integer render runs)
+        resultTD(FormatValue.Integer render runs)
 
       def rows =
         keys.map { k =>
@@ -377,12 +377,12 @@ object SuiteComp {
       <.div(
         *.resultFormatRow,
         "Result format: ",
-        ResultFormat.all.toTagMod { f =>
+        FormatResults.all.toTagMod { f =>
           <.label(
             *.resultFormat,
             <.input.radio(
-              ^.checked := (s.resultFormat == f),
-              ^.onChange --> $.modState(_.copy(resultFormat = f))),
+              ^.checked := (s.formatResults == f),
+              ^.onChange --> $.modState(_.copy(formatResults = f))),
             f.label)
         }
       )
@@ -401,7 +401,7 @@ object SuiteComp {
           <.span("Benchmark running..."),
           abortButton),
         renderFormatButtons(s),
-        renderResults(s.resultFormat, p.suite, r.progess, r.bm, resultFmts),
+        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
         renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
@@ -419,7 +419,7 @@ object SuiteComp {
           <.span(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
           resetButton),
         renderFormatButtons(s),
-        renderResults(s.resultFormat, p.suite, r.progess, r.bm, resultFmts),
+        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
         renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
@@ -437,8 +437,8 @@ object SuiteComp {
           .reduceOption(_.min(_))
           .getOrElse(Duration.Zero)
 
-      val mainFmt = ResultFmt.choose(minAvg)
-      Vector(mainFmt, ResultFmt.OpsPerSec)
+      val mainFmt = FormatResult.choose(minAvg)
+      Vector(mainFmt, FormatResult.OpsPerSec)
     }
 
     def render(p: Props, s: State): VdomElement = {
