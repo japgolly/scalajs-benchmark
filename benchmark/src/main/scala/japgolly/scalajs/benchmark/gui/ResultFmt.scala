@@ -113,7 +113,19 @@ object ResultFmt {
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
   val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 1, 0)
-  val SecPerOp    = timePerOp(TimeUnit.SECONDS, 2, 1)
+  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 2)
+  val SecPerOp3   = timePerOp(TimeUnit.SECONDS, 3, 3)
   val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
   val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
+
+  def choose(minDur: Duration): ResultFmt =
+    if (minDur.toMicros < 1000)
+      MicrosPerOp
+    else if (minDur.toMillis < 1000)
+      MillisPerOp
+    else if (minDur.toSeconds < 10)
+      SecPerOp3
+    else
+      SecPerOp2
+
 }

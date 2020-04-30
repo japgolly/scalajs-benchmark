@@ -437,12 +437,8 @@ object SuiteComp {
           .reduceOption(_.min(_))
           .getOrElse(Duration.Zero)
 
-      if (minAvg.toMicros < 1000)
-        Vector(ResultFmt.MicrosPerOp, ResultFmt.OpsPerSec)
-      else if (minAvg.toMillis < 1000)
-        Vector(ResultFmt.MillisPerOp, ResultFmt.OpsPerSec)
-      else
-        Vector(ResultFmt.SecPerOp, ResultFmt.OpsPerSec)
+      val mainFmt = ResultFmt.choose(minAvg)
+      Vector(mainFmt, ResultFmt.OpsPerSec)
     }
 
     def render(p: Props, s: State): VdomElement = {
