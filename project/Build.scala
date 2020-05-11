@@ -1,8 +1,11 @@
 import sbt._
 import Keys._
 import com.typesafe.sbt.pgp.PgpKeys
-import org.scalajs.sbtplugin.ScalaJSPlugin, ScalaJSPlugin.autoImport._
+import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin
+import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
 import Lib._
 
@@ -15,12 +18,12 @@ object ScalaJsBenchmark {
     val ChartJs          = "1.0.2"
     val MacroParadise    = "2.1.1"
     val Monocle          = "1.6.3"
-    val React            = "16.7.0"
+    val React            = "16.13.1"
     val Scala212         = "2.12.11"
     val Scala213         = "2.13.2"
     val ScalaCollCompat  = "2.1.6"
-    val ScalaCss         = "0.6.0"
-    val ScalaJsReact     = "1.6.0"
+    val ScalaCss         = "0.6.1"
+    val ScalaJsReact     = "1.7.0"
     val Scalaz           = "7.2.30"
 
     // Demo only
@@ -82,6 +85,7 @@ object ScalaJsBenchmark {
   lazy val benchmark =
     Project("benchmark", file("benchmark"))
       .enablePlugins(ScalaJSPlugin)
+      .enablePlugins(JSDependenciesPlugin)
       .configure(commonSettings, definesMacros, publicationSettings(ghProject))
       .settings(
         libraryDependencies ++= Seq(
@@ -149,7 +153,7 @@ object ScalaJsBenchmark {
           "org.typelevel" %%% "cats-free"     % Ver.Cats,
           "com.chuusai"   %%% "shapeless"     % Ver.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
-        emitSourceMaps := true,
+        scalaJSLinkerConfig ~= { _.withSourceMap(true) },
         skip in packageJSDependencies := false,
         test := { (compile in Test).value; () })
 }

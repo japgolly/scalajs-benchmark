@@ -160,7 +160,7 @@ object ReactChart {
       } yield ()
   }
 
-  val Comp = ScalaComponent.builder[Props]("ReactChart")
+  val Comp = ScalaComponent.builder[Props]
     .initialState[State](None)
     .renderBackend[Backend]
     .componentDidMount(_.backend.mount)

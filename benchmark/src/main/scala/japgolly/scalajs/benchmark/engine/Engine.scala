@@ -55,7 +55,7 @@ object Engine {
     }
 
     val finish: AsyncCallback[Unit] =
-      AsyncCallback.point {
+      AsyncCallback.delay {
         hnd.value = js.undefined
         broadcastFinishOnAbort = false
         progress
@@ -66,7 +66,7 @@ object Engine {
       val clock = options.clock
 
       def schedule(next: AsyncCallback[Unit]): AsyncCallback[Unit] =
-        AsyncCallback.point {
+        AsyncCallback.delay {
           hnd.value = js.timers.setTimeout(delay)(next.toCallback.runNow())
         }
 
@@ -78,7 +78,7 @@ object Engine {
           msg(BenchmarkPreparing(progress, key)) {
 
             def complete(result: Result): AsyncCallback[Unit] =
-              AsyncCallback.point { progress = progress.copy(runs = progress.runs + 1) } >>
+              AsyncCallback.delay { progress = progress.copy(runs = progress.runs + 1) } >>
               msg(BenchmarkFinished(progress, key, result))(
                 go(next))
 
@@ -95,7 +95,7 @@ object Engine {
 
                   def runBenchmarks(rs: Stats.Mutable): AsyncCallback[Stats] = {
                     val bmRound: AsyncCallback[Unit] =
-                      AsyncCallback.point {
+                      AsyncCallback.delay {
                         val startTime = System.currentTimeMillis()
                         val delayAfter = startTime + 1000
                         @inline def needDelay(): Boolean = System.currentTimeMillis() > delayAfter
@@ -115,7 +115,7 @@ object Engine {
                           go()
                       }
 
-                    var self: AsyncCallback[Stats] = AsyncCallback.point(???)
+                    var self: AsyncCallback[Stats] = AsyncCallback.delay(???)
                     self = bmRound >> AsyncCallback.byName {
                       if (!isEnough(rs) && !aborted)
                         self.delayMs(1)
@@ -125,7 +125,7 @@ object Engine {
                     self
                   }
 
-                  AsyncCallback.point(new Stats.Mutable)
+                  AsyncCallback.delay(new Stats.Mutable)
                     .flatMap(runBenchmarks)
                     .attempt
                     .finallyRun(teardown.asAsyncCallback)
@@ -151,9 +151,9 @@ object Engine {
 
     AbortFn(
       for {
-        _ <- AsyncCallback.point { aborted = true }
-        _ <- AsyncCallback.point(hnd.value foreach js.timers.clearTimeout)
-        b <- AsyncCallback.point(broadcastFinishOnAbort)
+        _ <- AsyncCallback.delay { aborted = true }
+        _ <- AsyncCallback.delay(hnd.value foreach js.timers.clearTimeout)
+        b <- AsyncCallback.delay(broadcastFinishOnAbort)
         _ <- finish.when_(b)
       } yield ()
     )
