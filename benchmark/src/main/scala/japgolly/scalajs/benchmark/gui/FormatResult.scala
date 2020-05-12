@@ -69,11 +69,11 @@ object FormatResult {
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
-  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 1, 0)
-  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 2)
+  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 0, 0)
+  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 3)
   val SecPerOp3   = timePerOp(TimeUnit.SECONDS, 3, 3)
-  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
-  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
+  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 3)
+  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 3)
 
   def choose(minDur: Duration): FormatResult =
     if (minDur.toMicros < 1000)
