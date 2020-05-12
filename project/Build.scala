@@ -17,7 +17,7 @@ object ScalaJsBenchmark {
     val BetterMonadicFor = "0.3.1"
     val ChartJs          = "1.0.2"
     val MacroParadise    = "2.1.1"
-    val Monocle          = "1.6.3"
+    val Monocle          = "1.7.3"
     val React            = "16.13.1"
     val Scala212         = "2.12.11"
     val Scala213         = "2.13.2"
