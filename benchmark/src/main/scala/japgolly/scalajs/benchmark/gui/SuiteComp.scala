@@ -329,7 +329,7 @@ object SuiteComp {
         inner)
     }
 
-    def preMount: Callback = {
+    def onMount: Callback = {
       def storeCurrentTitle =
         CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].set
 
@@ -363,7 +363,7 @@ object SuiteComp {
       ScalaComponent.builder[Props[P]]
         .initialStateFromProps(State.init)
         .renderBackend[Backend[P]]
-        .componentWillMount(_.backend.preMount)
+        .componentDidMount(_.backend.onMount)
         // TODO handle suite changes - it's all in state atm
         .componentWillUnmount(_.backend.shutdown)
         .build

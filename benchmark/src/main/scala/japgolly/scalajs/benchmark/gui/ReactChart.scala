@@ -75,7 +75,9 @@ object ReactChart {
 
   case class RGB(r: Int, g: Int, b: Int)
 
-  case class Props(style: TagMod, data: ScalaBarData, options: Chart.BarOptions = newObj,
+  case class Props(style: TagMod,
+                   data: ScalaBarData,
+                   options: Chart.BarOptions = newObj,
                    fx: Option[Effect] = None)
 
   type State = Option[BarChart]
@@ -95,25 +97,25 @@ object ReactChart {
     def mount: Callback =
       $.props >>= newChart >>= (c => $ setState Some(c))
 
-    def update(np: Props): Callback =
+    val update: Callback =
       for {
-        c  <- $.state.asCBO[BarChart]
-        op <- $.props
+        c <- $.state.asCBO[BarChart]
+        p <- $.props.toCBO
       } yield {
 
         def xs = c.scale.xLabels.length
 
-        while (xs > np.data.labels.length)
+        while (xs > p.data.labels.length)
           c.removeData()
 
-        for (i <- xs until np.data.labels.length) {
+        for (i <- xs until p.data.labels.length) {
           val values = new js.Array[Chart.Value]()
-          np.data.datasets.take(xs).foreach(values push _.data(i))
-          c.addData(values, np.data.labels(i))
+          p.data.datasets.take(xs).foreach(values push _.data(i))
+          c.addData(values, p.data.labels(i))
         }
 
         for {
-          (d, i) <- np.data.datasets.iterator.zipWithIndex
+          (d, i) <- p.data.datasets.iterator.zipWithIndex
           (v, j) <- d.data.iterator.zipWithIndex
         } {
           c.datasets.lift(i).flatMap(_.bars.toOption).flatMap(_.lift(j)) match {
@@ -122,9 +124,9 @@ object ReactChart {
           }
         }
 
-        np.fx.foreach(applyFx(c, _, np.data).runNow())
+        p.fx.foreach(applyFx(c, _, p.data).runNow())
 
-        c.scale.xLabels = JsUtil.jsArrayFromTraversable(np.data.labels)
+        c.scale.xLabels = JsUtil.jsArrayFromTraversable(p.data.labels)
         c.scale.calculateXLabelRotation()
         c.update()
       }
@@ -165,6 +167,6 @@ object ReactChart {
     .renderBackend[Backend]
     .componentDidMount(_.backend.mount)
     .componentWillUnmount(_.backend.unmount)
-    .componentWillReceiveProps(x => x.backend.update(x.nextProps))
+    .componentDidUpdate(_.backend.update)
     .build
 }
