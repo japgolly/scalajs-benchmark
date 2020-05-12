@@ -4,6 +4,7 @@ import com.typesafe.sbt.pgp.PgpKeys
 import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin
 import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
@@ -25,6 +26,10 @@ object ScalaJsBenchmark {
     val ScalaCss         = "0.6.1"
     val ScalaJsReact     = "1.7.0"
     val Scalaz           = "7.2.30"
+
+    // Test only
+    val Microlibs = "2.3"
+    val MTest     = "0.7.4"
 
     // Demo only
     val Cats      = "2.1.1"
@@ -77,6 +82,13 @@ object ScalaJsBenchmark {
       }.value
     ))
 
+  def utestSettings: PE =
+    _.settings(
+      jsEnv               := new JSDOMNodeJSEnv,
+      libraryDependencies += "com.lihaoyi" %%% "utest" % Ver.MTest % Test,
+      libraryDependencies += "com.github.japgolly.microlibs" %%% "test-util" % Ver.Microlibs % Test,
+      testFrameworks      := new TestFramework("utest.runner.Framework") :: Nil)
+
   lazy val root =
     Project("root", file("."))
       .configure(commonSettings, preventPublication)
@@ -86,7 +98,7 @@ object ScalaJsBenchmark {
     Project("benchmark", file("benchmark"))
       .enablePlugins(ScalaJSPlugin)
       .enablePlugins(JSDependenciesPlugin)
-      .configure(commonSettings, definesMacros, publicationSettings(ghProject))
+      .configure(commonSettings, definesMacros, publicationSettings(ghProject), utestSettings)
       .settings(
         libraryDependencies ++= Seq(
           "org.scala-lang.modules"            %%% "scala-collection-compat" % Ver.ScalaCollCompat,
@@ -117,8 +129,7 @@ object ScalaJsBenchmark {
             /        "Chart.js"
             minified "Chart.min.js"),
 
-        addMacroParadisePlugin,
-        test := {})
+        addMacroParadisePlugin)
 
   object Demo {
     def librariesFileTask = Def.task {
