@@ -125,6 +125,10 @@ object ScalaJsBenchmark {
             dependsOn "umd/react.development.js"
             commonJSName "ReactDOM",
 
+          "org.webjars.npm" % "jStat" % "1.7.1"
+            /        "jstat.js"
+            minified "jstat.min.js",
+
           "org.webjars" % "chartjs" % Ver.ChartJs
             /        "Chart.js"
             minified "Chart.min.js"),
