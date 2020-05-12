@@ -113,7 +113,7 @@ object FormatResults {
     def formatNum[A](formatValue: FormatValue[A], value: A): String = {
       val str =
         decFmt match {
-          case Some(fmt) => Util.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+          case Some(fmt) => TextUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
           case None      => formatValue.toText(value)
         }
       modNumber(str)
@@ -178,7 +178,7 @@ object FormatResults {
         separatePlusMinus   = true,
         emptyRowAfterHeader = true,
         overridePrecision   = None,
-        modNumber           = Util.addThousandSeps
+        modNumber           = TextUtil.addThousandSeps
       )
 
       val preResultColumns = suite.params.headers.length + 1
@@ -189,7 +189,7 @@ object FormatResults {
         else
           " "
 
-      val text = Util.formatTable(rows, gap)
+      val text = TextUtil.formatTable(rows, gap)
 
       <.pre(*.resultText, text)
     }
@@ -206,7 +206,7 @@ object FormatResults {
         overridePrecision   = Some(decimalPoints),
         modNumber           = identity
       )
-      val text = Util.formatCSV(rows)
+      val text = TextUtil.formatCSV(rows)
       <.pre(*.resultText, text)
     }
   }

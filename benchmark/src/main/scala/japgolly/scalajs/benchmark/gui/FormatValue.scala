@@ -29,7 +29,7 @@ object FormatValue {
       Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        Util.addThousandSeps(fmt format d)),
+        TextUtil.addThousandSeps(fmt format d)),
       identity,
       fmt.format(_)
     )

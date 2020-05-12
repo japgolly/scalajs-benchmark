@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-object Util {
+object TextUtil {
 
   private val numberFmt = """^-?(\d,?)+(?:\.\d+)?$""".r.pattern
 

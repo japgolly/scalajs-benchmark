@@ -84,7 +84,7 @@ object SuiteComp {
   private type ResultFmts    = Vector[FormatResult]
 
   private def formatTotalTime(fd: FiniteDuration): String =
-    Util.addThousandSeps("%.2f" format FormatResult.getUnits(SECONDS)(fd)) + " seconds"
+    TextUtil.addThousandSeps("%.2f" format FormatResult.getUnits(SECONDS)(fd)) + " seconds"
 
   final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
     type Props        = SuiteComp.Props[P]

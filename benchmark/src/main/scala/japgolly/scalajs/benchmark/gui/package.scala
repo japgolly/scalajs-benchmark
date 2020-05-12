@@ -38,7 +38,7 @@ package object gui {
   object RenderTxt {
 
     val Int: RenderTxt[Int] =
-      i => Util.addThousandSeps(i.toString)
+      i => TextUtil.addThousandSeps(i.toString)
 
     val Bool: RenderTxt[Boolean] =
       b => if (b) "T" else "F"
