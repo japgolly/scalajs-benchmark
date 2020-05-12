@@ -142,6 +142,7 @@ object ScalaJsBenchmark {
   lazy val demo =
     Project("demo", file("demo"))
       .enablePlugins(ScalaJSPlugin)
+      .enablePlugins(JSDependenciesPlugin)
       .configure(commonSettings, preventPublication)
       .dependsOn(benchmark)
       .settings(

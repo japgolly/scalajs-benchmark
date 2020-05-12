@@ -16,7 +16,7 @@ object Libraries extends SbtLibraries {
       case _            => "Unknown"
     }
     if (LinkingInfo.developmentMode)
-      ver += "-dev"
+      ver += "-fastOptJS"
     Library("Scala.JS", ver)
   }
 }
