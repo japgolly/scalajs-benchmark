@@ -1,10 +1,9 @@
 import sbt._
 import Keys._
 import com.typesafe.sbt.pgp.PgpKeys._
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import org.scalajs.sbtplugin.cross.CrossProject
-import ScalaJSPlugin._
-import ScalaJSPlugin.autoImport._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Lib {
   type PE = Project => Project

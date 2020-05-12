@@ -183,7 +183,7 @@ object MenuComp {
       }
 
       val Comp =
-        ScalaComponent.builder[Props]("ToC")
+        ScalaComponent.builder[Props]
           .render_P(render)
           .build
     }
