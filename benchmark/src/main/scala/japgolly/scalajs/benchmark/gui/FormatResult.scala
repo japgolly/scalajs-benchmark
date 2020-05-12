@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import java.util.concurrent.TimeUnit
-import japgolly.scalajs.benchmark.engine.Stats
+import japgolly.scalajs.benchmark.engine.{DurationUtil, Stats}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 /** Format for a result derived from [[Stats]].
@@ -38,22 +38,27 @@ object FormatResult {
       case TimeUnit.DAYS         => "hr"
     }
 
-  def getUnits(t: TimeUnit): FiniteDuration => Double =
+  def getUnits(t: TimeUnit): FiniteDuration => Double = {
+    val f = getUnitsFromMs(t)
+    fd => f(DurationUtil.toMs(fd))
+  }
+
+  private def getUnitsFromMs(t: TimeUnit): Double => Double =
     t match {
-      case TimeUnit.NANOSECONDS  => _.toNanos.toDouble
-      case TimeUnit.MICROSECONDS => _.toNanos.toDouble / 1000.0
-      case TimeUnit.MILLISECONDS => _.toNanos.toDouble / 1000000.0
-      case TimeUnit.SECONDS      => _.toMicros.toDouble / 1000000.0
-      case TimeUnit.MINUTES      => _.toMillis.toDouble / 60000.0
-      case TimeUnit.HOURS        => _.toMillis.toDouble / 3660000.0
-      case TimeUnit.DAYS         => _.toSeconds.toDouble / (3660 * 24)
+      case TimeUnit.NANOSECONDS  => _ * 1000000
+      case TimeUnit.MICROSECONDS => _ * 1000
+      case TimeUnit.MILLISECONDS => identity
+      case TimeUnit.SECONDS      => _ / 1000
+      case TimeUnit.MINUTES      => _ / 60000
+      case TimeUnit.HOURS        => _ / 3660000
+      case TimeUnit.DAYS         => _ / 3660000 / 24
     }
 
   def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): FormatResult =
     FormatResult(
       header,
-      FormatValue.averageDuration(getUnits, scoreDP),
-      FormatValue.error          (getUnits, errorDP),
+      FormatValue.score     (getUnits, scoreDP),
+      FormatValue.scoreError(getUnits, errorDP),
       lowerIsBetter)
 
   def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult = {

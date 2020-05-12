@@ -80,7 +80,7 @@ object FormatResults {
                   ^.onDoubleClick --> showError))
 
             case BMDone(Right(r)) =>
-              runsCell(r.runs) +:
+              runsCell(r.samples) +:
                 resultFmts.flatMap(f => Vector(
                   resultTD(f.score render r),
                   plusMinusCell,
@@ -148,7 +148,7 @@ object FormatResults {
         case BMRunning        => cells :+= "Running..."
         case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
         case BMDone(Right(r)) =>
-          cells :+= formatNum(FormatValue.Integer, r.runs)
+          cells :+= formatNum(FormatValue.Integer, r.samples)
           for (f <- resultFmts) {
             val score = formatNum(f.score, r)
             val error = formatNum(f.error, r)

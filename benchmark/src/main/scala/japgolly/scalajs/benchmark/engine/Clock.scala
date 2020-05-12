@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.engine
 
-import japgolly.scalajs.react.{Callback, CallbackTo}
+import japgolly.scalajs.react.CallbackTo
 import scala.concurrent.duration._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal

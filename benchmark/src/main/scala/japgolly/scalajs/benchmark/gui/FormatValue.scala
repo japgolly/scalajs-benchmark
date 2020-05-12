@@ -55,20 +55,20 @@ object FormatValue {
 
   def duration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Duration] =
     optionalNumber(
-      dp,
-      <.span("∞"),
-      -1,
-      "∞")
+      dp            = dp,
+      default       = <.span("NaN"),
+      defaultDouble = Double.NaN,
+      defaultText   = "NaN")
       .contramap {
         case f: FiniteDuration => Some(getUnits(f))
         case _                 => None
       }
 
-  def averageDuration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.average)
+  def score(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
+    duration(getUnits, dp).contramap(_.score)
 
-  def error(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.marginOfError)
+  def scoreError(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
+    duration(getUnits, dp).contramap(_.scoreError)
 
   val Integer = number(0).contramap[Int](_.toDouble)
 }
