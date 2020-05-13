@@ -75,7 +75,7 @@ object TextUtil {
     try
       d.asInstanceOf[js.Dynamic].toLocaleString(
         js.undefined,
-        js.Dynamic.literal(maximumFractionDigits = maxDP)
+        js.Dynamic.literal(minimumFractionDigits = maxDP, maximumFractionDigits = maxDP)
       ).asInstanceOf[String]
     catch {
       case _: Throwable => s"%.${maxDP}f".format(d)
