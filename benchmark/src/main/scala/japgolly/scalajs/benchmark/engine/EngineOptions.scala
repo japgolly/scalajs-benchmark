@@ -28,8 +28,8 @@ object EngineOptions {
       delay               = defaultDelay,
       warmupIterationTime = None,
       warmupIterations    = 1,
-      iterations          = 4,
-      iterationTime       = 2.seconds,
+      iterations          = 9,
+      iterationTime       = 1.seconds,
     )
 
   // Ensure benchmarks don't start before chart animation finishes
