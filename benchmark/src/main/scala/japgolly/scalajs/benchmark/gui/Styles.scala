@@ -118,12 +118,6 @@ object Styles extends StyleSheet.Inline {
       cursor.pointer,
       marginLeft(1.5 ex))
 
-    val resultText = style(
-      border(solid, 1 px, c"#111"),
-      backgroundColor(c"#e9e9e9"),
-      padding(1 ex),
-    )
-
     private def graphWidth = 640 px
 
     val graphContainer = style(
@@ -168,6 +162,32 @@ object Styles extends StyleSheet.Inline {
 
   // ===================================================================================================================
 
+  object TextOutput {
+
+    val pre = style(
+      border(solid, 1 px, c"#111"),
+      backgroundColor(c"#e9e9e9"),
+      padding(1 ex),
+      maxHeight :=! "calc(28em + 1ex)",
+      overflow.auto,
+      position.relative, // this block is the anchor to the buttons
+    )
+
+    val hiddenTextArea = style(
+      position.absolute,
+      zIndex(-1),
+      opacity(0),
+    )
+
+    val copyToClipboardButton = style(
+      position.absolute,
+      top(`0`),
+      right(`0`),
+    )
+  }
+
+  // ===================================================================================================================
+
   object Menu {
 
     val topNav = style(
@@ -195,5 +215,6 @@ object Styles extends StyleSheet.Inline {
 
   initInnerObjects(
     Menu.topNav,
+    TextOutput.pre,
     Suite.resultTable)
 }

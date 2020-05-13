@@ -196,9 +196,12 @@ object FormatResults {
 
       val text = TextUtil.formatTable(rows, gap)
 
-      <.pre(*.resultText, text)
+      wrapText(text)
     }
   }
+
+  private def wrapText(text: String): VdomElement =
+    TextOutput.Component(text)
 
   // ===================================================================================================================
 
@@ -212,7 +215,7 @@ object FormatResults {
         modNumber           = identity
       )
       val text = TextUtil.formatCSV(rows)
-      <.pre(*.resultText, text)
+      wrapText(text)
     }
   }
 
@@ -327,7 +330,7 @@ object FormatResults {
 
     override def render[P](args: Args[P]): VdomElement = {
       val text = json(args).spaces2
-      <.pre(*.resultText, text)
+      wrapText(text)
     }
   }
 
