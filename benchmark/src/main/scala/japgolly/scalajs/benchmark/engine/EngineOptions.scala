@@ -1,6 +1,7 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 
 /**
@@ -15,13 +16,21 @@ final case class EngineOptions(clock              : Clock,
                                iterationTime      : FiniteDuration,
                               ) {
 
-  def actualWarmupIterationTime: FiniteDuration =
+  val actualWarmupIterationTime: FiniteDuration =
     warmupIterationTime.getOrElse(iterationTime)
+
+  val estimatedTimePerBM: FiniteDuration =
+    EngineOptions.estimatedOverheadPerBm +
+      warmupIterations * actualWarmupIterationTime +
+      iterationTime * iterations
+
+  val estimatedMsPerBM: Double =
+    TimeUtil.toMs(estimatedTimePerBM)
 }
 
 object EngineOptions {
 
-  val default: EngineOptions =
+  lazy val default: EngineOptions =
     apply(
       clock               = Clock.Default,
       initialDelay        = 4.millis,
@@ -39,5 +48,7 @@ object EngineOptions {
     val delayMicro   = delaySec * 1000000.0
     delayMicro.toInt.micros
   }
-}
 
+  private val estimatedOverheadPerBm =
+    FiniteDuration(1500, TimeUnit.MILLISECONDS)
+}

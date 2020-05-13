@@ -111,8 +111,13 @@ object SuiteComp {
           case BenchmarkRunning(_, k) =>
             $.modStateAsync(State.at(k) set BMRunning)
 
-          case BenchmarkFinished(_, k, r) =>
-            $.modStateAsync(State.at(k) set BMDone(r))
+          case BenchmarkFinished(p, k, r) =>
+            val setResult = State.at(k) set BMDone(r)
+            val setProgress = State.status[P].modify {
+              case sr: SuiteRunning => sr.copy(progess = p)
+              case x                => x
+            }
+            $.modStateAsync(setResult compose setProgress)
 
           case SuiteStarting(_) =>
             AsyncCallback.unit
@@ -207,7 +212,7 @@ object SuiteComp {
         else
           TagMod(params.headers.indices.map(paramRow): _*)
 
-      val onStart: Option[Callback] = {
+      val startData = {
         def selectedBMs = p.suite.suite.bms.iterator
           .zipWithIndex
           .filterNot(s.disabledBMs contains _._2)
@@ -219,8 +224,21 @@ object SuiteComp {
           bms <- Some(selectedBMs).filter(_.nonEmpty)
         } yield {
           val s2 = guiSuiteBMs.set(bms)(p.suite)
-          start(s2, p.engineOptions, ps).toCallback
+          val cb = start(s2, p.engineOptions, ps).toCallback
+          val eta = p.engineOptions.estimatedMsPerBM * (ps.length * bms.length)
+          (cb, eta)
         }
+      }
+
+      val onStart: Option[Callback] =
+        startData.map(_._1)
+
+      val etaOption: Option[Double] =
+        startData.map(_._2)
+
+      def renderETA = {
+        val eta = etaOption.fold("-")(formatETA)
+        <.div(*.etaRow, "ETA: ", eta)
       }
 
       def startButton =
@@ -232,12 +250,20 @@ object SuiteComp {
 
       <.div(
         renderFormatButtons(p, s),
+        renderETA,
         <.table(
           *.settingsTable,
           <.tbody(
             bmRow,
             paramRows)),
         startButton)
+    }
+
+    private def formatETA(ms: Double): String = {
+      val sec = ms / 1000
+      val min = sec / 60
+      val hr  = min / 60
+      s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
     }
 
     private def renderResults(fmt: FormatResults, suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement =
@@ -296,6 +322,9 @@ object SuiteComp {
     private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
       val resultFmts = deriveResultFmts(r.progess, r.bm)
 
+      val eta =
+        p.engineOptions.estimatedMsPerBM * r.progess.remaining
+
       def abortButton =
         <.button(
           *.abortButton,
@@ -304,7 +333,7 @@ object SuiteComp {
 
       <.div(
         <.div(*.runningRow,
-          <.span("Benchmark running..."),
+          <.span("Benchmark running... ETA: ", formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
         renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),

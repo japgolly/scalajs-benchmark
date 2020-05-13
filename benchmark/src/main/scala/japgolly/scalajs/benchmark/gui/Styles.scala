@@ -56,6 +56,10 @@ object Styles extends StyleSheet.Inline {
       fontWeight.normal,
       paddingLeft(0.3 ex))
 
+    val etaRow = style(
+      marginBottom(1 em),
+    )
+
     val allBMsCheckbox = style(
       display.block,
       paddingBottom(0.3 em),

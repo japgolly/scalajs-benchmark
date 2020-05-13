@@ -73,9 +73,10 @@ object Engine {
           msg(BenchmarkPreparing(progress, key)) {
 
             def complete(result: Result): AsyncCallback[Unit] =
-              AsyncCallback.delay { progress = progress.copy(runs = progress.runs + 1) } >>
-              msg(BenchmarkFinished(progress, key, result))(
-                go(next))
+              AsyncCallback.byName {
+                progress = progress.copy(runs = progress.runs + 1)
+                msg(BenchmarkFinished(progress, key, result))(go(next))
+              }
 
             val setup =
               key.bm.setup.run(key.param, setupCtx)
