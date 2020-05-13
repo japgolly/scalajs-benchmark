@@ -21,7 +21,7 @@ abstract class FormatResults(final val label: String) {
 object FormatResults {
 
   val builtIn: Vector[FormatResults] =
-    Vector(Table, Text, CSV(8), JmhJson)
+    Vector(Table, JmhText, JmhJson, CSV(8))
 
   final case class Args[P](suite     : GuiSuite[P],
                            progress  : Progress[P],
@@ -178,7 +178,7 @@ object FormatResults {
 
   // ===================================================================================================================
 
-  case object Text extends FormatResults("Text") {
+  case object JmhText extends FormatResults("JMH Text") {
     override def render[P](args: Args[P]): VdomElement = {
       import args._
 
@@ -207,28 +207,6 @@ object FormatResults {
       ).render
     }
   }
-
-  // ===================================================================================================================
-
-  final case class CSV(decimalPoints: Int) extends FormatResults("CSV") {
-    override def render[P](args: Args[P]): VdomElement = {
-      val rows = textTable(
-        args                = args,
-        separatePlusMinus   = false,
-        emptyRowAfterHeader = false,
-        overridePrecision   = Some(decimalPoints),
-        modNumber           = identity
-      )
-      val text = TextUtil.formatCSV(rows)
-      TextOutput.Props(
-        text = text,
-        mimeType = "text/csv",
-        filename = args.filename("csv"),
-      ).render
-    }
-  }
-
-
   // ===================================================================================================================
 
   case object JmhJson extends FormatResults("JMH JSON") {
@@ -343,6 +321,26 @@ object FormatResults {
         text = text,
         mimeType = "application/json",
         filename = args.filename("json"),
+      ).render
+    }
+  }
+
+  // ===================================================================================================================
+
+  final case class CSV(decimalPoints: Int) extends FormatResults("CSV") {
+    override def render[P](args: Args[P]): VdomElement = {
+      val rows = textTable(
+        args                = args,
+        separatePlusMinus   = false,
+        emptyRowAfterHeader = false,
+        overridePrecision   = Some(decimalPoints),
+        modNumber           = identity
+      )
+      val text = TextUtil.formatCSV(rows)
+      TextOutput.Props(
+        text = text,
+        mimeType = "text/csv",
+        filename = args.filename("csv"),
       ).render
     }
   }
