@@ -23,6 +23,14 @@ jobs:
       jdk: openjdk11
       env: SCALAJS_VERSION=
 
+install:
+  - . $HOME/.nvm/nvm.sh
+  - nvm install 14
+  - nvm use 14
+  - export NODE_PATH="$(npm config get prefix)"/lib/node_modules
+  - npm install
+  - npm install jsdom source-map-support
+
 script:
   - sbt ++$TRAVIS_SCALA_VERSION test
 
