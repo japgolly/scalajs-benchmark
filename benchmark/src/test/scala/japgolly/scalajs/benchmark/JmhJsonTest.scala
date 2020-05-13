@@ -8,6 +8,7 @@ import japgolly.scalajs.benchmark.gui.{BMDone, BMStatus, FormatResult, GuiParam,
 import japgolly.scalajs.benchmark.gui.FormatResults.{Args, JmhJson}
 import monocle.Iso
 import scala.concurrent.duration._
+import scala.scalajs.js
 import utest._
 
 object JmhJsonTest extends TestSuite {
@@ -22,6 +23,9 @@ object JmhJsonTest extends TestSuite {
     iterations          = 4,
     iterationTime       = 2.seconds,
   )
+
+  private val startTime =
+    new js.Date()
 
   private def assertEqJson(actual: Json, expect: String): Unit = {
     val e = parse(expect).getOrThrow()
@@ -90,7 +94,7 @@ object JmhJsonTest extends TestSuite {
 
     testJmhJson[Unit](
       suite      = GuiSuite(suite),
-      progress   = Progress(plan, 123),
+      progress   = Progress(startTime, plan, 123),
       results    = Map(bm1p0 -> BMDone(Right(Stats(bm1p0r, eo)))),
       resultFmts = Vector(FormatResult.MillisPerOp),
       expect     = expect,
@@ -191,7 +195,7 @@ object JmhJsonTest extends TestSuite {
 
     testJmhJson[P](
       suite      = GuiSuite(suite, gps),
-      progress   = Progress(plan, 123),
+      progress   = Progress(startTime, plan, 123),
       results    = Map(bm1p1 -> BMDone(Right(Stats(bm1p1r, eo))), bm1p2 -> BMDone(Right(Stats(bm1p2r, eo)))),
       resultFmts = Vector(FormatResult.MicrosPerOp, FormatResult.OpsPerSec),
       expect     = expect,
