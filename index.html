@@ -10,32 +10,47 @@
       margin-top:1.1em;
       margin-bottom:2.4em;
     }
-    a {
-      color: #00c;
+    body > div {
       display: block;
       font-size: 1.8em;
       margin-top: 1.7em;
+    }
+    a {
+      color: #00c;
     }
     a:not(:hover) {
       text-decoration: none;
     }
     a span {
       margin-left:0.15ex;
-      color:#888;
     }
-    a span::before { content: ' / Scala.JS '; }
-    /*
-    a span::before { content: ' (Scala.JS '; }
-    a span::after { content: ')'; }
-    */
+    a span::before { content: 'Scala.JS '; }
     </style>
 </head>
 <body>
   <h1>scalajs-benchmark</h1>
-  <a href="res/scala-2.12.html">Scala 2.11.11<span>0.6.19</span></a>
-  <a href="res/scala-2.12.11.html">Scala 2.12.11<span>0.6.32</span></a>
-  <a href="res/scala-2.13.1.html">Scala 2.13.1<span>0.6.32</span></a>
-  <a href="res/scala-2.13.2.html">Scala 2.13.2<span>0.6.32</span></a>
-  <a href="https://github.com/japgolly/scalajs-benchmark">Github</a>
+
+  <div>Scala 2.11.11: <a href="res/scala-2.12.html"><span>0.6.19</span></a></div>
+
+  <div>
+    Scala 2.12.11:
+    <a href="res/scala-2.12.11-sjs-0.6.33.html"><span>0.6.33</span></a> |
+    <a href="res/scala-2.12.11-sjs-1.0.1.html"><span>1.0.1</span></a>
+  </div>
+
+  <div>
+    Scala 2.13.1:
+    <a href="res/scala-2.13.1-sjs-0.6.33.html"><span>0.6.33</span></a> |
+    <a href="res/scala-2.13.1-sjs-1.0.1.html"><span>1.0.1</span></a>
+  </div>
+
+  <div>
+    Scala 2.13.2:
+    <a href="res/scala-2.13.2-sjs-0.6.33.html"><span>0.6.33</span></a> |
+    <a href="res/scala-2.13.2-sjs-1.0.1.html"><span>1.0.1</span></a>
+  </div>
+
+  <div><a href="https://github.com/japgolly/scalajs-benchmark">Github</a></div>
+
 </body>
 </html>
