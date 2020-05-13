@@ -135,7 +135,7 @@ object Engine {
                     }
 
                   val warmup =
-                    runIterations(options.warmupIterations, options.warmupIterationTime.getOrElse(options.iterationTime))
+                    runIterations(options.warmupIterations, options.actualWarmupIterationTime)
 
                   val real =
                     runIterations(options.iterations, options.iterationTime).map(_())

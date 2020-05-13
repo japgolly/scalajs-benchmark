@@ -17,6 +17,7 @@ object ScalaJsBenchmark {
   object Ver {
     val BetterMonadicFor = "0.3.1"
     val ChartJs          = "1.0.2"
+    val Circe            = "0.13.0"
     val MacroParadise    = "2.1.1"
     val Monocle          = "1.6.3"
     val React            = "16.13.1"
@@ -109,6 +110,9 @@ object ScalaJsBenchmark {
           "com.github.japgolly.scalacss"      %%% "ext-react"               % Ver.ScalaCss,
           "com.github.julien-truffaut"        %%% "monocle-core"            % Ver.Monocle,
           "com.github.julien-truffaut"        %%% "monocle-macro"           % Ver.Monocle,
+          "io.circe"                          %%% "circe-core"              % Ver.Circe,
+          "io.circe"                          %%% "circe-generic"           % Ver.Circe,
+          "io.circe"                          %%% "circe-parser"            % Ver.Circe % Test,
           "org.scalaz"                        %%% "scalaz-core"             % Ver.Scalaz),
 
         dependencyOverrides += "org.webjars.npm" % "js-tokens" % "3.0.2", // https://github.com/webjars/webjars/issues/1789

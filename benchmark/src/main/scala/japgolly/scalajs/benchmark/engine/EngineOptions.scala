@@ -13,7 +13,11 @@ final case class EngineOptions(clock              : Clock,
                                warmupIterationTime: Option[FiniteDuration],
                                iterations         : Int,
                                iterationTime      : FiniteDuration,
-                              )
+                              ) {
+
+  def actualWarmupIterationTime: FiniteDuration =
+    warmupIterationTime.getOrElse(iterationTime)
+}
 
 object EngineOptions {
 

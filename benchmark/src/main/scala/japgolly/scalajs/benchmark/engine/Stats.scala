@@ -3,7 +3,7 @@ package japgolly.scalajs.benchmark.engine
 import scala.concurrent.duration._
 import scala.scalajs.js
 
-final case class Stats(rawData: Vector[Vector[FiniteDuration]], o: EngineOptions) {
+final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: EngineOptions) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
@@ -14,6 +14,13 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], o: EngineOptions
     }
     val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
     s"${fmtD(score)} ± ${fmtD(scoreError)} /op ($samples runs, Σ $tot)"
+  }
+
+  lazy val isolatedBatches: Vector[Stats] = {
+    val e = Vector.empty[Vector[FiniteDuration]]
+    rawData.map { batch =>
+      Stats(e :+ batch, engineOptions)
+    }
   }
 
   val times =

@@ -9,11 +9,11 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
   * Eg. ops/sec: 2058.8 ± 8.1
   *
   * @param score Formatter for the score itself.
-  * @param error Formatter for the error in (score ± error).
+  * @param scoreError Formatter for the error in (score ± error).
   */
 final case class FormatResult(header       : String,
-                              score        : FormatValue[Stats],
-                              error        : FormatValue[Stats],
+                              score        : FormatValue[Duration],
+                              scoreError   : FormatValue[Duration],
                               lowerIsBetter: Boolean) {
 
   def higherIsBetter = !lowerIsBetter
@@ -57,8 +57,8 @@ object FormatResult {
   def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): FormatResult =
     FormatResult(
       header,
-      FormatValue.score     (getUnits, scoreDP),
-      FormatValue.scoreError(getUnits, errorDP),
+      FormatValue.duration(getUnits, scoreDP),
+      FormatValue.duration(getUnits, errorDP),
       lowerIsBetter)
 
   def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult = {

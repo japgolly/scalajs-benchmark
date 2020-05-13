@@ -1,6 +1,5 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.Stats
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scalacss.ScalaCssReact._
@@ -63,12 +62,6 @@ object FormatValue {
         case f: FiniteDuration => Some(getUnits(f))
         case _                 => None
       }
-
-  def score(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.score)
-
-  def scoreError(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.scoreError)
 
   val Integer = number(0).contramap[Int](_.toDouble)
 }
