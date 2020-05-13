@@ -5,6 +5,7 @@ import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
+import japgolly.scalajs.react.extra.components.TriStateCheckbox
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle._
 import monocle.macros.Lenses
@@ -82,7 +83,7 @@ object SuiteComp {
       running ^|-> runningAt(k)
   }
 
-  private type ResultFmts    = Vector[FormatResult]
+  private type ResultFmts = Vector[FormatResult]
 
   private def formatTotalTime(fd: FiniteDuration): String =
     TextUtil.addThousandSeps("%.2f" format FormatResult.getUnits(SECONDS)(fd)) + " seconds"
@@ -150,20 +151,49 @@ object SuiteComp {
       val td = <.td(*.settingsTableData)
 
       def bmRow = {
-        def bmCell(bm: Benchmark[P], i: Int) =
-          <.label(
-            *.settingsTableBm,
-            ^.onDoubleClick --> makeSoleBM(i),
-            <.input.checkbox(
-              ^.checked  := !s.disabledBMs.contains(i),
-              ^.onChange --> toggleBM(i)),
-            <.span(
-              *.settingsTableBmLabel,
-              bm.name))
+
+        val bms = p.suite.suite.bms
+
+        val allCheckbox =
+          TagMod.when(bms.length > 2) {
+            val triState =
+              if (s.disabledBMs.isEmpty)
+                TriStateCheckbox.Checked
+              else if (s.disabledBMs.size == bms.length)
+                TriStateCheckbox.Unchecked
+              else
+                TriStateCheckbox.Indeterminate
+
+            val setNextState: Callback =
+              $.modState(State.disabledBMs[P].set(
+                triState.nextDeterminate match {
+                  case TriStateCheckbox.Checked   => Set.empty
+                  case TriStateCheckbox.Unchecked => bms.indices.toSet
+                }
+              ))
+
+            <.label(
+              *.allBMsCheckbox,
+              TriStateCheckbox.Props(triState, setNextState).render,
+              "All")
+          }
+
+        val checkboxes =
+          bms.iterator.zipWithIndex.toTagMod { case (bm, i) =>
+            <.label(
+              *.settingsTableBm,
+              ^.onDoubleClick --> makeSoleBM(i),
+              <.input.checkbox(
+                ^.checked  := !s.disabledBMs.contains(i),
+                ^.onChange --> toggleBM(i)),
+              <.span(
+                *.settingsTableBmLabel,
+                bm.name))
+          }
 
         <.tr(
           th("Benchmarks"),
-          td(p.suite.suite.bms.iterator.zipWithIndex.map((bmCell _).tupled).toList: _*))
+          td(allCheckbox, checkboxes))
       }
 
       def paramRow(i: Int) =
@@ -234,9 +264,9 @@ object SuiteComp {
         m.getOrElse(k, BMPending) match {
           case BMDone(Right(stats)) => fmt.score.getDouble(stats.score) getOrElse 0
           case BMDone(Left(_))
-               | BMPending
-               | BMRunning
-               | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
+             | BMPending
+             | BMRunning
+             | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
         }
       ).take(bmsToShow).toVector
 

@@ -56,6 +56,13 @@ object Styles extends StyleSheet.Inline {
       fontWeight.normal,
       paddingLeft(0.3 ex))
 
+    val allBMsCheckbox = style(
+      display.block,
+      paddingBottom(0.3 em),
+      marginBottom(0.3 em),
+      borderBottom(1 px, solid, c"#ccc"),
+    )
+
     val resultTable = style(
       borderCollapse.collapse)
 
