@@ -1,6 +1,5 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.Stats
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scalacss.ScalaCssReact._
@@ -9,16 +8,18 @@ import scalacss.ScalaCssReact._
   *
   * Eg. 32.456 sec
   */
-final case class FormatValue[-I](getDouble: I => Option[Double],
-                                 render   : I => VdomElement,
-                                 toDouble : I => Double,
-                                 toText   : I => String) {
+final case class FormatValue[-I](getDouble   : I => Option[Double],
+                                 render      : I => VdomElement,
+                                 toDouble    : I => Double,
+                                 toTextPretty: I => String,
+                                 toTextBasic : I => String) {
   def contramap[A](f: A => I): FormatValue[A] =
     FormatValue(
       getDouble compose f,
       render compose f,
       toDouble compose f,
-      toText compose f)
+      toTextPretty compose f,
+      toTextBasic compose f)
 }
 
 object FormatValue {
@@ -29,9 +30,10 @@ object FormatValue {
       Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        Util.addThousandSeps(fmt format d)),
+        TextUtil.prettyPrintNumber(d, dp)),
       identity,
-      fmt.format(_)
+      TextUtil.prettyPrintNumber(_, dp),
+      fmt.format(_),
     )
   }
 
@@ -48,27 +50,25 @@ object FormatValue {
         case None    => defaultDouble
       },
       {
-        case Some(d) => n toText d
+        case Some(d) => n toTextPretty d
+        case None    => defaultText
+      },
+      {
+        case Some(d) => n toTextBasic d
         case None    => defaultText
       })
   }
 
   def duration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Duration] =
     optionalNumber(
-      dp,
-      <.span("∞"),
-      -1,
-      "∞")
+      dp            = dp,
+      default       = <.span("NaN"),
+      defaultDouble = Double.NaN,
+      defaultText   = "NaN")
       .contramap {
         case f: FiniteDuration => Some(getUnits(f))
         case _                 => None
       }
-
-  def averageDuration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.average)
-
-  def error(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.marginOfError)
 
   val Integer = number(0).contramap[Int](_.toDouble)
 }

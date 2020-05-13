@@ -3,18 +3,30 @@ package japgolly.scalajs.benchmark.engine
 import scala.concurrent.duration._
 import scala.scalajs.js
 
-final case class Stats(times: Vector[FiniteDuration], o: EngineOptions) {
+final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: EngineOptions) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
-      d.toMicros.toDouble / 1000000L.toDouble
-    def fmtD(d: Duration): String =
-      d.toMicros.toInt.toString + "μs"
+      TimeUtil.toMs(d) * 1000 / 1000000L.toDouble
+    def fmtD(d: Duration): String = d match {
+      case f: FiniteDuration => (TimeUtil.toMs(f) * 1000).toInt.toString + "μs"
+      case _                 => d.toString
+    }
     val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
-    s"${fmtD(average)} ± ${fmtD(marginOfError)} ${marginOfErrorRel.toInt}% /op ($runs runs, Σ $tot)"
+    s"${fmtD(score)} ± ${fmtD(scoreError)} /op ($samples runs, Σ $tot)"
   }
 
-  def runs =
+  lazy val isolatedBatches: Vector[Stats] = {
+    val e = Vector.empty[Vector[FiniteDuration]]
+    rawData.map { batch =>
+      Stats(e :+ batch, engineOptions)
+    }
+  }
+
+  val times =
+    rawData.flatten
+
+  def samples =
     times.length
 
   val totalTime: FiniteDuration =
@@ -27,35 +39,61 @@ final case class Stats(times: Vector[FiniteDuration], o: EngineOptions) {
     if (times.isEmpty)
       Duration.Inf
     else
-      totalTime / runs
+      totalTime / samples
 
-  val statsInMicroSec: StatMath = {
-    val a = times.map(_.toMicros.toDouble)
-    // org.scalajs.dom.console.log(a.mkString("[", ", ","]"))
-    val b = if (a.length < o.outlierTrimIfMin) a else
-      StatMath.removeHighOutliers(a, o.outlierTrimPct)
-    StatMath(b)
+  private lazy val statMathMs =
+    StatMath(times.map(TimeUtil.toMs))
+
+  private def meanErrorMsAt(confidence: Double): Double = {
+    val df = samples - 1
+    val p = 1 - (1 - confidence) / 2
+    val a = StatMath.tDistributionInverseCumulativeProbability(df = df, p = p)
+    a * statMathMs.sem
   }
 
-  def marginOfError: FiniteDuration =
-    FiniteDuration(statsInMicroSec.sigma2.toLong, MICROSECONDS)
+  def getMeanErrorAt(confidence: Double): Duration =
+    if (samples <= 2)
+      Duration.Inf
+    else
+      TimeUtil.fromMs(meanErrorMsAt(confidence))
 
-  /** [0,100]% */
-  def marginOfErrorRel: Double =
-    statsInMicroSec.relSigma2
+  def getConfidenceIntervalAt(confidence: Double): (Duration, Duration) =
+    if (samples <= 2)
+      (Duration.Undefined, Duration.Undefined)
+    else {
+      val meanErr = meanErrorMsAt(confidence)
+      (TimeUtil.fromMs(statMathMs.mean - meanErr), TimeUtil.fromMs(statMathMs.mean + meanErr))
+    }
+
+  val score           = average
+  val scoreError      = getMeanErrorAt(0.999)
+  val scoreConfidence = getConfidenceIntervalAt(0.999)
 }
 
 object Stats {
 
   private[engine] class Mutable {
-    var times = new js.Array[FiniteDuration]
-    var totalTime = Duration.Zero
+    private val batches      = new js.Array[js.Array[FiniteDuration]]
+    private var curBatch     = new js.Array[FiniteDuration]
+    private var curBatchTime = Duration.Zero
 
     def add(d: FiniteDuration): Unit = {
-      times push d
-      totalTime += d
+      curBatch.push(d)
+      curBatchTime += d
     }
 
-    def runs = times.length
+    def totalBatchTime() =
+      curBatchTime
+
+    def endBatch(): Unit = {
+      batches.push(curBatch)
+      curBatch = new js.Array[FiniteDuration]
+      curBatchTime = Duration.Zero
+    }
+
+    /** Make sure you call [[endBatch()]] before calling this. */
+    def result(): Vector[Vector[FiniteDuration]] =
+      Vector.tabulate(batches.length)(batches(_).toVector)
   }
+
 }

@@ -17,13 +17,13 @@ final case class SetupCtx(aborted: CallbackTo[Boolean]) {
 final case class Setup[-A, B](run: (A, SetupCtx) => AsyncCallback[(B, Teardown)]) {
 
   def contramap[C](f: C => A): Setup[C, B] =
-    contramapAsync(c => AsyncCallback.point(f(c)))
+    contramapAsync(c => AsyncCallback.delay(f(c)))
 
   def contramapAsync[AA <: A, C](f: C => AsyncCallback[AA]): Setup[C, B] =
     Setup.async(f) >>> this
 
   def map[C](f: B => C): Setup[A, C] =
-    mapAsync(b => AsyncCallback.point(f(b)))
+    mapAsync(b => AsyncCallback.delay(f(b)))
 
   def flatMap[AA <: A, C](next: B => Setup[Unit, C]): Setup[AA, C] =
     new Setup((a, s) =>
@@ -74,7 +74,7 @@ object Setup {
 
   /** Setup only; no teardown. */
   def simple[A, B](f: A => B): Setup[A, B] =
-    new Setup[A, B]((a, _) => AsyncCallback.point((f(a), Teardown.empty)))
+    new Setup[A, B]((a, _) => AsyncCallback.delay((f(a), Teardown.empty)))
 
   def async[A, B](f: A => AsyncCallback[B]): Setup[A, B] =
     new Setup[A, B]((a, s) => f(a).map((_, Teardown.empty)))

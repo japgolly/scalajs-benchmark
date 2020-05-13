@@ -1,8 +1,11 @@
 package japgolly.scalajs.benchmark.gui
 
-object Util {
+import scala.scalajs.js
+import scala.scalajs.js.|
 
-  private val numberFmt = """^-?(\d,?)+(?:\.\d+)?$""".r.pattern
+object TextUtil {
+
+  private val numberFmt = """^-?(\d[,.]?)+(?:[,.]\d+)?$""".r.pattern
 
   def formatTable(rows: Iterable[Vector[String]],
                   gap : Int => String = _ => "  "): String = {
@@ -61,18 +64,22 @@ object Util {
       .mkString("\n")
   }
 
-  private val addThouRegex = """(\d)(?=(\d\d\d)+(?!\d))""".r
-
-  def addThousandSeps(s: String): String = {
-    def go(s: String) = addThouRegex.replaceAllIn(s, "$1,")
-    s.indexOf('.') match {
-      case n if n >= 0 =>
-        val (a,b) = s.splitAt(n)
-        go(a) + b
-      case _ =>
-        go(s)
+  def prettyPrintNumber(d: Int | Double): String =
+    try
+      d.asInstanceOf[js.Dynamic].toLocaleString().asInstanceOf[String]
+    catch {
+      case _: Throwable => d.toString
     }
-  }
+
+  def prettyPrintNumber(d: Double, maxDP: Int): String =
+    try
+      d.asInstanceOf[js.Dynamic].toLocaleString(
+        js.undefined,
+        js.Dynamic.literal(maximumFractionDigits = maxDP)
+      ).asInstanceOf[String]
+    catch {
+      case _: Throwable => s"%.${maxDP}f".format(d)
+    }
 
   def removeTrailingZeros(str: String): String =
     str.replaceFirst("0+$", "").replaceFirst("\\.$", "")

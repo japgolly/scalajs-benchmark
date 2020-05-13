@@ -5,11 +5,13 @@ import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
+import japgolly.scalajs.react.extra.components.TriStateCheckbox
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle._
 import monocle.macros.Lenses
 import org.scalajs.dom.document
 import scala.concurrent.duration._
+import scala.scalajs.js
 import scalacss.ScalaCssReact._
 import GuiParams.GenState
 import ReactTemp._
@@ -81,10 +83,10 @@ object SuiteComp {
       running ^|-> runningAt(k)
   }
 
-  private type ResultFmts    = Vector[FormatResult]
+  private type ResultFmts = Vector[FormatResult]
 
   private def formatTotalTime(fd: FiniteDuration): String =
-    Util.addThousandSeps("%.2f" format FormatResult.getUnits(SECONDS)(fd)) + " seconds"
+    TextUtil.prettyPrintNumber(FormatResult.getUnits(SECONDS)(fd), 2) + " seconds"
 
   final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
     type Props        = SuiteComp.Props[P]
@@ -109,8 +111,13 @@ object SuiteComp {
           case BenchmarkRunning(_, k) =>
             $.modStateAsync(State.at(k) set BMRunning)
 
-          case BenchmarkFinished(_, k, r) =>
-            $.modStateAsync(State.at(k) set BMDone(r))
+          case BenchmarkFinished(p, k, r) =>
+            val setResult = State.at(k) set BMDone(r)
+            val setProgress = State.status[P].modify {
+              case sr: SuiteRunning => sr.copy(progess = p)
+              case x                => x
+            }
+            $.modStateAsync(setResult compose setProgress)
 
           case SuiteStarting(_) =>
             AsyncCallback.unit
@@ -125,10 +132,10 @@ object SuiteComp {
         }
 
       for {
-        startTime <- AsyncCallback.point(System.currentTimeMillis())
+        startTime <- AsyncCallback.delay(System.currentTimeMillis())
         _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
         abort     <- actuallyStart(startTime).asAsyncCallback
-        running    = SuiteRunning[P](suite, Progress(plan, 0), Map.empty, abort)
+        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress(new js.Date(), plan, 0), Map.empty, abort))
         _         <- $.modStateAsync(State.status set running)
         } yield ()
     }
@@ -149,20 +156,49 @@ object SuiteComp {
       val td = <.td(*.settingsTableData)
 
       def bmRow = {
-        def bmCell(bm: Benchmark[P], i: Int) =
-          <.label(
-            *.settingsTableBm,
-            ^.onDoubleClick --> makeSoleBM(i),
-            <.input.checkbox(
-              ^.checked  := !s.disabledBMs.contains(i),
-              ^.onChange --> toggleBM(i)),
-            <.span(
-              *.settingsTableBmLabel,
-              bm.name))
+
+        val bms = p.suite.suite.bms
+
+        val allCheckbox =
+          TagMod.when(bms.length > 2) {
+            val triState =
+              if (s.disabledBMs.isEmpty)
+                TriStateCheckbox.Checked
+              else if (s.disabledBMs.size == bms.length)
+                TriStateCheckbox.Unchecked
+              else
+                TriStateCheckbox.Indeterminate
+
+            val setNextState: Callback =
+              $.modState(State.disabledBMs[P].set(
+                triState.nextDeterminate match {
+                  case TriStateCheckbox.Checked   => Set.empty
+                  case TriStateCheckbox.Unchecked => bms.indices.toSet
+                }
+              ))
+
+            <.label(
+              *.allBMsCheckbox,
+              TriStateCheckbox.Props(triState, setNextState).render,
+              "All")
+          }
+
+        val checkboxes =
+          bms.iterator.zipWithIndex.toTagMod { case (bm, i) =>
+            <.label(
+              *.settingsTableBm,
+              ^.onDoubleClick --> makeSoleBM(i),
+              <.input.checkbox(
+                ^.checked  := !s.disabledBMs.contains(i),
+                ^.onChange --> toggleBM(i)),
+              <.span(
+                *.settingsTableBmLabel,
+                bm.name))
+          }
 
         <.tr(
           th("Benchmarks"),
-          td(p.suite.suite.bms.iterator.zipWithIndex.map((bmCell _).tupled).toList: _*))
+          td(allCheckbox, checkboxes))
       }
 
       def paramRow(i: Int) =
@@ -176,7 +212,7 @@ object SuiteComp {
         else
           TagMod(params.headers.indices.map(paramRow): _*)
 
-      val onStart: Option[Callback] = {
+      val startData = {
         def selectedBMs = p.suite.suite.bms.iterator
           .zipWithIndex
           .filterNot(s.disabledBMs contains _._2)
@@ -188,8 +224,21 @@ object SuiteComp {
           bms <- Some(selectedBMs).filter(_.nonEmpty)
         } yield {
           val s2 = guiSuiteBMs.set(bms)(p.suite)
-          start(s2, p.engineOptions, ps).toCallback
+          val cb = start(s2, p.engineOptions, ps).toCallback
+          val eta = p.engineOptions.estimatedMsPerBM * (ps.length * bms.length)
+          (cb, eta)
         }
+      }
+
+      val onStart: Option[Callback] =
+        startData.map(_._1)
+
+      val etaOption: Option[Double] =
+        startData.map(_._2)
+
+      def renderETA = {
+        val eta = etaOption.fold("-")(formatETA)
+        <.div(*.etaRow, "ETA: ", eta)
       }
 
       def startButton =
@@ -201,12 +250,20 @@ object SuiteComp {
 
       <.div(
         renderFormatButtons(p, s),
+        renderETA,
         <.table(
           *.settingsTable,
           <.tbody(
             bmRow,
             paramRows)),
         startButton)
+    }
+
+    private def formatETA(ms: Double): String = {
+      val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
+      val min = sec / 60
+      val hr  = min / 60
+      s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
     }
 
     private def renderResults(fmt: FormatResults, suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement =
@@ -231,11 +288,11 @@ object SuiteComp {
 
       val dataPoints = keys.iterator.map[Chart.Value](k =>
         m.getOrElse(k, BMPending) match {
-          case BMDone(Right(stats)) => fmt.score.getDouble(stats) getOrElse 0
+          case BMDone(Right(stats)) => fmt.score.getDouble(stats.score) getOrElse 0
           case BMDone(Left(_))
-               | BMPending
-               | BMRunning
-               | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
+             | BMPending
+             | BMRunning
+             | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
         }
       ).take(bmsToShow).toVector
 
@@ -265,6 +322,9 @@ object SuiteComp {
     private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
       val resultFmts = deriveResultFmts(r.progess, r.bm)
 
+      val eta =
+        p.engineOptions.estimatedMsPerBM * r.progess.remaining
+
       def abortButton =
         <.button(
           *.abortButton,
@@ -273,7 +333,7 @@ object SuiteComp {
 
       <.div(
         <.div(*.runningRow,
-          <.span("Benchmark running..."),
+          <.span("Benchmark running... ETA: ", formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
         renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
@@ -329,7 +389,7 @@ object SuiteComp {
         inner)
     }
 
-    def preMount: Callback = {
+    def onMount: Callback = {
       def storeCurrentTitle =
         CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].set
 
@@ -360,10 +420,10 @@ object SuiteComp {
     type P = Unit
 
     val c: Comp[_] =
-      ScalaComponent.builder[Props[P]]("SuiteComp")
+      ScalaComponent.builder[Props[P]]
         .initialStateFromProps(State.init)
         .renderBackend[Backend[P]]
-        .componentWillMount(_.backend.preMount)
+        .componentDidMount(_.backend.onMount)
         // TODO handle suite changes - it's all in state atm
         .componentWillUnmount(_.backend.shutdown)
         .build

@@ -1,10 +1,15 @@
 package japgolly.scalajs.benchmark.gui
 
+import io.circe._
+import io.circe.syntax._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import java.util.concurrent.TimeUnit
+import org.scalajs.dom.window
+import scala.concurrent.duration.FiniteDuration
 import scalacss.ScalaCssReact._
 
 /** Format for a number of results.
@@ -16,13 +21,17 @@ abstract class FormatResults(final val label: String) {
 object FormatResults {
 
   val builtIn: Vector[FormatResults] =
-    Vector(Table, Text, CSV(8))
+    Vector(Table, JmhText, JmhJson, CSV(8))
 
   final case class Args[P](suite     : GuiSuite[P],
                            progress  : Progress[P],
                            results   : Map[PlanKey[P], BMStatus],
                            resultFmts: Vector[FormatResult]) {
+
     val resultFmtCount = resultFmts.length
+
+    def filename(ext: String): String =
+      s"sjsbm-${suite.suite.filenameFriendlyName}-${progress.timestampTxt}.$ext"
   }
 
   // ===================================================================================================================
@@ -79,12 +88,12 @@ object FormatResults {
                   ^.cursor.pointer,
                   ^.onDoubleClick --> showError))
 
-            case BMDone(Right(r)) =>
-              runsCell(r.runs) +:
+            case BMDone(Right(stats)) =>
+              runsCell(stats.samples) +:
                 resultFmts.flatMap(f => Vector(
-                  resultTD(f.score render r),
+                  resultTD(f.score render stats.score),
                   plusMinusCell,
-                  resultTD(f.error render r)))
+                  resultTD(f.scoreError render stats.scoreError)))
           })
           <.tr(hs: _*)
         }
@@ -103,21 +112,23 @@ object FormatResults {
                    separatePlusMinus  : Boolean,
                    emptyRowAfterHeader: Boolean,
                    overridePrecision  : Option[Int],
-                   modNumber          : String => String,
+                   prettyNumbers      : Boolean,
                   ): Vector[Vector[String]] = {
     import args._
 
     val decFmt =
       overridePrecision.map { dp => "%." + dp + "f" }
 
-    def formatNum[A](formatValue: FormatValue[A], value: A): String = {
-      val str =
-        decFmt match {
-          case Some(fmt) => Util.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
-          case None      => formatValue.toText(value)
-        }
-      modNumber(str)
-    }
+    def formatNum[A](formatValue: FormatValue[A], value: A): String =
+      decFmt match {
+        case Some(fmt) =>
+          TextUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+        case None =>
+          if (prettyNumbers)
+            formatValue.toTextPretty(value)
+          else
+            formatValue.toTextBasic(value)
+      }
 
     val keys = progress.plan.keys
 
@@ -147,11 +158,11 @@ object FormatResults {
         case BMPreparing      => cells :+= "Preparing..."
         case BMRunning        => cells :+= "Running..."
         case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
-        case BMDone(Right(r)) =>
-          cells :+= formatNum(FormatValue.Integer, r.runs)
+        case BMDone(Right(s)) =>
+          cells :+= formatNum(FormatValue.Integer, s.samples)
           for (f <- resultFmts) {
-            val score = formatNum(f.score, r)
-            val error = formatNum(f.error, r)
+            val score = formatNum(f.score, s.score)
+            val error = formatNum(f.scoreError, s.scoreError)
             val c =
               if (separatePlusMinus)
                 Vector(score, "±", error)
@@ -169,7 +180,7 @@ object FormatResults {
 
   // ===================================================================================================================
 
-  case object Text extends FormatResults("Text") {
+  case object JmhText extends FormatResults("JMH Text") {
     override def render[P](args: Args[P]): VdomElement = {
       import args._
 
@@ -178,7 +189,7 @@ object FormatResults {
         separatePlusMinus   = true,
         emptyRowAfterHeader = true,
         overridePrecision   = None,
-        modNumber           = Util.addThousandSeps
+        prettyNumbers       = true,
       )
 
       val preResultColumns = suite.params.headers.length + 1
@@ -189,9 +200,130 @@ object FormatResults {
         else
           " "
 
-      val text = Util.formatTable(rows, gap)
+      val text = TextUtil.formatTable(rows, gap)
 
-      <.pre(*.resultText, text)
+      TextOutput.Props(
+        text = text,
+        mimeType = "text/plain",
+        filename = args.filename("txt"),
+      ).render
+    }
+  }
+  // ===================================================================================================================
+
+  case object JmhJson extends FormatResults("JMH JSON") {
+
+    private object Internals {
+      type BenchmarksJson = Vector[BenchmarkJson]
+
+      // "jmhVersion": "1.21",
+      // "jvm": "/usr/lib/jvm/java-11-graalvm/bin/java",
+      // "jvmArgs": [ ... ]
+      final case class BenchmarkJson(benchmark            : String,
+                                     mode                 : String,
+                                     threads              : Int,
+                                     forks                : Int,
+                                     jdkVersion           : String,
+                                     vmName               : String,
+                                     vmVersion            : String,
+                                     userAgent            : String, // custom
+                                     warmupIterations     : Int,
+                                     warmupTime           : String,
+                                     warmupBatchSize      : Int,
+                                     measurementIterations: Int,
+                                     measurementTime      : String,
+                                     measurementBatchSize : Int,
+                                     params               : Option[Map[String, String]],
+                                     primaryMetric        : PrimaryMetric,
+                                     secondaryMetrics     : SecondaryMetrics)
+
+      final case class PrimaryMetric(score          : Double,
+                                     scoreError     : Double,
+                                     scoreConfidence: Vector[Double],
+                                     scoreUnit      : String,
+                                     rawData        : Vector[Vector[Double]]) // outer is per-fork
+
+      final case class SecondaryMetrics()
+    }
+
+    def json[P](args: Args[P]): Json = {
+      import io.circe.generic.auto._
+      import Internals._
+      import args._
+
+      def durToStr(fd: FiniteDuration): String = {
+        val u = fd.unit match {
+          case TimeUnit.NANOSECONDS  => "ns"
+          case TimeUnit.MICROSECONDS => "us"
+          case TimeUnit.MILLISECONDS => "ms"
+          case TimeUnit.SECONDS      => "s"
+          case TimeUnit.MINUTES      => "m"
+          case TimeUnit.HOURS        => "h"
+          case TimeUnit.DAYS         => "d"
+        }
+        s"${fd.length} $u"
+      }
+
+      val benchmarksJson: BenchmarksJson =
+        if (resultFmts.isEmpty)
+          Vector.empty
+        else {
+          val fmtRes = resultFmts.head
+          val hasParams = suite.params.editors.nonEmpty
+          results.iterator.collect {
+            case (key, BMDone(Right(stats))) =>
+
+              val params: Option[Map[String, String]] =
+                if (hasParams)
+                  Some {
+                    suite.params.renderParamsToText(key.param).iterator.zipWithIndex.map { case (param, idx) =>
+                      suite.params.headers(idx) -> param
+                    }.toMap
+                  }
+                else
+                  None
+
+              val primaryMetric =
+                PrimaryMetric(
+                  score           = fmtRes.score.toDouble(stats.score),
+                  scoreError      = fmtRes.scoreError.toDouble(stats.scoreError),
+                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(fmtRes.score.toDouble),
+                  scoreUnit       = fmtRes.header.replace('μ', 'u'),
+                  rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b.score))),
+                )
+
+              BenchmarkJson(
+                benchmark             = s"${suite.suite.name}.${key.bm.name}".replace(' ', '_'),
+                mode                  = "avgt",
+                threads               = 1,
+                forks                 = 1,
+                jdkVersion            = System.getProperty("java.version", "?"),
+                vmName                = "Scala.JS",
+                vmVersion             = ScalaJsInfo.version,
+                userAgent             = window.navigator.userAgent,
+                warmupIterations      = stats.engineOptions.warmupIterations,
+                warmupTime            = durToStr(stats.engineOptions.actualWarmupIterationTime),
+                warmupBatchSize       = 1,
+                measurementIterations = stats.engineOptions.iterations,
+                measurementTime       = durToStr(stats.engineOptions.iterationTime),
+                measurementBatchSize  = 1,
+                params                = params,
+                primaryMetric         = primaryMetric,
+                secondaryMetrics      = SecondaryMetrics(),
+              )
+          }.toVector
+        }
+
+      benchmarksJson.asJson.deepDropNullValues
+    }
+
+    override def render[P](args: Args[P]): VdomElement = {
+      val text = json(args).spaces2
+      TextOutput.Props(
+        text = text,
+        mimeType = "application/json",
+        filename = args.filename("json"),
+      ).render
     }
   }
 
@@ -204,10 +336,14 @@ object FormatResults {
         separatePlusMinus   = false,
         emptyRowAfterHeader = false,
         overridePrecision   = Some(decimalPoints),
-        modNumber           = identity
+        prettyNumbers       = false,
       )
-      val text = Util.formatCSV(rows)
-      <.pre(*.resultText, text)
+      val text = TextUtil.formatCSV(rows)
+      TextOutput.Props(
+        text = text,
+        mimeType = "text/csv",
+        filename = args.filename("csv"),
+      ).render
     }
   }
 

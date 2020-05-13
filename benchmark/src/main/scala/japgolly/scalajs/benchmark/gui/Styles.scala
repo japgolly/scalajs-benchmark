@@ -56,6 +56,17 @@ object Styles extends StyleSheet.Inline {
       fontWeight.normal,
       paddingLeft(0.3 ex))
 
+    val etaRow = style(
+      marginBottom(1 em),
+    )
+
+    val allBMsCheckbox = style(
+      display.block,
+      paddingBottom(0.3 em),
+      marginBottom(0.3 em),
+      borderBottom(1 px, solid, c"#ccc"),
+    )
+
     val resultTable = style(
       borderCollapse.collapse)
 
@@ -105,7 +116,7 @@ object Styles extends StyleSheet.Inline {
       marginLeft(2 ex))
 
     val doneRow = style(
-      color(green),
+      color(c"#060"),
       runningRow)
 
     def resetButton = abortButton
@@ -117,12 +128,6 @@ object Styles extends StyleSheet.Inline {
     val resultFormat = style(
       cursor.pointer,
       marginLeft(1.5 ex))
-
-    val resultText = style(
-      border(solid, 1 px, c"#111"),
-      backgroundColor(c"#e9e9e9"),
-      padding(1 ex),
-    )
 
     private def graphWidth = 640 px
 
@@ -168,6 +173,36 @@ object Styles extends StyleSheet.Inline {
 
   // ===================================================================================================================
 
+  object TextOutput {
+
+    val pre = style(
+      border(solid, 1 px, c"#222"),
+      color(c"#222"),
+      backgroundColor(c"#ebfaff"),
+      padding(1 ex),
+      maxHeight :=! "calc(28em + 1ex)",
+      overflow.auto,
+      position.relative, // this block is the anchor to the buttons
+    )
+
+    val hiddenTextArea = style(
+      position.absolute,
+      zIndex(-1),
+      opacity(0),
+    )
+
+    val buttons = style(
+      position.absolute,
+      top(`0`),
+      right(`0`),
+      display.flex,
+      flexDirection.column,
+      alignItems.flexEnd,
+    )
+  }
+
+  // ===================================================================================================================
+
   object Menu {
 
     val topNav = style(
@@ -195,5 +230,6 @@ object Styles extends StyleSheet.Inline {
 
   initInnerObjects(
     Menu.topNav,
+    TextOutput.pre,
     Suite.resultTable)
 }

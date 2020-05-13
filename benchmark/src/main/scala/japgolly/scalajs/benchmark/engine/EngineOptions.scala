@@ -1,32 +1,44 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 
-final case class EngineOptions(clock           : Clock,
-                               initialDelay    : FiniteDuration,
-                               delay           : () => FiniteDuration,
-                               outlierTrimIfMin: Int,
-                               outlierTrimPct  : Double,
-                               minRuns         : Int,
-                               minTime         : FiniteDuration,
-                               maxRuns         : Int,
-                               maxTime         : FiniteDuration,
-                              )
+/**
+  * @param warmupIterationTime None means use [[iterationTime]]
+  */
+final case class EngineOptions(clock              : Clock,
+                               initialDelay       : FiniteDuration,
+                               delay              : () => FiniteDuration,
+                               warmupIterations   : Int,
+                               warmupIterationTime: Option[FiniteDuration],
+                               iterations         : Int,
+                               iterationTime      : FiniteDuration,
+                              ) {
+
+  val actualWarmupIterationTime: FiniteDuration =
+    warmupIterationTime.getOrElse(iterationTime)
+
+  val estimatedTimePerBM: FiniteDuration =
+    EngineOptions.estimatedOverheadPerBm +
+      warmupIterations * actualWarmupIterationTime +
+      iterationTime * iterations
+
+  val estimatedMsPerBM: Double =
+    TimeUtil.toMs(estimatedTimePerBM)
+}
 
 object EngineOptions {
 
-  val default: EngineOptions =
+  lazy val default: EngineOptions =
     apply(
-      clock            = Clock.Default,
-      initialDelay     = 4.millis,
-      delay            = defaultDelay,
-      outlierTrimIfMin = 1000,
-      outlierTrimPct   = 0.08,
-      minRuns          = 10000,
-      minTime          = 1.second,
-      maxRuns          = 100000,
-      maxTime          = 12.second,
+      clock               = Clock.Default,
+      initialDelay        = 4.millis,
+      delay               = defaultDelay,
+      warmupIterationTime = None,
+      warmupIterations    = 2,
+      iterations          = 9,
+      iterationTime       = 1.seconds,
     )
 
   // Ensure benchmarks don't start before chart animation finishes
@@ -36,5 +48,7 @@ object EngineOptions {
     val delayMicro   = delaySec * 1000000.0
     delayMicro.toInt.micros
   }
-}
 
+  private val estimatedOverheadPerBm =
+    FiniteDuration(1600, TimeUnit.MILLISECONDS)
+}
