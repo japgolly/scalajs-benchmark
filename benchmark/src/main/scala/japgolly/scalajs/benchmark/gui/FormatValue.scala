@@ -8,16 +8,18 @@ import scalacss.ScalaCssReact._
   *
   * Eg. 32.456 sec
   */
-final case class FormatValue[-I](getDouble: I => Option[Double],
-                                 render   : I => VdomElement,
-                                 toDouble : I => Double,
-                                 toText   : I => String) {
+final case class FormatValue[-I](getDouble   : I => Option[Double],
+                                 render      : I => VdomElement,
+                                 toDouble    : I => Double,
+                                 toTextPretty: I => String,
+                                 toTextBasic : I => String) {
   def contramap[A](f: A => I): FormatValue[A] =
     FormatValue(
       getDouble compose f,
       render compose f,
       toDouble compose f,
-      toText compose f)
+      toTextPretty compose f,
+      toTextBasic compose f)
 }
 
 object FormatValue {
@@ -28,9 +30,10 @@ object FormatValue {
       Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        TextUtil.addThousandSeps(fmt format d)),
+        TextUtil.prettyPrintNumber(d, dp)),
       identity,
-      fmt.format(_)
+      TextUtil.prettyPrintNumber(_, dp),
+      fmt.format(_),
     )
   }
 
@@ -47,7 +50,11 @@ object FormatValue {
         case None    => defaultDouble
       },
       {
-        case Some(d) => n toText d
+        case Some(d) => n toTextPretty d
+        case None    => defaultText
+      },
+      {
+        case Some(d) => n toTextBasic d
         case None    => defaultText
       })
   }

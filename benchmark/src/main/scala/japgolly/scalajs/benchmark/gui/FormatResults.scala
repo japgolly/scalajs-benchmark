@@ -112,21 +112,23 @@ object FormatResults {
                    separatePlusMinus  : Boolean,
                    emptyRowAfterHeader: Boolean,
                    overridePrecision  : Option[Int],
-                   modNumber          : String => String,
+                   prettyNumbers      : Boolean,
                   ): Vector[Vector[String]] = {
     import args._
 
     val decFmt =
       overridePrecision.map { dp => "%." + dp + "f" }
 
-    def formatNum[A](formatValue: FormatValue[A], value: A): String = {
-      val str =
-        decFmt match {
-          case Some(fmt) => TextUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
-          case None      => formatValue.toText(value)
-        }
-      modNumber(str)
-    }
+    def formatNum[A](formatValue: FormatValue[A], value: A): String =
+      decFmt match {
+        case Some(fmt) =>
+          TextUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+        case None =>
+          if (prettyNumbers)
+            formatValue.toTextPretty(value)
+          else
+            formatValue.toTextBasic(value)
+      }
 
     val keys = progress.plan.keys
 
@@ -187,7 +189,7 @@ object FormatResults {
         separatePlusMinus   = true,
         emptyRowAfterHeader = true,
         overridePrecision   = None,
-        modNumber           = TextUtil.addThousandSeps
+        prettyNumbers       = true,
       )
 
       val preResultColumns = suite.params.headers.length + 1
@@ -334,7 +336,7 @@ object FormatResults {
         separatePlusMinus   = false,
         emptyRowAfterHeader = false,
         overridePrecision   = Some(decimalPoints),
-        modNumber           = identity
+        prettyNumbers       = false,
       )
       val text = TextUtil.formatCSV(rows)
       TextOutput.Props(

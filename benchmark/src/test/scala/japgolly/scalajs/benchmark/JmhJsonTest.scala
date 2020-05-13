@@ -114,7 +114,7 @@ object JmhJsonTest extends TestSuite {
     val bm1p1  = PlanKey[P](0, 0)(bm1, p1)
     val bm1p2  = PlanKey[P](0, 1)(bm1, p2)
     val bm1p1r = Vector(Vector(10.micros, 9.micros), Vector(9.micros, 10.micros))
-    val bm1p2r = Vector(Vector(13.micros, 13.micros), Vector(13.micros, 13.micros))
+    val bm1p2r = Vector(Vector(1300.micros, 1300.micros), Vector(1300.micros, 1300.micros))
 
     val expect =
       s"""[
@@ -173,17 +173,17 @@ object JmhJsonTest extends TestSuite {
         |      "On": "F"
         |    },
         |    "primaryMetric": {
-        |      "score": 13,
+        |      "score": 1300,
         |      "scoreError": 0,
         |      "scoreConfidence": [
-        |        13,
-        |        13
+        |        1300,
+        |        1300
         |      ],
         |      "scoreUnit": "us/op",
         |      "rawData": [
         |        [
-        |          13,
-        |          13
+        |          1300,
+        |          1300
         |        ]
         |      ]
         |    },
