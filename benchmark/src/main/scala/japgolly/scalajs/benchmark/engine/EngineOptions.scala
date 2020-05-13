@@ -3,30 +3,33 @@ package japgolly.scalajs.benchmark.engine
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import scala.concurrent.duration._
 
-final case class EngineOptions(clock           : Clock,
-                               initialDelay    : FiniteDuration,
-                               delay           : () => FiniteDuration,
-                               outlierTrimIfMin: Int,
-                               outlierTrimPct  : Double,
-                               minRuns         : Int,
-                               minTime         : FiniteDuration,
-                               maxRuns         : Int,
-                               maxTime         : FiniteDuration,
-                              )
+/**
+  * @param warmupIterationTime None means use [[iterationTime]]
+  */
+final case class EngineOptions(clock              : Clock,
+                               initialDelay       : FiniteDuration,
+                               delay              : () => FiniteDuration,
+                               warmupIterations   : Int,
+                               warmupIterationTime: Option[FiniteDuration],
+                               iterations         : Int,
+                               iterationTime      : FiniteDuration,
+                              ) {
+
+  def actualWarmupIterationTime: FiniteDuration =
+    warmupIterationTime.getOrElse(iterationTime)
+}
 
 object EngineOptions {
 
   val default: EngineOptions =
     apply(
-      clock            = Clock.Default,
-      initialDelay     = 4.millis,
-      delay            = defaultDelay,
-      outlierTrimIfMin = 1000,
-      outlierTrimPct   = 0.08,
-      minRuns          = 10000,
-      minTime          = 1.second,
-      maxRuns          = 100000,
-      maxTime          = 12.second,
+      clock               = Clock.Default,
+      initialDelay        = 4.millis,
+      delay               = defaultDelay,
+      warmupIterationTime = None,
+      warmupIterations    = 1,
+      iterations          = 9,
+      iterationTime       = 1.seconds,
     )
 
   // Ensure benchmarks don't start before chart animation finishes

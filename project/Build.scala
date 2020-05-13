@@ -4,6 +4,7 @@ import com.typesafe.sbt.pgp.PgpKeys
 import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin
 import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
@@ -16,6 +17,7 @@ object ScalaJsBenchmark {
   object Ver {
     val BetterMonadicFor = "0.3.1"
     val ChartJs          = "1.0.2"
+    val Circe            = "0.13.0"
     val MacroParadise    = "2.1.1"
     val Monocle          = "1.6.3"
     val React            = "16.13.1"
@@ -25,6 +27,10 @@ object ScalaJsBenchmark {
     val ScalaCss         = "0.6.1"
     val ScalaJsReact     = "1.7.0"
     val Scalaz           = "7.2.30"
+
+    // Test only
+    val Microlibs = "2.3"
+    val MTest     = "0.7.4"
 
     // Demo only
     val Cats      = "2.1.1"
@@ -77,6 +83,13 @@ object ScalaJsBenchmark {
       }.value
     ))
 
+  def utestSettings: PE =
+    _.settings(
+      jsEnv               := new JSDOMNodeJSEnv,
+      libraryDependencies += "com.lihaoyi" %%% "utest" % Ver.MTest % Test,
+      libraryDependencies += "com.github.japgolly.microlibs" %%% "test-util" % Ver.Microlibs % Test,
+      testFrameworks      := new TestFramework("utest.runner.Framework") :: Nil)
+
   lazy val root =
     Project("root", file("."))
       .configure(commonSettings, preventPublication)
@@ -86,7 +99,7 @@ object ScalaJsBenchmark {
     Project("benchmark", file("benchmark"))
       .enablePlugins(ScalaJSPlugin)
       .enablePlugins(JSDependenciesPlugin)
-      .configure(commonSettings, definesMacros, publicationSettings(ghProject))
+      .configure(commonSettings, definesMacros, publicationSettings(ghProject), utestSettings)
       .settings(
         libraryDependencies ++= Seq(
           "org.scala-lang.modules"            %%% "scala-collection-compat" % Ver.ScalaCollCompat,
@@ -97,6 +110,9 @@ object ScalaJsBenchmark {
           "com.github.japgolly.scalacss"      %%% "ext-react"               % Ver.ScalaCss,
           "com.github.julien-truffaut"        %%% "monocle-core"            % Ver.Monocle,
           "com.github.julien-truffaut"        %%% "monocle-macro"           % Ver.Monocle,
+          "io.circe"                          %%% "circe-core"              % Ver.Circe,
+          "io.circe"                          %%% "circe-generic"           % Ver.Circe,
+          "io.circe"                          %%% "circe-parser"            % Ver.Circe % Test,
           "org.scalaz"                        %%% "scalaz-core"             % Ver.Scalaz),
 
         dependencyOverrides += "org.webjars.npm" % "js-tokens" % "3.0.2", // https://github.com/webjars/webjars/issues/1789
@@ -113,12 +129,15 @@ object ScalaJsBenchmark {
             dependsOn "umd/react.development.js"
             commonJSName "ReactDOM",
 
+          "org.webjars.npm" % "jstat" % "1.9.3"
+            /        "dist/jstat.js"
+            minified "dist/jstat.min.js",
+
           "org.webjars" % "chartjs" % Ver.ChartJs
             /        "Chart.js"
             minified "Chart.min.js"),
 
-        addMacroParadisePlugin,
-        test := {})
+        addMacroParadisePlugin)
 
   object Demo {
     def librariesFileTask = Def.task {

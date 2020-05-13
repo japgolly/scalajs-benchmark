@@ -3,6 +3,7 @@ package japgolly.scalajs.benchmark.engine
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo}
 import scala.annotation.tailrec
+import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.timers.SetTimeoutHandle
@@ -47,13 +48,6 @@ object Engine {
     var progress               = Progress(plan, 0)
     val setupCtx               = SetupCtx(CallbackTo(aborted))
 
-    def isEnough(s: Stats.Mutable): Boolean = {
-      import options._
-      @inline def small = s.runs >= minRuns && s.totalTime >= minTime
-      @inline def large = s.runs >= maxRuns || s.totalTime >= maxTime
-      small || large
-    }
-
     val finish: AsyncCallback[Unit] =
       AsyncCallback.delay {
         hnd.value = js.undefined
@@ -88,12 +82,19 @@ object Engine {
             setup.attempt.flatMap {
 
               case Right((bmFn, teardown)) =>
-                msg(BenchmarkRunning(progress, key)) {
 
+                // =====================================================================================================
+                // Real benchmarking here
+
+                msg(BenchmarkRunning(progress, key)) {
                   val bm = CallbackTo.lift(bmFn)
                   val bmTimedUnsafe = clock.time(bm).toScalaFn
 
-                  def runBenchmarks(rs: Stats.Mutable): AsyncCallback[Stats] = {
+                  def runIteration(sm: Stats.Mutable, maxTime: FiniteDuration): AsyncCallback[Unit] = {
+
+                    def isEnough(): Boolean =
+                      sm.totalBatchTime() >= maxTime
+
                     val bmRound: AsyncCallback[Unit] =
                       AsyncCallback.delay {
                         val startTime = System.currentTimeMillis()
@@ -106,8 +107,8 @@ object Engine {
                           // val t = clock.time(localFnAndTeardown._1())
                           // localFnAndTeardown._2.run()
                           val t = bmTimedUnsafe()
-                          rs add t
-                          if (!isEnough(rs) && !needDelay())
+                          sm.add(t)
+                          if (!isEnough() && !needDelay())
                             go()
                         }
 
@@ -115,22 +116,36 @@ object Engine {
                           go()
                       }
 
-                    var self: AsyncCallback[Stats] = AsyncCallback.delay(???)
+                    var self: AsyncCallback[Unit] = AsyncCallback.delay(???)
                     self = bmRound >> AsyncCallback.byName {
-                      if (!isEnough(rs) && !aborted)
+                      if (!isEnough() && !aborted)
                         self.delayMs(1)
                       else
-                        AsyncCallback.pure(Stats(rs.times.toVector, options))
+                        AsyncCallback.delay(sm.endBatch())
                     }
                     self
                   }
 
-                  AsyncCallback.delay(new Stats.Mutable)
-                    .flatMap(runBenchmarks)
+                  def runIterations(iterations: Int, maxTime: FiniteDuration): AsyncCallback[() => Stats] =
+                    AsyncCallback.byName {
+                      val sm        = new Stats.Mutable
+                      val iteration = runIteration(sm, maxTime)
+                      val runs      = (1 to iterations).foldLeft(AsyncCallback.unit)((q, _) => q >> iteration)
+                      runs.ret(() => Stats(sm.result(), options))
+                    }
+
+                  val warmup =
+                    runIterations(options.warmupIterations, options.actualWarmupIterationTime)
+
+                  val real =
+                    runIterations(options.iterations, options.iterationTime).map(_())
+
+                  (warmup >> real)
                     .attempt
                     .finallyRun(teardown.asAsyncCallback)
                     .flatMap(complete)
                 }
+                // =====================================================================================================
 
               case Left(err) =>
                 complete(Left(err))
@@ -175,8 +190,8 @@ object Engine {
 
     run(plan, options) {
       case SuiteStarting     (p)       => Callback.log("Starting suite: " + p.plan.name).asAsyncCallback
-      case BenchmarkPreparing(p, k)    => AsyncCallback.unit
-      case BenchmarkRunning  (p, k)    => AsyncCallback.unit
+      case BenchmarkPreparing(_, _)    => AsyncCallback.unit
+      case BenchmarkRunning  (_, _)    => AsyncCallback.unit
       case BenchmarkFinished (p, k, r) => Callback.info(fmt.format(p.runs, p.total, k.bm.name, k.param, r)).asAsyncCallback
       case SuiteFinished     (p)       => Callback.log("Suite completed: " + p.plan.name).asAsyncCallback
     }

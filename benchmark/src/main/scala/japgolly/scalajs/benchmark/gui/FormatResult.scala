@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import java.util.concurrent.TimeUnit
-import japgolly.scalajs.benchmark.engine.Stats
+import japgolly.scalajs.benchmark.engine.{DurationUtil, Stats}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 /** Format for a result derived from [[Stats]].
@@ -9,11 +9,11 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
   * Eg. ops/sec: 2058.8 ± 8.1
   *
   * @param score Formatter for the score itself.
-  * @param error Formatter for the error in (score ± error).
+  * @param scoreError Formatter for the error in (score ± error).
   */
 final case class FormatResult(header       : String,
-                              score        : FormatValue[Stats],
-                              error        : FormatValue[Stats],
+                              score        : FormatValue[Duration],
+                              scoreError   : FormatValue[Duration],
                               lowerIsBetter: Boolean) {
 
   def higherIsBetter = !lowerIsBetter
@@ -38,22 +38,27 @@ object FormatResult {
       case TimeUnit.DAYS         => "hr"
     }
 
-  def getUnits(t: TimeUnit): FiniteDuration => Double =
+  def getUnits(t: TimeUnit): FiniteDuration => Double = {
+    val f = getUnitsFromMs(t)
+    fd => f(DurationUtil.toMs(fd))
+  }
+
+  private def getUnitsFromMs(t: TimeUnit): Double => Double =
     t match {
-      case TimeUnit.NANOSECONDS  => _.toNanos.toDouble
-      case TimeUnit.MICROSECONDS => _.toNanos.toDouble / 1000.0
-      case TimeUnit.MILLISECONDS => _.toNanos.toDouble / 1000000.0
-      case TimeUnit.SECONDS      => _.toMicros.toDouble / 1000000.0
-      case TimeUnit.MINUTES      => _.toMillis.toDouble / 60000.0
-      case TimeUnit.HOURS        => _.toMillis.toDouble / 3660000.0
-      case TimeUnit.DAYS         => _.toSeconds.toDouble / (3660 * 24)
+      case TimeUnit.NANOSECONDS  => _ * 1000000
+      case TimeUnit.MICROSECONDS => _ * 1000
+      case TimeUnit.MILLISECONDS => identity
+      case TimeUnit.SECONDS      => _ / 1000
+      case TimeUnit.MINUTES      => _ / 60000
+      case TimeUnit.HOURS        => _ / 3660000
+      case TimeUnit.DAYS         => _ / 3660000 / 24
     }
 
   def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): FormatResult =
     FormatResult(
       header,
-      FormatValue.averageDuration(getUnits, scoreDP),
-      FormatValue.error          (getUnits, errorDP),
+      FormatValue.duration(getUnits, scoreDP),
+      FormatValue.duration(getUnits, errorDP),
       lowerIsBetter)
 
   def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult = {
@@ -64,11 +69,11 @@ object FormatResult {
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
-  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 1, 0)
-  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 2)
+  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 0, 0)
+  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 3)
   val SecPerOp3   = timePerOp(TimeUnit.SECONDS, 3, 3)
-  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 1, 1)
-  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 0, 0)
+  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 3)
+  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 3)
 
   def choose(minDur: Duration): FormatResult =
     if (minDur.toMicros < 1000)

@@ -1,6 +1,5 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.Stats
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scalacss.ScalaCssReact._
@@ -29,7 +28,7 @@ object FormatValue {
       Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        Util.addThousandSeps(fmt format d)),
+        TextUtil.addThousandSeps(fmt format d)),
       identity,
       fmt.format(_)
     )
@@ -55,20 +54,14 @@ object FormatValue {
 
   def duration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Duration] =
     optionalNumber(
-      dp,
-      <.span("∞"),
-      -1,
-      "∞")
+      dp            = dp,
+      default       = <.span("NaN"),
+      defaultDouble = Double.NaN,
+      defaultText   = "NaN")
       .contramap {
         case f: FiniteDuration => Some(getUnits(f))
         case _                 => None
       }
-
-  def averageDuration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.average)
-
-  def error(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Stats] =
-    duration(getUnits, dp).contramap(_.marginOfError)
 
   val Integer = number(0).contramap[Int](_.toDouble)
 }
