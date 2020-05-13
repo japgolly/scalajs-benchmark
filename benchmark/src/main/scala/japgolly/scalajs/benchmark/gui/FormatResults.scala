@@ -31,10 +31,7 @@ object FormatResults {
     val resultFmtCount = resultFmts.length
 
     def filename(ext: String): String =
-      filename("", ext)
-
-    def filename(prefix: String, ext: String): String =
-      s"sjb-${prefix}${suite.suite.filenameFriendlyName}-${progress.timestampTxt}.$ext"
+      s"sjsbm-${suite.suite.filenameFriendlyName}-${progress.timestampTxt}.$ext"
   }
 
   // ===================================================================================================================
@@ -345,7 +342,7 @@ object FormatResults {
       TextOutput.Props(
         text = text,
         mimeType = "application/json",
-        filename = args.filename("jmh-", "json"),
+        filename = args.filename("json"),
       ).render
     }
   }
