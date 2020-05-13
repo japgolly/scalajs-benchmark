@@ -4,23 +4,33 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 import japgolly.scalajs.benchmark.gui.Styles.{TextOutput => *}
-import org.scalajs.dom.{html, document}
+import japgolly.scalajs.benchmark.vendor.FileSaver
+import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
+import org.scalajs.dom.{document, html}
+import scala.scalajs.js
 
 object TextOutput {
 
-  type Props = String
+  final case class Props(text: String, mimeType: String, filename: String) {
+    @inline def render: VdomElement = Component(this)
+  }
 
-  final case class State(prevText: String, clicked: Boolean) {
-    def update(text: String): State =
-      if (text == prevText)
+  object Props {
+    implicit def reusability: Reusability[Props] =
+      Reusability.derive
+  }
+
+  final case class State(prev: Props, clicked: Boolean) {
+    def update(props: Props): State =
+      if (props == prev)
         this
       else
-        State.init(text)
+        State.init(props)
   }
 
   object State {
-    def init(text: String): State =
-      apply(text, clicked = false)
+    def init(props: Props): State =
+      apply(props, clicked = false)
 
     implicit def reusability: Reusability[State] =
       Reusability.derive
@@ -37,13 +47,23 @@ object TextOutput {
         _        <- $.modState(_.copy(clicked = true))
       } yield ()
 
-    def render(text: Props, state: State): VdomNode = {
+    private val button =
+      <.button(^.role := "button")
+
+    def render(p: Props, s: State): VdomNode = {
 
       val copyButtonLabel =
-        if (state.clicked)
+        if (s.clicked)
           "Copied"
         else
           "Copy to clipboard"
+
+      val saveFile = Callback {
+        val body = js.Array[js.Any](p.text)
+        val mime = BlobPropertyBag(p.mimeType + ";charset=utf-8")
+        val blob = new Blob(body, mime)
+        FileSaver.saveAs(blob, p.filename)
+      }
 
       def copyButton = TagMod(
         <.textarea.withRef(hiddenTextAreaRef)(
@@ -51,17 +71,22 @@ object TextOutput {
           ^.tabIndex    := -1,
           ^.aria.hidden := true,
           ^.readOnly    := true,
-          ^.value       := text),
-        <.button(
-          *.copyToClipboardButton,
-          ^.role := "button",
+          ^.value       := p.text),
+        button(
           ^.onClick --> copyToClipboard,
           copyButtonLabel))
 
-      <.pre(
-        *.pre,
-        copyButton,
-        text,
+      val saveButton =
+        button(
+          ^.onClick --> saveFile,
+          "Save")
+
+      <.pre(*.pre,
+        <.div(*.buttons,
+          copyButton,
+          saveButton,
+        ),
+        p.text,
       )
     }
   }

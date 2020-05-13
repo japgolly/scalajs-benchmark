@@ -133,6 +133,10 @@ object ScalaJsBenchmark {
             /        "dist/jstat.js"
             minified "dist/jstat.min.js",
 
+          "org.webjars.npm" % "file-saver" % "2.0.2"
+            /        "dist/FileSaver.js"
+            minified "dist/FileSaver.min.js",
+
           "org.webjars" % "chartjs" % Ver.ChartJs
             /        "Chart.js"
             minified "Chart.min.js"),

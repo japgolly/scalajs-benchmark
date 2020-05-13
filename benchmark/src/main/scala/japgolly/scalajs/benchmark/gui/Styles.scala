@@ -179,10 +179,13 @@ object Styles extends StyleSheet.Inline {
       opacity(0),
     )
 
-    val copyToClipboardButton = style(
+    val buttons = style(
       position.absolute,
       top(`0`),
       right(`0`),
+      display.flex,
+      flexDirection.column,
+      alignItems.flexEnd,
     )
   }
 

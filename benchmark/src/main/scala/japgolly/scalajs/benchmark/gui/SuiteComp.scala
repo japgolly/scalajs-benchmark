@@ -10,6 +10,7 @@ import monocle._
 import monocle.macros.Lenses
 import org.scalajs.dom.document
 import scala.concurrent.duration._
+import scala.scalajs.js
 import scalacss.ScalaCssReact._
 import GuiParams.GenState
 import ReactTemp._
@@ -128,7 +129,7 @@ object SuiteComp {
         startTime <- AsyncCallback.delay(System.currentTimeMillis())
         _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
         abort     <- actuallyStart(startTime).asAsyncCallback
-        running    = SuiteRunning[P](suite, Progress(plan, 0), Map.empty, abort)
+        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress(new js.Date(), plan, 0), Map.empty, abort))
         _         <- $.modStateAsync(State.status set running)
         } yield ()
     }

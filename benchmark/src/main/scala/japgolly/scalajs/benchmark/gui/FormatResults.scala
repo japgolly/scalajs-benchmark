@@ -27,7 +27,14 @@ object FormatResults {
                            progress  : Progress[P],
                            results   : Map[PlanKey[P], BMStatus],
                            resultFmts: Vector[FormatResult]) {
+
     val resultFmtCount = resultFmts.length
+
+    def filename(ext: String): String =
+      filename("", ext)
+
+    def filename(prefix: String, ext: String): String =
+      s"sjb-${prefix}${suite.suite.filenameFriendlyName}-${progress.timestampTxt}.$ext"
   }
 
   // ===================================================================================================================
@@ -196,12 +203,13 @@ object FormatResults {
 
       val text = TextUtil.formatTable(rows, gap)
 
-      wrapText(text)
+      TextOutput.Props(
+        text = text,
+        mimeType = "text/plain",
+        filename = args.filename("txt"),
+      ).render
     }
   }
-
-  private def wrapText(text: String): VdomElement =
-    TextOutput.Component(text)
 
   // ===================================================================================================================
 
@@ -215,7 +223,11 @@ object FormatResults {
         modNumber           = identity
       )
       val text = TextUtil.formatCSV(rows)
-      wrapText(text)
+      TextOutput.Props(
+        text = text,
+        mimeType = "text/csv",
+        filename = args.filename("csv"),
+      ).render
     }
   }
 
@@ -330,7 +342,11 @@ object FormatResults {
 
     override def render[P](args: Args[P]): VdomElement = {
       val text = json(args).spaces2
-      wrapText(text)
+      TextOutput.Props(
+        text = text,
+        mimeType = "application/json",
+        filename = args.filename("jmh-", "json"),
+      ).render
     }
   }
 

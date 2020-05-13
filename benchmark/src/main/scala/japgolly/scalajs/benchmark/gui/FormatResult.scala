@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import java.util.concurrent.TimeUnit
-import japgolly.scalajs.benchmark.engine.{DurationUtil, Stats}
+import japgolly.scalajs.benchmark.engine.{TimeUtil, Stats}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 /** Format for a result derived from [[Stats]].
@@ -40,7 +40,7 @@ object FormatResult {
 
   def getUnits(t: TimeUnit): FiniteDuration => Double = {
     val f = getUnitsFromMs(t)
-    fd => f(DurationUtil.toMs(fd))
+    fd => f(TimeUtil.toMs(fd))
   }
 
   private def getUnitsFromMs(t: TimeUnit): Double => Double =

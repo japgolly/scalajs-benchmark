@@ -7,9 +7,9 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
-      DurationUtil.toMs(d) * 1000 / 1000000L.toDouble
+      TimeUtil.toMs(d) * 1000 / 1000000L.toDouble
     def fmtD(d: Duration): String = d match {
-      case f: FiniteDuration => (DurationUtil.toMs(f) * 1000).toInt.toString + "μs"
+      case f: FiniteDuration => (TimeUtil.toMs(f) * 1000).toInt.toString + "μs"
       case _                 => d.toString
     }
     val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
@@ -42,7 +42,7 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
       totalTime / samples
 
   private lazy val statMathMs =
-    StatMath(times.map(DurationUtil.toMs))
+    StatMath(times.map(TimeUtil.toMs))
 
   private def meanErrorMsAt(confidence: Double): Double = {
     val df = samples - 1
@@ -55,14 +55,14 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
     if (samples <= 2)
       Duration.Inf
     else
-      DurationUtil.fromMs(meanErrorMsAt(confidence))
+      TimeUtil.fromMs(meanErrorMsAt(confidence))
 
   def getConfidenceIntervalAt(confidence: Double): (Duration, Duration) =
     if (samples <= 2)
       (Duration.Undefined, Duration.Undefined)
     else {
       val meanErr = meanErrorMsAt(confidence)
-      (DurationUtil.fromMs(statMathMs.mean - meanErr), DurationUtil.fromMs(statMathMs.mean + meanErr))
+      (TimeUtil.fromMs(statMathMs.mean - meanErr), TimeUtil.fromMs(statMathMs.mean + meanErr))
     }
 
   val score           = average

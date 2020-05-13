@@ -19,9 +19,10 @@ final case class BenchmarkRunning  [P](progress: Progress[P], key: PlanKey[P])  
 final case class BenchmarkFinished [P](progress: Progress[P], key: PlanKey[P], result: Result) extends Event[P]
 final case class SuiteFinished     [P](progress: Progress[P]/*, aborted | results, */)         extends Event[P]
 
-final case class Progress[P](plan: Plan[P], runs: Int) {
-  def total = plan.totalBenchmarks
-  def remaining = total - runs
+final case class Progress[P](startedAt: js.Date, plan: Plan[P], runs: Int) {
+  def timestampTxt = TimeUtil.dateStrFromJsDate(startedAt) + "_" + TimeUtil.timeStrFromJsDate(startedAt)
+  def total        = plan.totalBenchmarks
+  def remaining    = total - runs
 }
 
 final case class AbortFn(value: AsyncCallback[Unit]) {
@@ -45,7 +46,7 @@ object Engine {
     val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
     var broadcastFinishOnAbort = true
     var aborted                = false
-    var progress               = Progress(plan, 0)
+    var progress               = Progress(new js.Date(), plan, 0)
     val setupCtx               = SetupCtx(CallbackTo(aborted))
 
     val finish: AsyncCallback[Unit] =
