@@ -19,7 +19,8 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
 1. You write benchmarks.
   ```scala
-  import japgolly.scalajs.benchmark._, gui._
+  import japgolly.scalajs.benchmark._
+  import japgolly.scalajs.benchmark.gui._
 
   object Example {
     val suite = GuiSuite(
@@ -45,15 +46,15 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
 1. Add a tiny loader HTML [like this](demo/scala213-full.html).
 
-1. Create a `JSApp` and point `scalajs-benchmark` at your suite of benchmarks.
+1. Create a main app and point `scalajs-benchmark` at your suite of benchmarks.
 
   ```scala
   import org.scalajs.dom.document
   import japgolly.scalajs.benchmark.gui.BenchmarkGUI
 
-  object Main extends scalajs.js.JSApp {
+  object Main {
 
-    def main() = {
+    def main(args: Array[String]) = {
       val body = document getElementById "body"
       BenchmarkGUI.renderSuite(body)(Example.suite)
     }
