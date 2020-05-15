@@ -135,7 +135,7 @@ object SuiteComp {
         startTime <- AsyncCallback.delay(System.currentTimeMillis())
         _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
         abort     <- actuallyStart(startTime).asAsyncCallback
-        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress(new js.Date(), plan, 0), Map.empty, abort))
+        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress.start(plan, options), Map.empty, abort))
         _         <- $.modStateAsync(State.status set running)
         } yield ()
     }

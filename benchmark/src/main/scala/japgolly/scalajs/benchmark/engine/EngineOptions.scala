@@ -36,8 +36,8 @@ object EngineOptions {
       initialDelay        = 4.millis,
       delay               = defaultDelay,
       warmupIterationTime = None,
-      warmupIterations    = 2,
-      iterations          = 9,
+      warmupIterations    = 1,
+      iterations          = 10,
       iterationTime       = 1.seconds,
     )
 
@@ -50,5 +50,5 @@ object EngineOptions {
   }
 
   private val estimatedOverheadPerBm =
-    FiniteDuration(1600, TimeUnit.MILLISECONDS)
+    FiniteDuration(2000, TimeUnit.MILLISECONDS)
 }

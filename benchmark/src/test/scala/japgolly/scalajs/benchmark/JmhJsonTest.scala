@@ -3,6 +3,7 @@ package japgolly.scalajs.benchmark
 import io.circe._
 import io.circe.parser._
 import japgolly.microlibs.testutil.TestUtil._
+import japgolly.scalajs.benchmark
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.{BMDone, BMStatus, FormatResult, GuiParam, GuiParams, GuiSuite}
 import japgolly.scalajs.benchmark.gui.FormatResults.{Args, JmhJson}
@@ -48,12 +49,21 @@ object JmhJsonTest extends TestSuite {
     assertEqJson(actual, expect)
   }
 
+  private def itStats(times: Double*): IterationStats = {
+    val b = new IterationStats.Builder
+    times.foreach(b.add)
+    b.result()
+  }
+
+  private def stats(times: IterationStats*): Stats =
+    Stats(times.toVector)
+
   private def testSimple() = {
     val bm1    = Benchmark("My BM")(())
     val suite  = Suite[Unit]("My Suite")(bm1)
     val plan   = Plan[Unit](suite, Vector.empty)
     val bm1p0  = PlanKey[Unit](0, 0)(bm1, ())
-    val bm1p0r = Vector(Vector(12.1.millis, 12.2.millis), Vector(12.3.millis, 12.2.millis))
+    val bm1p0r = stats(itStats(12.15), itStats(12.3, 12.2), itStats(12.3), itStats(12.1))
 
     val expect =
       s"""[
@@ -73,16 +83,18 @@ object JmhJsonTest extends TestSuite {
         |    "measurementBatchSize": 1,
         |    "primaryMetric": {
         |      "score": 12.2,
-        |      "scoreError": 0.527619,
+        |      "scoreError": 0.589896,
         |      "scoreConfidence": [
-        |        11.67238,
-        |        12.727619
+        |        11.610103,
+        |        12.789896
         |      ],
         |      "scoreUnit": "ms/op",
         |      "rawData": [
         |        [
         |          12.15,
-        |          12.25
+        |          12.25,
+        |          12.3,
+        |          12.1
         |        ]
         |      ]
         |    },
@@ -94,8 +106,8 @@ object JmhJsonTest extends TestSuite {
 
     testJmhJson[Unit](
       suite      = GuiSuite(suite),
-      progress   = Progress(startTime, plan, 123),
-      results    = Map(bm1p0 -> BMDone(Right(Stats(bm1p0r, eo)))),
+      progress   = Progress(startTime, plan, 123, eo),
+      results    = Map(bm1p0 -> BMDone(Right(bm1p0r))),
       resultFmts = Vector(FormatResult.MillisPerOp),
       expect     = expect,
     )
@@ -113,8 +125,8 @@ object JmhJsonTest extends TestSuite {
     val plan   = Plan[P](suite, Vector(p1, p2))
     val bm1p1  = PlanKey[P](0, 0)(bm1, p1)
     val bm1p2  = PlanKey[P](0, 1)(bm1, p2)
-    val bm1p1r = Vector(Vector(10.micros, 9.micros), Vector(9.micros, 10.micros))
-    val bm1p2r = Vector(Vector(1300.micros, 1300.micros), Vector(1300.micros, 1300.micros))
+    val bm1p1r = stats(itStats(.01), itStats(.009), itStats(.009), itStats(.01))
+    val bm1p2r = stats(itStats(1.3), itStats(1.3), itStats(1.3), itStats(1.3))
 
     val expect =
       s"""[
@@ -146,8 +158,10 @@ object JmhJsonTest extends TestSuite {
         |      "scoreUnit": "us/op",
         |      "rawData": [
         |        [
-        |          9.5,
-        |          9.5
+        |          10,
+        |          9,
+        |          9,
+        |          10
         |        ]
         |      ]
         |    },
@@ -183,6 +197,8 @@ object JmhJsonTest extends TestSuite {
         |      "rawData": [
         |        [
         |          1300,
+        |          1300,
+        |          1300,
         |          1300
         |        ]
         |      ]
@@ -195,8 +211,8 @@ object JmhJsonTest extends TestSuite {
 
     testJmhJson[P](
       suite      = GuiSuite(suite, gps),
-      progress   = Progress(startTime, plan, 123),
-      results    = Map(bm1p1 -> BMDone(Right(Stats(bm1p1r, eo))), bm1p2 -> BMDone(Right(Stats(bm1p2r, eo)))),
+      progress   = Progress(startTime, plan, 123, eo),
+      results    = Map(bm1p1 -> BMDone(Right(bm1p1r)), bm1p2 -> BMDone(Right(bm1p2r))),
       resultFmts = Vector(FormatResult.MicrosPerOp, FormatResult.OpsPerSec),
       expect     = expect,
     )

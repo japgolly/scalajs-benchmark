@@ -1,23 +1,25 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.react.CallbackTo
-import scala.concurrent.duration._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal
 import scala.util.Try
 
 trait Clock {
-  def time(f: CallbackTo[_]): CallbackTo[FiniteDuration]
+  /** @return time `f` took to complete, in milliseconds */
+  def time(f: CallbackTo[_]): CallbackTo[Double]
 }
 
 trait StatelessClock extends Clock {
   type Time
   def unsafeGet(): Time
-  def duration(start: Time, end: Time): FiniteDuration
+
+  /** @return difference in milliseconds */
+  def duration(start: Time, end: Time): Double
 
   // val bh = new Blackhole
 
-  override def time(c: CallbackTo[_]): CallbackTo[FiniteDuration] = {
+  override def time(c: CallbackTo[_]): CallbackTo[Double] = {
     val f = c.toScalaFn
     CallbackTo {
       val a = unsafeGet()
@@ -34,14 +36,14 @@ object Clock {
     override def toString = "SysNano"
     override type Time                      = Long
     override def unsafeGet()                = System.nanoTime()
-    override def duration(a: Time, b: Time) = FiniteDuration(b - a, NANOSECONDS)
+    override def duration(a: Time, b: Time) = (b - a).toDouble / 1000000
   }
 
   object SysMilli extends StatelessClock {
     override def toString = "SysMilli"
     override type Time                      = Long
     override def unsafeGet()                = System.currentTimeMillis()
-    override def duration(a: Time, b: Time) = FiniteDuration(b - a, MILLISECONDS)
+    override def duration(a: Time, b: Time) = (b - a).toDouble
   }
 
   @JSGlobal("chrome.Interval")
@@ -53,21 +55,27 @@ object Clock {
   }
 
   val Chrome: Option[Clock] =
-    Try(new ChromeInterval()).toOption.map(i =>
+    Try(new ChromeInterval()).toOption.map { i =>
+      var last: Any = 123 // serving the same purpose as BlackHole
+
       new Clock {
-        override def toString = "Chrome"
-        override def time(c: CallbackTo[_]): CallbackTo[FiniteDuration] = {
+        override def toString =
+          last match {
+            case notGonnaHappen: Clock => notGonnaHappen.toString
+            case _                     => "Clock.Chrome"
+          }
+
+        override def time(c: CallbackTo[_]): CallbackTo[Double] = {
           val f = c.toScalaFn
           CallbackTo {
             i.start()
-            val x = f()
+            last = f()
             i.stop()
-            // bh.consumeA(x)
-            FiniteDuration(i.microseconds().toLong, MICROSECONDS)
+            i.microseconds() / 1000.0
           }
         }
       }
-    )
+    }
 
   /*
   From https://github.com/bestiejs/benchmark.js/blob/master/benchmark.js
