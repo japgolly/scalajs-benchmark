@@ -3,10 +3,7 @@ package japgolly.scalajs.benchmark.engine
 import scala.concurrent.duration._
 import scala.scalajs.js
 
-/**
-  * @param rawData Times in milliseconds per execution, per iteration
-  */
-final case class Stats(rawData: js.Array[js.Array[Double]]) {
+final case class Stats(rawData: Vector[IterationStats]) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
@@ -19,19 +16,20 @@ final case class Stats(rawData: js.Array[js.Array[Double]]) {
     s"${fmtD(score)} ± ${fmtD(scoreError)} /op ($samples runs, Σ $tot)"
   }
 
-  lazy val isolatedBatches: Vector[Stats] =
+  lazy val isolatedBatches: Vector[Stats] = {
+    val e = Vector.empty[IterationStats]
     Vector.tabulate(rawData.length) { i =>
       val batch = rawData(i)
-      Stats(js.Array(batch))
+      Stats(e :+ batch)
     }
+  }
 
   val times: js.Array[Double] =
     rawData.length match {
       case 0 => new js.Array[Double]
-      case 1 => rawData.head
-      case _ => rawData.head.concat(rawData.iterator.drop(1).toSeq: _*)
+      case 1 => rawData.head.rawData
+      case _ => rawData.head.rawData.concat(rawData.iterator.drop(1).map(_.rawData).toSeq: _*)
     }
-
 
   def samples =
     times.length
@@ -79,28 +77,24 @@ final case class Stats(rawData: js.Array[js.Array[Double]]) {
 
 object Stats {
 
-  private[engine] class Mutable {
-    private val batches      = new js.Array[js.Array[Double]]
-    private var curBatch     = new js.Array[Double]
-    private var curBatchTime = 0.0
+  final class Builder {
+    private val iterations   = Vector.newBuilder[IterationStats]
+    private var curIteration = new IterationStats.Builder
 
-    def add(d: Double): Unit = {
-      curBatch.push(d)
-      curBatchTime += d
+    def add(d: Double): Unit =
+      curIteration.add(d)
+
+    def totalIterationTime() =
+      curIteration.totalTime()
+
+    def endIteration(): Unit = {
+      iterations += curIteration.result()
+      curIteration = new IterationStats.Builder
     }
 
-    def totalBatchTime() =
-      curBatchTime
-
-    def endBatch(): Unit = {
-      batches.push(curBatch)
-      curBatch = new js.Array[Double]
-      curBatchTime = 0.0
-    }
-
-    /** Make sure you call [[endBatch()]] before calling this. */
+    /** Make sure you call [[endIteration()]] before calling this. */
     def result(): Stats =
-      Stats(batches)
+      Stats(iterations.result())
   }
 
 }

@@ -101,10 +101,10 @@ object Engine {
                   val bm = CallbackTo.lift(bmFn)
                   val bmTimedUnsafe = clock.time(bm).toScalaFn
 
-                  def runIteration(sm: Stats.Mutable, maxTimeMs: Double): AsyncCallback[Unit] = {
+                  def runIteration(s: Stats.Builder, maxTimeMs: Double): AsyncCallback[Unit] = {
 
                     def isEnough(): Boolean =
-                      sm.totalBatchTime() >= maxTimeMs
+                      s.totalIterationTime() >= maxTimeMs
 
                     val bmRound: AsyncCallback[Unit] =
                       AsyncCallback.delay {
@@ -118,7 +118,7 @@ object Engine {
                           // val t = clock.time(localFnAndTeardown._1())
                           // localFnAndTeardown._2.run()
                           val t = bmTimedUnsafe()
-                          sm.add(t)
+                          s.add(t)
                           if (!isEnough() && !needDelay())
                             go()
                         }
@@ -132,14 +132,14 @@ object Engine {
                       if (!isEnough() && !aborted)
                         self.delayMs(1)
                       else
-                        AsyncCallback.delay(sm.endBatch())
+                        AsyncCallback.delay(s.endIteration())
                     }
                     self
                   }
 
                   def runIterations(iterations: Int, maxTime: FiniteDuration): AsyncCallback[() => Stats] =
                     AsyncCallback.byName {
-                      val sm        = new Stats.Mutable
+                      val sm        = new Stats.Builder
                       val iteration = runIteration(sm, TimeUtil.toMs(maxTime))
                       val runs      = (1 to iterations).foldLeft(AsyncCallback.unit)((q, _) => q >> iteration)
                       runs.ret(() => sm.result())

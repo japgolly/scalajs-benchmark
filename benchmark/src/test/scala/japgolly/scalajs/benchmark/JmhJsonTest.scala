@@ -3,6 +3,7 @@ package japgolly.scalajs.benchmark
 import io.circe._
 import io.circe.parser._
 import japgolly.microlibs.testutil.TestUtil._
+import japgolly.scalajs.benchmark
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.{BMDone, BMStatus, FormatResult, GuiParam, GuiParams, GuiSuite}
 import japgolly.scalajs.benchmark.gui.FormatResults.{Args, JmhJson}
@@ -48,12 +49,21 @@ object JmhJsonTest extends TestSuite {
     assertEqJson(actual, expect)
   }
 
+  private def itStats(times: Double*): IterationStats = {
+    val b = new IterationStats.Builder
+    times.foreach(b.add)
+    b.result()
+  }
+
+  private def stats(times: IterationStats*): Stats =
+    Stats(times.toVector)
+
   private def testSimple() = {
     val bm1    = Benchmark("My BM")(())
     val suite  = Suite[Unit]("My Suite")(bm1)
     val plan   = Plan[Unit](suite, Vector.empty)
     val bm1p0  = PlanKey[Unit](0, 0)(bm1, ())
-    val bm1p0r = js.Array(js.Array(12.1, 12.2), js.Array(12.3, 12.2))
+    val bm1p0r = stats(itStats(12.1, 12.2), itStats(12.3, 12.2))
 
     val expect =
       s"""[
@@ -95,7 +105,7 @@ object JmhJsonTest extends TestSuite {
     testJmhJson[Unit](
       suite      = GuiSuite(suite),
       progress   = Progress(startTime, plan, 123, eo),
-      results    = Map(bm1p0 -> BMDone(Right(Stats(bm1p0r)))),
+      results    = Map(bm1p0 -> BMDone(Right(bm1p0r))),
       resultFmts = Vector(FormatResult.MillisPerOp),
       expect     = expect,
     )
@@ -113,8 +123,8 @@ object JmhJsonTest extends TestSuite {
     val plan   = Plan[P](suite, Vector(p1, p2))
     val bm1p1  = PlanKey[P](0, 0)(bm1, p1)
     val bm1p2  = PlanKey[P](0, 1)(bm1, p2)
-    val bm1p1r = js.Array(js.Array(.01, .009), js.Array(.009, .01))
-    val bm1p2r = js.Array(js.Array(1.3, 1.3), js.Array(1.3, 1.3))
+    val bm1p1r = stats(itStats(.01, .009), itStats(.009, .01))
+    val bm1p2r = stats(itStats(1.3, 1.3), itStats(1.3, 1.3))
 
     val expect =
       s"""[
@@ -196,7 +206,7 @@ object JmhJsonTest extends TestSuite {
     testJmhJson[P](
       suite      = GuiSuite(suite, gps),
       progress   = Progress(startTime, plan, 123, eo),
-      results    = Map(bm1p1 -> BMDone(Right(Stats(bm1p1r))), bm1p2 -> BMDone(Right(Stats(bm1p2r)))),
+      results    = Map(bm1p1 -> BMDone(Right(bm1p1r)), bm1p2 -> BMDone(Right(bm1p2r))),
       resultFmts = Vector(FormatResult.MicrosPerOp, FormatResult.OpsPerSec),
       expect     = expect,
     )
