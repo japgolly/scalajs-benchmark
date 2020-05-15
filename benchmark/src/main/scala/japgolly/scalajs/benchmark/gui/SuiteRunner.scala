@@ -2,7 +2,8 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
-import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import japgolly.scalajs.benchmark.gui._
+import japgolly.scalajs.benchmark.gui.GuiParams.GenState
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
@@ -12,24 +13,37 @@ import monocle.macros.Lenses
 import org.scalajs.dom.document
 import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
-import GuiParams.GenState
 import Styles.{Suite => *}
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 
-/**
-  * React component that provides the GUI over a [[GuiSuite]].
-  */
-object SuiteComp {
-  type Comp[P] = ScalaComponent[Props[P], State[P], Backend[P], CtorType.Props]
+final class SuiteRunner[P] {
+  import SuiteRunner._
 
-  // ===================================================================================================================
+  val Component = ScalaComponent.builder[Props[P]]
+    .initialStateFromProps(State.init[P])
+    .renderBackend[Backend[P]]
+    .componentDidMount(_.backend.onMount)
+    // TODO handle suite changes - it's all in state atm
+    .componentWillUnmount(_.backend.shutdown)
+    .build
+}
+
+object SuiteRunner {
+
+  def render[P](suite        : GuiSuite[P],
+                engineOptions: EngineOptions = EngineOptions.default,
+                guiOptions   : GuiOptions    = GuiOptions.default): VdomElement =
+    apply[P].Component(Props(suite, engineOptions, guiOptions))
+
+  def apply[P]: SuiteRunner[P] =
+    instance.asInstanceOf[SuiteRunner[P]]
+
+  private val instance =
+    new SuiteRunner[Any]
 
   final case class Props[P](suite        : GuiSuite[P],
-                            engineOptions: EngineOptions = EngineOptions.default,
-                            guiOptions   : GuiOptions    = GuiOptions.default) {
-    @inline def render: VdomElement = Comp[P](this)
-  }
-
-  // ===================================================================================================================
+                            engineOptions: EngineOptions,
+                            guiOptions   : GuiOptions)
 
   @Lenses
   final case class State[A](status       : SuiteStatus[A],
@@ -53,8 +67,6 @@ object SuiteComp {
         oldTitle      = None,
         formatResults = p.guiOptions.formatResultsDefault)
   }
-
-  // ===================================================================================================================
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
 
@@ -89,70 +101,84 @@ object SuiteComp {
       running ^|-> runningAt(k)
   }
 
-  private type ResultFmts = Vector[FormatResult]
-
   // ===================================================================================================================
 
-  final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
-    type Props        = SuiteComp.Props[P]
-    type State        = SuiteComp.State[P]
-    type SuiteRunning = SuiteComp.SuiteRunning[P]
-    type SuiteDone    = SuiteComp.SuiteDone[P]
+  final class Backend[P]($: BackendScope[Props[P], State[P]]) {
+    type Props        = SuiteRunner.Props[P]
+    type State        = SuiteRunner.State[P]
+    type SuiteStatus  = SuiteRunner.SuiteStatus[P]
+    type SuiteRunning = SuiteRunner.SuiteRunning[P]
+    type SuiteDone    = SuiteRunner.SuiteDone[P]
 
-    private val guiSuiteBMs = GuiSuite.suite[P] ^|-> Suite.bms
+    private type ResultFmts = Vector[FormatResult]
+
+    def onMount: Callback = {
+      def storeCurrentTitle =
+        CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].set
+
+      def setNewTitle =
+        $.props.map(p => document.title = p.suite.name)
+
+      storeCurrentTitle.flatMap($.modState(_, setNewTitle))
+    }
+
+    def shutdown: Callback = {
+      def abortIfRunning: SuiteStatus => Callback = {
+        case r: SuiteRunning => r.abortFn.callback
+        case _: SuiteDone
+           | SuitePending
+           | SuiteWillStart  => Callback.empty
+      }
+
+      def restoreTitle(o: Option[String]): Callback =
+        o.fold(Callback.empty)(t => Callback(document.title = t))
+
+      $.state.flatMap(s =>
+        abortIfRunning(s.status) >> restoreTitle(s.oldTitle))
+    }
+
+    // =================================================================================================================
+    // Util
+
+    private val guiSuiteBMs =
+      GuiSuite.suite[P] ^|-> Suite.bms
 
     private val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
-
-    private def start(suite: GuiSuite[P], options: EngineOptions, params: Vector[P]): AsyncCallback[Unit] = {
-      val plan = Plan(suite.suite, params)
-
-      def actuallyStart(startTime: Long) =
-        Engine.run(plan, options) {
-
-          case BenchmarkPreparing(_, k) =>
-            $.modStateAsync(State.at(k) set BMPreparing)
-
-          case BenchmarkRunning(_, k) =>
-            $.modStateAsync(State.at(k) set BMRunning)
-
-          case BenchmarkFinished(p, k, r) =>
-            val setResult = State.at(k) set BMDone(r)
-            val setProgress = State.status[P].modify {
-              case sr: SuiteRunning => sr.copy(progess = p)
-              case x                => x
-            }
-            $.modStateAsync(setResult compose setProgress)
-
-          case SuiteStarting(_) =>
-            AsyncCallback.unit
-
-          case SuiteFinished(progress) =>
-            val endTime = System.currentTimeMillis()
-            $.modStateAsync(State.status.modify { (s: SuiteStatus[P]) =>
-              val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
-              val time = FiniteDuration(endTime - startTime, MILLISECONDS)
-              SuiteDone(suite, progress, bm, time)
-            }(_))
-        }
-
-      for {
-        startTime <- AsyncCallback.delay(System.currentTimeMillis())
-        _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
-        abort     <- actuallyStart(startTime).asAsyncCallback
-        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress.start(plan, options), Map.empty, abort))
-        _         <- $.modStateAsync(State.status set running)
-        } yield ()
-    }
 
     private def toggleBM(i: Int): Callback =
       $.modState(State.disabledBMs.modify(s =>
         if (s contains i) s - i else s + i)(_))
 
     private def makeSoleBM(i: Int): Callback =
-      $.props >>= (p =>
+      $.props.flatMap(p =>
         $.modState(State.disabledBMs.set(
           p.suite.suite.bms.indices.toSet - i)(_)))
+
+    private def deriveResultFmts(progress: Progress[P], m: EachBMStatus[P]): ResultFmts = {
+      val keys = progress.plan.keys
+
+      val minAvg =
+        keys
+          .iterator
+          .flatMap(m.get)
+          .collect { case BMDone(Right(s)) => s.average }
+          .reduceOption(_.min(_))
+          .getOrElse(Duration.Zero)
+
+      val mainFmt = FormatResult.choose(minAvg)
+      Vector(mainFmt, FormatResult.OpsPerSec)
+    }
+
+    // =================================================================================================================
+    // Rendering
+
+    private def formatETA(ms: Double): String = {
+      val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
+      val min = sec / 60
+      val hr  = min / 60
+      s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
+    }
 
     private def renderSuitePending(p: Props, s: State): VdomElement = {
       val ev = StateSnapshot(s.editors)(updateEditorState)
@@ -264,16 +290,58 @@ object SuiteComp {
         startButton)
     }
 
-    private def formatTotalTime(fd: FiniteDuration): String =
-      formatETA(TimeUtil.toMs(fd))
+    private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
+      val resultFmts = deriveResultFmts(r.progess, r.bm)
 
-    private def formatETA(ms: Double): String = {
-      val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
-      val min = sec / 60
-      val hr  = min / 60
-      s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
+      val eta =
+        p.engineOptions.estimatedMsPerBM * r.progess.remaining
+
+      def abortButton =
+        <.button(
+          *.abortButton,
+          ^.onClick --> r.abortFn.callback,
+          "Abort")
+
+      <.div(
+        <.div(*.runningRow,
+          <.span("Benchmark running... ETA: ", formatETA(eta)),
+          abortButton),
+        renderFormatButtons(p, s),
+        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
+        renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
+    private def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
+      val resultFmts = deriveResultFmts(r.progess, r.bm)
+
+      def resetButton =
+        <.button(
+          *.resetButton,
+          ^.onClick --> $.modState(State.status.set(SuitePending)(_)),
+          "Reset")
+
+      <.div(
+        <.div(*.doneRow,
+          <.span(s"Benchmark completed in ${formatETA(TimeUtil.toMs(r.totalTime))}."),
+          resetButton),
+        renderFormatButtons(p, s),
+        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
+        renderGraph(p.suite, r.progess, r.bm, resultFmts))
+    }
+
+    private def renderFormatButtons(p: Props, s: State) =
+      <.div(
+        *.resultFormatRow,
+        "Result format: ",
+        p.guiOptions.formatResults.toTagMod { f =>
+          <.label(
+            *.resultFormat,
+            <.input.radio(
+              ^.checked := (s.formatResults == f),
+              ^.onChange --> $.modState(_.copy(formatResults = f))),
+            f.label)
+        }
+      )
     private def renderResults(fmt       : FormatResults,
                               suite     : GuiSuite[P],
                               progress  : Progress[P],
@@ -311,90 +379,22 @@ object SuiteComp {
 
       val dataset = ScalaDataset(fmt.header, dataPoints)
       val bardata = ScalaBarData(titles, Vector(dataset))
-      val props = ReactChart.Props(*.graph, *.graphInner(bardata))
+      val props   = ReactChart.Props(*.graph, *.graphInner(bardata))
 
       <.div(*.graphContainer,
         <.div(*.graphHeader, fmt.graphHeader),
-        ReactChart.Comp(props))
-    }
-
-    private def renderFormatButtons(p: Props, s: State) =
-      <.div(
-        *.resultFormatRow,
-        "Result format: ",
-        p.guiOptions.formatResults.toTagMod { f =>
-          <.label(
-            *.resultFormat,
-            <.input.radio(
-              ^.checked := (s.formatResults == f),
-              ^.onChange --> $.modState(_.copy(formatResults = f))),
-            f.label)
-        }
-      )
-
-    private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
-      val resultFmts = deriveResultFmts(r.progess, r.bm)
-
-      val eta =
-        p.engineOptions.estimatedMsPerBM * r.progess.remaining
-
-      def abortButton =
-        <.button(
-          *.abortButton,
-          ^.onClick --> r.abortFn.callback,
-          "Abort")
-
-      <.div(
-        <.div(*.runningRow,
-          <.span("Benchmark running... ETA: ", formatETA(eta)),
-          abortButton),
-        renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
-        renderGraph(p.suite, r.progess, r.bm, resultFmts))
-    }
-
-    private def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
-      val resultFmts = deriveResultFmts(r.progess, r.bm)
-
-      def resetButton =
-        <.button(
-          *.resetButton,
-          ^.onClick --> $.modState(State.status.set(SuitePending)(_)),
-          "Reset")
-
-      <.div(
-        <.div(*.doneRow,
-          <.span(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
-          resetButton),
-        renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
-        renderGraph(p.suite, r.progess, r.bm, resultFmts))
+        props.render)
     }
 
     private def renderDesc(e: VdomElement) =
       <.div(*.suiteDesc, e)
 
-    private def deriveResultFmts(progress: Progress[P], m: EachBMStatus[P]): ResultFmts = {
-      val keys = progress.plan.keys
-
-      val minAvg =
-        keys
-          .iterator
-          .flatMap(m.get)
-          .collect { case BMDone(Right(s)) => s.average }
-          .reduceOption(_.min(_))
-          .getOrElse(Duration.Zero)
-
-      val mainFmt = FormatResult.choose(minAvg)
-      Vector(mainFmt, FormatResult.OpsPerSec)
-    }
-
     def render(p: Props, s: State): VdomElement = {
       val inner: VdomElement = s.status match {
-        case r: SuiteRunning => renderSuiteRunning(p, s, r)
-        case r: SuiteDone    => renderSuiteDone(p, s, r)
         case SuitePending    => renderSuitePending(p, s)
         case SuiteWillStart  => <.span
+        case r: SuiteRunning => renderSuiteRunning(p, s, r)
+        case r: SuiteDone    => renderSuiteDone(p, s, r)
       }
       <.div(
         <.h2(*.suiteName, p.suite.name),
@@ -402,48 +402,47 @@ object SuiteComp {
         inner)
     }
 
-    def onMount: Callback = {
-      def storeCurrentTitle =
-        CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].set
+    // =================================================================================================================
 
-      def setNewTitle =
-        $.props.map(p => document.title = p.suite.name)
+    private def start(suite: GuiSuite[P], options: EngineOptions, params: Vector[P]): AsyncCallback[Unit] = {
+      val plan = Plan(suite.suite, params)
 
-      storeCurrentTitle >>= ($.modState(_, setNewTitle))
-    }
+      def actuallyStart(startTime: Long) =
+        Engine.run(plan, options) {
 
-    def shutdown: Callback = {
-      def abortIfRunning: SuiteStatus[P] => Callback = {
-        case r: SuiteRunning => r.abortFn.callback
-        case _: SuiteDone
-           | SuitePending
-           | SuiteWillStart  => Callback.empty
-      }
+          case BenchmarkPreparing(_, k) =>
+            $.modStateAsync(State.at(k) set BMPreparing)
 
-      def restoreTitle(o: Option[String]): Callback =
-        o.fold(Callback.empty)(t => Callback(document.title = t))
+          case BenchmarkRunning(_, k) =>
+            $.modStateAsync(State.at(k) set BMRunning)
 
-      $.state >>= (s =>
-        abortIfRunning(s.status) >> restoreTitle(s.oldTitle))
+          case BenchmarkFinished(p, k, r) =>
+            val setResult = State.at(k) set BMDone(r)
+            val setProgress = State.status[P].modify {
+              case sr: SuiteRunning => sr.copy(progess = p)
+              case x                => x
+            }
+            $.modStateAsync(setResult compose setProgress)
+
+          case SuiteStarting(_) =>
+            AsyncCallback.unit
+
+          case SuiteFinished(progress) =>
+            val endTime = System.currentTimeMillis()
+            $.modStateAsync(State.status.modify { (s: SuiteStatus) =>
+              val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
+              val time = FiniteDuration(endTime - startTime, MILLISECONDS)
+              SuiteDone(suite, progress, bm, time)
+            }(_))
+        }
+
+      for {
+        startTime <- AsyncCallback.delay(System.currentTimeMillis())
+        _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
+        abort     <- actuallyStart(startTime).asAsyncCallback
+        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress.start(plan, options), Map.empty, abort))
+        _         <- $.modStateAsync(State.status set running)
+      } yield ()
     }
   }
-
-  // ===================================================================================================================
-
-  private val __Comp = {
-    // TODO Bloody hack. Really need to accommodate this properly in scalajs-react
-    type P = Unit
-
-    val c: Comp[_] =
-      ScalaComponent.builder[Props[P]]
-        .initialStateFromProps(State.init)
-        .renderBackend[Backend[P]]
-        .componentDidMount(_.backend.onMount)
-        // TODO handle suite changes - it's all in state atm
-        .componentWillUnmount(_.backend.shutdown)
-        .build
-    c
-  }
-
-  def Comp[P] = __Comp.asInstanceOf[Comp[P]]
 }

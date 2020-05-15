@@ -1,7 +1,7 @@
 package demo
 
 import org.scalajs.dom.document
-import japgolly.scalajs.benchmark.gui.BenchmarkGUI
+import japgolly.scalajs.benchmark.gui._
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 object Main {
@@ -15,24 +15,24 @@ object Main {
 
     val tgt = document.getElementById("body")
 
-    BenchmarkGUI.renderMenu(tgt, layout = configureLayout)(
+    BenchmarkGUI.renderMenu(tgt, layoutConfig = configureLayout)(
       suites.example.Examples.all,
       suites.cats.all,
       suites.scala.all,
       suites.scalaz.all,
-      suites.shootouts.all)
+      suites.shootouts.all,
+    )
   }
 
-  /*
-   * Customise the layout slightly.
+  /* Customise the layout slightly.
    *
    * Optional, of course.
    */
-  import japgolly.scalajs.benchmark.gui.MenuComp.LayoutCfg
-  import japgolly.scalajs.react._, vdom.html_<^._
+  import japgolly.scalajs.react.vdom.html_<^._
   import demo.Util._
-  def configureLayout: LayoutCfg = {
-    def top(view: VdomElement): VdomElement =
+
+  def configureLayout: LayoutConfig = {
+    def toc(view: VdomElement): VdomElement =
       <.main(
         <.h1(
           ^.marginBottom := "0.2em",
@@ -47,6 +47,6 @@ object Main {
         <.main(
           ^.marginTop := "2.6em",
           view))
-    LayoutCfg.default.copy(topPage = top)
+    LayoutConfig.default.copy(toc = toc)
   }
 }

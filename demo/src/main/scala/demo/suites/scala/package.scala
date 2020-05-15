@@ -1,11 +1,11 @@
 package demo.suites
 
 import demo.Libraries
-import japgolly.scalajs.benchmark.gui.MenuComp
+import japgolly.scalajs.benchmark.gui.GuiBuilder
 
 package object scala {
 
-  lazy val all = MenuComp.folder(Libraries.Scala.fullName)(
+  lazy val all = GuiBuilder.folder(Libraries.Scala.fullName)(
     Builders.guiSuite,
     MapBuilding.guiSuite,
     SetBuilding.guiSuite,
