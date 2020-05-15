@@ -54,13 +54,14 @@ object MenuComp {
     MenuFolder(name, uf, c)
   }
 
-  def buildRouter(baseUrl: BaseUrl,
-                  layout: LayoutCfg = LayoutCfg.default,
-                  options: EngineOptions = EngineOptions.default)
+  def buildRouter(baseUrl   : BaseUrl,
+                  layout    : LayoutCfg     = LayoutCfg.default,
+                  options   : EngineOptions = EngineOptions.default,
+                  guiOptions: GuiOptions    = GuiOptions.default)
                  (m1: MenuItems, mn: MenuItems*): Router[_] = {
     val mis = m1.toVector ++ mn.flatten
     val mis2 = Internals.convert(mis)
-    val cfg = Internals.routerCfg(mis2, layout, options)
+    val cfg = Internals.routerCfg(mis2, layout, options, guiOptions)
     Router(baseUrl, cfg)
   }
 
@@ -110,7 +111,10 @@ object MenuComp {
       m
     }
 
-    def routerCfg(items: MenuItems2, layoutCfg: LayoutCfg, options: EngineOptions): RouterConfig[Page] = {
+    def routerCfg(items     : MenuItems2,
+                  layoutCfg : LayoutCfg,
+                  options   : EngineOptions,
+                  guiOptions: GuiOptions): RouterConfig[Page] = {
       val idx = index(items)
 
       RouterConfigDsl[Page].buildConfig { dsl =>
@@ -121,7 +125,7 @@ object MenuComp {
 
         val routes =
           idx.foldLeft(rootRoute){ case (q, (path, mi)) =>
-            q | staticRoute(path, Some(mi)) ~> render(SuiteComp.Comp(SuiteComp.Props(mi.suite, options)))
+            q | staticRoute(path, Some(mi)) ~> render(SuiteComp.Props(mi.suite, options, guiOptions).render)
           }
 
         (routes | trimSlashes)

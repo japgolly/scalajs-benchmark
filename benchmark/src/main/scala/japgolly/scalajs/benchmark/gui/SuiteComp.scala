@@ -23,7 +23,9 @@ object SuiteComp {
 
   final case class Props[P](suite        : GuiSuite[P],
                             engineOptions: EngineOptions = EngineOptions.default,
-                            guiOptions   : GuiOptions    = GuiOptions.default)
+                            guiOptions   : GuiOptions    = GuiOptions.default) {
+    @inline def render: VdomElement = Comp[P](this)
+  }
 
   @Lenses
   final case class State[A](status       : SuiteStatus[A],
