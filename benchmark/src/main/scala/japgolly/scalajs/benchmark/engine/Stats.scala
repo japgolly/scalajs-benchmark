@@ -24,12 +24,11 @@ final case class Stats(rawData: Vector[IterationStats]) {
     }
   }
 
-  val times: js.Array[Double] =
-    rawData.length match {
-      case 0 => new js.Array[Double]
-      case 1 => rawData.head.rawData
-      case _ => rawData.head.rawData.concat(rawData.iterator.drop(1).map(_.rawData).toSeq: _*)
-    }
+  private val times: js.Array[Double] =
+    new js.Array[Double]
+
+  for (i <- rawData)
+    times.push(i.mean)
 
   def samples =
     times.length

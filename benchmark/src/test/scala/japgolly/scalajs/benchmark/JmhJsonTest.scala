@@ -63,7 +63,7 @@ object JmhJsonTest extends TestSuite {
     val suite  = Suite[Unit]("My Suite")(bm1)
     val plan   = Plan[Unit](suite, Vector.empty)
     val bm1p0  = PlanKey[Unit](0, 0)(bm1, ())
-    val bm1p0r = stats(itStats(12.1, 12.2), itStats(12.3, 12.2))
+    val bm1p0r = stats(itStats(12.15), itStats(12.3, 12.2), itStats(12.3), itStats(12.1))
 
     val expect =
       s"""[
@@ -83,16 +83,18 @@ object JmhJsonTest extends TestSuite {
         |    "measurementBatchSize": 1,
         |    "primaryMetric": {
         |      "score": 12.2,
-        |      "scoreError": 0.527619,
+        |      "scoreError": 0.589896,
         |      "scoreConfidence": [
-        |        11.67238,
-        |        12.727619
+        |        11.610103,
+        |        12.789896
         |      ],
         |      "scoreUnit": "ms/op",
         |      "rawData": [
         |        [
-        |          12.149999,
-        |          12.25
+        |          12.15,
+        |          12.25,
+        |          12.3,
+        |          12.1
         |        ]
         |      ]
         |    },
@@ -123,8 +125,8 @@ object JmhJsonTest extends TestSuite {
     val plan   = Plan[P](suite, Vector(p1, p2))
     val bm1p1  = PlanKey[P](0, 0)(bm1, p1)
     val bm1p2  = PlanKey[P](0, 1)(bm1, p2)
-    val bm1p1r = stats(itStats(.01, .009), itStats(.009, .01))
-    val bm1p2r = stats(itStats(1.3, 1.3), itStats(1.3, 1.3))
+    val bm1p1r = stats(itStats(.01), itStats(.009), itStats(.009), itStats(.01))
+    val bm1p2r = stats(itStats(1.3), itStats(1.3), itStats(1.3), itStats(1.3))
 
     val expect =
       s"""[
@@ -156,8 +158,10 @@ object JmhJsonTest extends TestSuite {
         |      "scoreUnit": "us/op",
         |      "rawData": [
         |        [
-        |          9.5,
-        |          9.5
+        |          10,
+        |          9,
+        |          9,
+        |          10
         |        ]
         |      ]
         |    },
@@ -192,6 +196,8 @@ object JmhJsonTest extends TestSuite {
         |      "scoreUnit": "us/op",
         |      "rawData": [
         |        [
+        |          1300,
+        |          1300,
         |          1300,
         |          1300
         |        ]
