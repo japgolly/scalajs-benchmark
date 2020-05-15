@@ -54,7 +54,7 @@ object GuiParams extends GuiParamsBoilerplate {
     }
   }
 
-  @deprecated("Use .combine2", "0.6.1")
+  @deprecated("Use .combine2", "0.7.0")
   def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: GuiParam[P1, E1], param2: GuiParam[P2, E2]): GuiParams[P] =
     combine2(iso)(param1, param2)
 

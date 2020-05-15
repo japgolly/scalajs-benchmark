@@ -21,8 +21,6 @@ package object gui {
   type Render[-A] = A => TagMod
 
   object Render {
-    @deprecated("Use Int instead.", "0.2.0") def int = Int
-    @deprecated("Use Bool instead.", "0.2.0") def bool = Bool
 
     val Int: Render[Int] =
       i => TagMod(Styles.Suite.paramInt, i)
@@ -49,7 +47,6 @@ package object gui {
   type Editor[A] = StateSnapshot[A] => VdomElement
 
   object Editor {
-    @deprecated("Use Text instead.", "0.2.0") def text = Text
 
     val Text: Editor[String] =
       e =>
@@ -63,8 +60,6 @@ package object gui {
   type Parser[A, B] = Prism[B, Vector[A]]
 
   object Parser {
-    @deprecated("Use IntsAsText instead.", "0.2.0") def intsAsText = IntsAsText
-    @deprecated("Use GuiParam.boolean instead.", "0.2.0") def boolsAsText = BoolsAsText
 
     def apply[A, B](f: Vector[A] => B)(g: B => Option[Vector[A]]): Parser[A, B] =
       Prism[B, Vector[A]](g)(f)
@@ -105,9 +100,5 @@ package object gui {
         case "f" | "false" | "no" | "n" | "0" => Some(false)
         case _ => None
       })(_.toString)
-
-    @deprecated("Use GuiParam.boolean instead.", "0.2.0")
-    def BoolsAsText: Parser[Boolean, String] =
-      listAsText(BoolStringPrism)
   }
 }
