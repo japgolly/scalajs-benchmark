@@ -3,11 +3,9 @@ package japgolly.scalajs.benchmark
 import io.circe._
 import io.circe.parser._
 import japgolly.microlibs.testutil.TestUtil._
-import japgolly.scalajs.benchmark
 import japgolly.scalajs.benchmark.engine._
-import japgolly.scalajs.benchmark.gui.{BMDone, BMStatus, FormatResult, GuiParam, GuiParams, GuiSuite}
+import japgolly.scalajs.benchmark.gui.{BMDone, BMStatus, FormatResult, GuiOptions, GuiParam, GuiParams, GuiSuite}
 import japgolly.scalajs.benchmark.gui.FormatResults.{Args, JmhJson}
-import monocle.Iso
 import scala.concurrent.duration._
 import scala.scalajs.js
 import utest._
@@ -44,7 +42,7 @@ object JmhJsonTest extends TestSuite {
                              results   : Map[PlanKey[P], BMStatus],
                              resultFmts: Vector[FormatResult],
                              expect    : String): Unit = {
-    val args = Args[P](suite, progress, results, resultFmts)
+    val args = Args[P](suite, progress, results, resultFmts, GuiOptions.default)
     val actual = JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent"))))
     assertEqJson(actual, expect)
   }
@@ -54,7 +52,7 @@ object JmhJsonTest extends TestSuite {
                                  results   : Map[PlanKey[P], BMStatus],
                                  resultFmts: Vector[FormatResult],
                                  expect    : String): Unit = {
-    val args = Args[P](suite, progress, results, resultFmts)
+    val args = Args[P](suite, progress, results, resultFmts, GuiOptions.default)
     val actual = JmhJson.jsonText(JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent")))))
     assertMultiline(actual, expect)
   }

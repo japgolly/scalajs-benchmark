@@ -1,7 +1,13 @@
 package japgolly.scalajs.benchmark.gui
 
-final case class GuiOptions(formatResultsDefault: FormatResults,
-                            formatResults       : Seq[FormatResults]) {
+import japgolly.scalajs.benchmark.Suite
+import japgolly.scalajs.benchmark.engine.Progress
+import scala.scalajs.LinkingInfo
+
+final case class GuiOptions(formatResultsDefault    : FormatResults,
+                            formatResults           : Seq[FormatResults],
+                            resultFilenameWithoutExt: (Suite[_], Progress[_]) => String,
+                           ) {
 
   assert(
     formatResults.contains(formatResultsDefault),
@@ -12,7 +18,20 @@ object GuiOptions {
 
   val default: GuiOptions =
     apply(
-      formatResultsDefault = FormatResults.Table,
-      formatResults        = FormatResults.builtIn,
+      formatResultsDefault     = FormatResults.Table,
+      formatResults            = FormatResults.builtIn,
+      resultFilenameWithoutExt = defaultFilename,
     )
+
+
+  // Access this via `default.resultFilenameWithoutExt`
+  private def defaultFilename: (Suite[_], Progress[_]) => String =
+    (s, p) => {
+      val mode =
+        if (LinkingInfo.developmentMode)
+          "fastopt-"
+        else
+          ""
+      s"sjsbm-${s.filenameFriendlyName}-${mode}${p.timestampTxt}"
+    }
 }

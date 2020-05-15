@@ -266,8 +266,13 @@ object SuiteComp {
       s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
     }
 
-    private def renderResults(fmt: FormatResults, suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement =
-      fmt.render(FormatResults.Args(suite, progress, m, resultFmts))
+    private def renderResults(fmt       : FormatResults,
+                              suite     : GuiSuite[P],
+                              progress  : Progress[P],
+                              results   : EachBMStatus[P],
+                              resultFmts: ResultFmts,
+                              guiOptions: GuiOptions): VdomElement =
+      fmt.render(FormatResults.Args(suite, progress, results, resultFmts, guiOptions))
 
     private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement = {
       import ReactChart._
@@ -336,7 +341,7 @@ object SuiteComp {
           <.span("Benchmark running... ETA: ", formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
+        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
         renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
@@ -354,7 +359,7 @@ object SuiteComp {
           <.span(s"Benchmark completed in ${formatTotalTime(r.totalTime)}."),
           resetButton),
         renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts),
+        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
         renderGraph(p.suite, r.progess, r.bm, resultFmts))
     }
 
