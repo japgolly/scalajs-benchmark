@@ -10,6 +10,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import java.util.concurrent.TimeUnit
 import org.scalajs.dom.window
 import scala.concurrent.duration.FiniteDuration
+import scala.scalajs.LinkingInfo
 import scalacss.ScalaCssReact._
 
 /** Format for a number of results.
@@ -30,8 +31,14 @@ object FormatResults {
 
     val resultFmtCount = resultFmts.length
 
-    def filename(ext: String): String =
-      s"sjsbm-${suite.suite.filenameFriendlyName}-${progress.timestampTxt}.$ext"
+    def filename(ext: String): String = {
+      val mode =
+        if (LinkingInfo.developmentMode)
+          "fastopt-"
+        else
+          ""
+      s"sjsbm-${suite.suite.filenameFriendlyName}-${mode}${progress.timestampTxt}.$ext"
+    }
   }
 
   // ===================================================================================================================
