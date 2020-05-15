@@ -135,7 +135,7 @@ object FormatResults {
     val rowBuilder = Vector.newBuilder[Vector[String]]
 
     def header: Vector[String] =
-      ("Benchmark" +: suite.params.headers :+ "Runs") ++ resultFmts.iterator.flatMap(f =>
+      ("Benchmark" +: suite.params.headers :+ "Cnt") ++ resultFmts.iterator.flatMap(f =>
         if (separatePlusMinus)
           f.header :: "±" :: "error" :: Nil
         else
