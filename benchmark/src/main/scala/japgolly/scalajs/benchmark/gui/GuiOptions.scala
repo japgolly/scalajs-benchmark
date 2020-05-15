@@ -7,6 +7,7 @@ import scala.scalajs.LinkingInfo
 final case class GuiOptions(formatResultsDefault    : FormatResults,
                             formatResults           : Seq[FormatResults],
                             resultFilenameWithoutExt: (Suite[_], Progress[_]) => String,
+                            allowBatchMode          : Boolean,
                            ) {
 
   assert(
@@ -21,8 +22,8 @@ object GuiOptions {
       formatResultsDefault     = FormatResults.Table,
       formatResults            = FormatResults.builtIn,
       resultFilenameWithoutExt = defaultFilename,
+      allowBatchMode           = true,
     )
-
 
   // Access this via `default.resultFilenameWithoutExt`
   private def defaultFilename: (Suite[_], Progress[_]) => String =

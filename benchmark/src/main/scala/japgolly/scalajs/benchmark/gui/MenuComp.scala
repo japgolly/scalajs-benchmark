@@ -13,11 +13,16 @@ import Styles.{Menu => *}
   */
 object MenuComp {
 
-  final case class LayoutCfg(topPage: VdomElement => VdomElement,
-                             suitePage: (TagMod => VdomElement, VdomElement) => VdomElement)
+  final case class LayoutCfg(topPage  : VdomElement => VdomElement,
+                             suitePage: (TagMod => VdomElement, VdomElement) => VdomElement,
+                             batch    : (TagMod => VdomElement, VdomElement) => VdomElement)
   object LayoutCfg {
     def default =
-      LayoutCfg(identity, (nav, page) => <.div(nav(EmptyVdom), page))
+      LayoutCfg(
+        identity,
+        (nav, page) => <.div(nav(EmptyVdom), page),
+        (nav, page) => <.div(nav(EmptyVdom), page),
+      )
   }
 
   final case class UrlFrag(path: String)
@@ -29,6 +34,7 @@ object MenuComp {
   sealed trait MenuItem
   final case class MenuSuite(urlFrag: UrlFrag, suite: GuiSuite[_]) extends MenuItem
   final case class MenuFolder(name: String, urlFrag: UrlFrag, children: MenuItems) extends MenuItem
+  final case class MenuBatch(urlFrag: UrlFrag) extends MenuItem
   type MenuItems = Iterable[MenuItem]
 
   implicit def autoLiftGuiSuite(s: GuiSuite[_]): MenuSuite =
@@ -40,8 +46,9 @@ object MenuComp {
   def folder(name: String, urlFrag: UrlFrag = null)(c: MenuItem*): MenuFolder = {
     val cs = c.iterator
       .map[((Int, String), MenuItem)] {
-        case m: MenuSuite => ((1, m.suite.name), m)
         case m: MenuFolder => ((0, m.name), m)
+        case m: MenuSuite  => ((1, m.suite.name), m)
+        case m: MenuBatch  => ((2, ""), m)
       }
       .toVector
       .sortBy(_._1)
@@ -59,7 +66,9 @@ object MenuComp {
                   options   : EngineOptions = EngineOptions.default,
                   guiOptions: GuiOptions    = GuiOptions.default)
                  (m1: MenuItems, mn: MenuItems*): Router[_] = {
-    val mis = m1.toVector ++ mn.flatten
+    var mis = m1.toVector ++ mn.flatten
+    if (guiOptions.allowBatchMode)
+      mis :+= MenuBatch(UrlFrag("batch-mode")) // TODO ensure unique
     val mis2 = Internals.convert(mis)
     val cfg = Internals.routerCfg(mis2, layout, options, guiOptions)
     Router(baseUrl, cfg)
@@ -72,13 +81,22 @@ object MenuComp {
   private object Internals {
 
     sealed trait MenuItem2
+    sealed trait MenuItem2Page extends MenuItem2 {
+      val urlPath: String
+    }
     type MenuItems2 = Iterable[MenuItem2]
-    case class MenuSuite2(urlPath: String, suite: GuiSuite[_]) extends MenuItem2
+    case class MenuSuite2(urlPath: String, suite: GuiSuite[_]) extends MenuItem2Page
     case class MenuFolder2(name: String, children: MenuItems2) extends MenuItem2
+    case class MenuBatch2(urlPath: String) extends MenuItem2Page
 
     type RouterCtl = RouterCtl_[Page]
 
-    type Page = Option[MenuSuite2]
+    sealed trait Page
+    object Page {
+      case object Index extends Page
+      final case class Suite(value: MenuSuite2) extends Page
+      final case class Batch(value: MenuBatch2) extends Page
+    }
 
     def convert(mis: MenuItems): MenuItems2 = {
       def go(path: String, mi: MenuItem): MenuItem2 = {
@@ -86,26 +104,31 @@ object MenuComp {
           path + suffix.path
 
         mi match {
-          case i: MenuSuite =>
-            MenuSuite2(addFrag(i.urlFrag), i.suite)
           case i: MenuFolder =>
             val prefix = addFrag(i.urlFrag) + "/"
             MenuFolder2(i.name, i.children.map(go(prefix, _)))
+
+          case i: MenuSuite =>
+            MenuSuite2(addFrag(i.urlFrag), i.suite)
+
+          case i: MenuBatch =>
+            MenuBatch2(addFrag(i.urlFrag))
         }
       }
       mis map (go("#/", _))
     }
 
-    def index(mis: MenuItems2): Map[String, MenuSuite2] = {
-      var m = Map.empty[String, MenuSuite2]
+    def index(mis: MenuItems2): Map[String, MenuItem2Page] = {
+      var m = Map.empty[String, MenuItem2Page]
+      def add(i: MenuItem2Page, path: String): Unit = {
+        if (m contains path)
+          dom.console.error(s"Multiple suites detected at URL: $path")
+        m = m.updated(path, i)
+      }
       def go(mis: MenuItems2): Unit =
         mis foreach {
-          case i: MenuFolder2 => go(i.children)
-          case i: MenuSuite2 =>
-            val path = i.urlPath
-            if (m contains path)
-              dom.console.error(s"Multiple suites detected at URL: $path")
-            m = m.updated(path, i)
+          case i: MenuFolder2   => go(i.children)
+          case i: MenuItem2Page => add(i, i.urlPath)
         }
       go(mis)
       m
@@ -121,46 +144,57 @@ object MenuComp {
         import dsl._
 
         val rootRoute: Rule =
-          staticRoute(root, None) ~> renderR(rc => TOC.Comp(TOC.Props(items, rc)))
+          staticRoute(root, Page.Index) ~> renderR(rc => TOC.Comp(TOC.Props(items, rc)))
 
         val routes =
-          idx.foldLeft(rootRoute){ case (q, (path, mi)) =>
-            q | staticRoute(path, Some(mi)) ~> render(SuiteComp.Props(mi.suite, options, guiOptions).render)
+          idx.foldLeft(rootRoute) {
+            case (q, (path, m: MenuSuite2)) =>
+              q | staticRoute(path, Page.Suite(m)) ~> render(SuiteComp.Props(m.suite, options, guiOptions).render)
+            case (q, (path, m: MenuBatch2)) =>
+              q | staticRoute(path, Page.Batch(m)) ~> render(BatchComp.Props().render)
           }
 
         (routes | trimSlashes)
-          .notFound(redirectToPage(None)(SetRouteVia.HistoryReplace))
+          .notFound(redirectToPage(Page.Index)(SetRouteVia.HistoryReplace))
           .renderWith(layout(layoutCfg))
-          .verify(None, idx.valuesIterator.map(Some(_)).toList: _*)
       }
     }
 
     val crumbSep = <.span(*.topNavBreadcrumbSep, "/")
 
-    def layout(layoutCfg: LayoutCfg)(ctl: RouterCtl, res: Resolution[Page]): VdomElement =
+    def layout(layoutCfg: LayoutCfg)(ctl: RouterCtl, res: Resolution[Page]): VdomElement = {
+
+      def breadcrumb(path: String): TagMod =
+        path
+          .dropWhile { case '#' | '/' => true; case _ => false }.split('/')
+          .iterator.zipWithIndex.toTagMod { case (frag, i) =>
+            val x = <.span(frag)
+            if (i == 0) x else TagMod(crumbSep, frag)
+          }
+
+      def topNav(name: TagMod, tm: TagMod): VdomElement =
+        <.div(
+          *.topNav,
+          ctl.link(Page.Index)("Home"),
+          crumbSep,
+          name)
+
       res.page match {
-        case None =>
+        case Page.Index =>
           layoutCfg topPage res.render()
 
-        case Some(mi) =>
-          def breadcrumb = mi.urlPath
-            .dropWhile { case '#' | '/' => true; case _ => false }.split('/')
-            .iterator.zipWithIndex.toTagMod { case (frag, i) =>
-              val x = <.span(frag)
-              if (i == 0) x else TagMod(crumbSep, frag)
-            }
+        case Page.Suite(mi) =>
+          layoutCfg.suitePage(topNav(breadcrumb(mi.urlPath), _), res.render())
 
-          def topNav(tm: TagMod): VdomElement =
-            <.div(
-              *.topNav,
-              ctl.link(None)("Home"),
-              crumbSep,
-              breadcrumb)
-
-          layoutCfg.suitePage(topNav, res.render())
+        case Page.Batch(mi) =>
+          layoutCfg.batch(topNav(TOC.batchMode, _), res.render())
       }
+    }
 
     object TOC {
+
+      val batchMode = "Batch mode"
+
       final case class Props(items      : MenuItems2,
                              router     : RouterCtl,
                              headerStyle: TagMod = *.folder,
@@ -179,8 +213,9 @@ object MenuComp {
 
         def go(mi: MenuItem2): VdomTag =
           mi match {
-            case s: MenuSuite2  => p.router.link(Some(s))(s.suite.name)
             case s: MenuFolder2 => <.div(<.h3(p.headerStyle, s.name), children(s.children))
+            case s: MenuSuite2  => p.router.link(Page.Suite(s))(s.suite.name)
+            case s: MenuBatch2  => p.router.link(Page.Batch(s))(batchMode)
           }
 
         children(p.items)
