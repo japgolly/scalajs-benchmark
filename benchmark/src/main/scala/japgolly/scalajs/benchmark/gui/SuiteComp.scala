@@ -11,7 +11,6 @@ import monocle._
 import monocle.macros.Lenses
 import org.scalajs.dom.document
 import scala.concurrent.duration._
-import scala.scalajs.js
 import scalacss.ScalaCssReact._
 import GuiParams.GenState
 import Styles.{Suite => *}

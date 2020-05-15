@@ -9,7 +9,10 @@ import monocle.Lens
   *
   * If you don't need a GUI, then a plain [[Suite]] is all you need.
   */
-final class GuiSuite[P](val suite: Suite[P], val params: GuiParams[P], val desc: Option[VdomElement]) {
+final class GuiSuite[P](val suite : Suite[P],
+                        val params: GuiParams[P],
+                        val desc  : Option[VdomElement]) {
+
   @inline def name = suite.name
 
   def describe(e: VdomElement): GuiSuite[P] =
