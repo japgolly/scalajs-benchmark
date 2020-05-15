@@ -53,7 +53,7 @@ object JmhJsonTest extends TestSuite {
     val suite  = Suite[Unit]("My Suite")(bm1)
     val plan   = Plan[Unit](suite, Vector.empty)
     val bm1p0  = PlanKey[Unit](0, 0)(bm1, ())
-    val bm1p0r = Vector(Vector(12.1.millis, 12.2.millis), Vector(12.3.millis, 12.2.millis))
+    val bm1p0r = js.Array(js.Array(12.1, 12.2), js.Array(12.3, 12.2))
 
     val expect =
       s"""[
@@ -81,7 +81,7 @@ object JmhJsonTest extends TestSuite {
         |      "scoreUnit": "ms/op",
         |      "rawData": [
         |        [
-        |          12.15,
+        |          12.149999,
         |          12.25
         |        ]
         |      ]
@@ -113,8 +113,8 @@ object JmhJsonTest extends TestSuite {
     val plan   = Plan[P](suite, Vector(p1, p2))
     val bm1p1  = PlanKey[P](0, 0)(bm1, p1)
     val bm1p2  = PlanKey[P](0, 1)(bm1, p2)
-    val bm1p1r = Vector(Vector(10.micros, 9.micros), Vector(9.micros, 10.micros))
-    val bm1p2r = Vector(Vector(1300.micros, 1300.micros), Vector(1300.micros, 1300.micros))
+    val bm1p1r = js.Array(js.Array(.01, .009), js.Array(.009, .01))
+    val bm1p2r = js.Array(js.Array(1.3, 1.3), js.Array(1.3, 1.3))
 
     val expect =
       s"""[

@@ -3,7 +3,10 @@ package japgolly.scalajs.benchmark.engine
 import scala.concurrent.duration._
 import scala.scalajs.js
 
-final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: EngineOptions) {
+/**
+  * @param rawData Times in milliseconds per execution, per iteration
+  */
+final case class Stats(rawData: js.Array[js.Array[Double]], engineOptions: EngineOptions) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
@@ -16,15 +19,19 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
     s"${fmtD(score)} ± ${fmtD(scoreError)} /op ($samples runs, Σ $tot)"
   }
 
-  lazy val isolatedBatches: Vector[Stats] = {
-    val e = Vector.empty[Vector[FiniteDuration]]
-    rawData.map { batch =>
-      Stats(e :+ batch, engineOptions)
+  lazy val isolatedBatches: Vector[Stats] =
+    Vector.tabulate(rawData.length) { i =>
+      val batch = rawData(i)
+      Stats(js.Array(batch), engineOptions)
     }
-  }
 
-  val times =
-    rawData.flatten
+  val times: js.Array[Double] =
+    rawData.length match {
+      case 0 => new js.Array[Double]
+      case 1 => rawData.head
+      case _ => rawData.head.concat(rawData.iterator.drop(1).toSeq: _*)
+    }
+
 
   def samples =
     times.length
@@ -33,7 +40,7 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
     if (times.isEmpty)
       Duration.Zero
     else
-      times.reduce(_ + _)
+      TimeUtil.fromMs(times.sum)
 
   val average: Duration =
     if (times.isEmpty)
@@ -42,7 +49,7 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
       totalTime / samples
 
   private lazy val statMathMs =
-    StatMath(times.map(TimeUtil.toMs))
+    StatMath(times)
 
   private def meanErrorMsAt(confidence: Double): Double = {
     val df = samples - 1
@@ -73,11 +80,11 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
 object Stats {
 
   private[engine] class Mutable {
-    private val batches      = new js.Array[js.Array[FiniteDuration]]
-    private var curBatch     = new js.Array[FiniteDuration]
-    private var curBatchTime = Duration.Zero
+    private val batches      = new js.Array[js.Array[Double]]
+    private var curBatch     = new js.Array[Double]
+    private var curBatchTime = 0.0
 
-    def add(d: FiniteDuration): Unit = {
+    def add(d: Double): Unit = {
       curBatch.push(d)
       curBatchTime += d
     }
@@ -87,13 +94,13 @@ object Stats {
 
     def endBatch(): Unit = {
       batches.push(curBatch)
-      curBatch = new js.Array[FiniteDuration]
-      curBatchTime = Duration.Zero
+      curBatch = new js.Array[Double]
+      curBatchTime = 0.0
     }
 
     /** Make sure you call [[endBatch()]] before calling this. */
-    def result(): Vector[Vector[FiniteDuration]] =
-      Vector.tabulate(batches.length)(batches(_).toVector)
+    def result(): js.Array[js.Array[Double]] =
+      batches
   }
 
 }
