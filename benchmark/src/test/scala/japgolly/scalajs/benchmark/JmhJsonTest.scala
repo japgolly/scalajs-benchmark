@@ -94,8 +94,8 @@ object JmhJsonTest extends TestSuite {
 
     testJmhJson[Unit](
       suite      = GuiSuite(suite),
-      progress   = Progress(startTime, plan, 123),
-      results    = Map(bm1p0 -> BMDone(Right(Stats(bm1p0r, eo)))),
+      progress   = Progress(startTime, plan, 123, eo),
+      results    = Map(bm1p0 -> BMDone(Right(Stats(bm1p0r)))),
       resultFmts = Vector(FormatResult.MillisPerOp),
       expect     = expect,
     )
@@ -195,8 +195,8 @@ object JmhJsonTest extends TestSuite {
 
     testJmhJson[P](
       suite      = GuiSuite(suite, gps),
-      progress   = Progress(startTime, plan, 123),
-      results    = Map(bm1p1 -> BMDone(Right(Stats(bm1p1r, eo))), bm1p2 -> BMDone(Right(Stats(bm1p2r, eo)))),
+      progress   = Progress(startTime, plan, 123, eo),
+      results    = Map(bm1p1 -> BMDone(Right(Stats(bm1p1r))), bm1p2 -> BMDone(Right(Stats(bm1p2r)))),
       resultFmts = Vector(FormatResult.MicrosPerOp, FormatResult.OpsPerSec),
       expect     = expect,
     )

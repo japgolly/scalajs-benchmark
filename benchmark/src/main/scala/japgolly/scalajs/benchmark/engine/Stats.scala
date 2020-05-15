@@ -6,7 +6,7 @@ import scala.scalajs.js
 /**
   * @param rawData Times in milliseconds per execution, per iteration
   */
-final case class Stats(rawData: js.Array[js.Array[Double]], engineOptions: EngineOptions) {
+final case class Stats(rawData: js.Array[js.Array[Double]]) {
 
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
@@ -22,7 +22,7 @@ final case class Stats(rawData: js.Array[js.Array[Double]], engineOptions: Engin
   lazy val isolatedBatches: Vector[Stats] =
     Vector.tabulate(rawData.length) { i =>
       val batch = rawData(i)
-      Stats(js.Array(batch), engineOptions)
+      Stats(js.Array(batch))
     }
 
   val times: js.Array[Double] =
@@ -99,8 +99,8 @@ object Stats {
     }
 
     /** Make sure you call [[endBatch()]] before calling this. */
-    def result(): js.Array[js.Array[Double]] =
-      batches
+    def result(): Stats =
+      Stats(batches)
   }
 
 }

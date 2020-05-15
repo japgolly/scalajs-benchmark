@@ -268,8 +268,9 @@ object FormatResults {
         if (resultFmts.isEmpty)
           Vector.empty
         else {
-          val fmtRes = resultFmts.head
-          val hasParams = suite.params.editors.nonEmpty
+          val fmtRes        = resultFmts.head
+          val hasParams     = suite.params.editors.nonEmpty
+          val engineOptions = progress.engineOptions
           results.iterator.collect {
             case (key, BMDone(Right(stats))) =>
 
@@ -301,11 +302,11 @@ object FormatResults {
                 vmName                = "Scala.JS",
                 vmVersion             = ScalaJsInfo.version,
                 userAgent             = window.navigator.userAgent,
-                warmupIterations      = stats.engineOptions.warmupIterations,
-                warmupTime            = durToStr(stats.engineOptions.actualWarmupIterationTime),
+                warmupIterations      = engineOptions.warmupIterations,
+                warmupTime            = durToStr(engineOptions.actualWarmupIterationTime),
                 warmupBatchSize       = 1,
-                measurementIterations = stats.engineOptions.iterations,
-                measurementTime       = durToStr(stats.engineOptions.iterationTime),
+                measurementIterations = engineOptions.iterations,
+                measurementTime       = durToStr(engineOptions.iterationTime),
                 measurementBatchSize  = 1,
                 params                = params,
                 primaryMetric         = primaryMetric,

@@ -19,10 +19,19 @@ final case class BenchmarkRunning  [P](progress: Progress[P], key: PlanKey[P])  
 final case class BenchmarkFinished [P](progress: Progress[P], key: PlanKey[P], result: Result) extends Event[P]
 final case class SuiteFinished     [P](progress: Progress[P]/*, aborted | results, */)         extends Event[P]
 
-final case class Progress[P](startedAt: js.Date, plan: Plan[P], runs: Int) {
+final case class Progress[P](startedAt    : js.Date,
+                             plan         : Plan[P],
+                             runs         : Int,
+                             engineOptions: EngineOptions) {
+
   def timestampTxt = TimeUtil.dateStrFromJsDate(startedAt) + "_" + TimeUtil.timeStrFromJsDate(startedAt)
   def total        = plan.totalBenchmarks
   def remaining    = total - runs
+}
+
+object Progress {
+  def start[P](plan: Plan[P], engineOptions: EngineOptions): Progress[P] =
+    apply(new js.Date(), plan, 0, engineOptions)
 }
 
 final case class AbortFn(value: AsyncCallback[Unit]) {
@@ -46,7 +55,7 @@ object Engine {
     val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
     var broadcastFinishOnAbort = true
     var aborted                = false
-    var progress               = Progress(new js.Date(), plan, 0)
+    var progress               = Progress.start(plan, options)
     val setupCtx               = SetupCtx(CallbackTo(aborted))
 
     val finish: AsyncCallback[Unit] =
@@ -133,7 +142,7 @@ object Engine {
                       val sm        = new Stats.Mutable
                       val iteration = runIteration(sm, TimeUtil.toMs(maxTime))
                       val runs      = (1 to iterations).foldLeft(AsyncCallback.unit)((q, _) => q >> iteration)
-                      runs.ret(() => Stats(sm.result(), options))
+                      runs.ret(() => sm.result())
                     }
 
                   val warmup =
