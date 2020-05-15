@@ -21,11 +21,15 @@ import Styles.{Suite => *}
 object SuiteComp {
   type Comp[P] = ScalaComponent[Props[P], State[P], Backend[P], CtorType.Props]
 
+  // ===================================================================================================================
+
   final case class Props[P](suite        : GuiSuite[P],
                             engineOptions: EngineOptions = EngineOptions.default,
                             guiOptions   : GuiOptions    = GuiOptions.default) {
     @inline def render: VdomElement = Comp[P](this)
   }
+
+  // ===================================================================================================================
 
   @Lenses
   final case class State[A](status       : SuiteStatus[A],
@@ -49,6 +53,8 @@ object SuiteComp {
         oldTitle      = None,
         formatResults = p.guiOptions.formatResultsDefault)
   }
+
+  // ===================================================================================================================
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
 
@@ -85,8 +91,7 @@ object SuiteComp {
 
   private type ResultFmts = Vector[FormatResult]
 
-  private def formatTotalTime(fd: FiniteDuration): String =
-    TextUtil.prettyPrintNumber(FormatResult.getUnits(SECONDS)(fd), 2) + " seconds"
+  // ===================================================================================================================
 
   final class Backend[P]($: BackendScope[SuiteComp.Props[P], SuiteComp.State[P]]) {
     type Props        = SuiteComp.Props[P]
@@ -99,8 +104,8 @@ object SuiteComp {
     private val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
-    private def start(suite: GuiSuite[P], options: EngineOptions, ps: Vector[P]): AsyncCallback[Unit] = {
-      val plan = Plan(suite.suite, ps)
+    private def start(suite: GuiSuite[P], options: EngineOptions, params: Vector[P]): AsyncCallback[Unit] = {
+      val plan = Plan(suite.suite, params)
 
       def actuallyStart(startTime: Long) =
         Engine.run(plan, options) {
@@ -258,6 +263,9 @@ object SuiteComp {
             paramRows)),
         startButton)
     }
+
+    private def formatTotalTime(fd: FiniteDuration): String =
+      formatETA(TimeUtil.toMs(fd))
 
     private def formatETA(ms: Double): String = {
       val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
@@ -419,6 +427,8 @@ object SuiteComp {
         abortIfRunning(s.status) >> restoreTitle(s.oldTitle))
     }
   }
+
+  // ===================================================================================================================
 
   private val __Comp = {
     // TODO Bloody hack. Really need to accommodate this properly in scalajs-react
