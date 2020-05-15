@@ -14,7 +14,6 @@ import scala.concurrent.duration._
 import scala.scalajs.js
 import scalacss.ScalaCssReact._
 import GuiParams.GenState
-import ReactTemp._
 import Styles.{Suite => *}
 
 /**
