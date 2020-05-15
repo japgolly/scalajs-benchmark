@@ -15,7 +15,7 @@ import monocle.Lens
 final class Suite[-P](val name: String, val bms: Vector[Benchmark[P]]) {
 
   lazy val filenameFriendlyName: String =
-    name.toLowerCase.replaceAll("[ .]", "_")
+    name.replaceAll("[ .]", "_")
 }
 
 object Suite {
