@@ -117,7 +117,7 @@ object JmhJsonTest extends TestSuite {
     type P     = (Int, Boolean)
     val p1     = (123, true)
     val p2     = (654, false)
-    val gp1    = GuiParam.int("Size", 5, 10)
+    val gp1    = GuiParam.int("The Size", 5, 10)
     val gp2    = GuiParam.boolean("On")
     val gps    = GuiParams.tuple2(gp1, gp2)
     val bm1    = Benchmark[P]("bm1", _ => ())
@@ -145,7 +145,7 @@ object JmhJsonTest extends TestSuite {
         |    "measurementTime": "2 s",
         |    "measurementBatchSize": 1,
         |    "params": {
-        |      "Size": "123",
+        |      "The_Size": "123",
         |      "On": "T"
         |    },
         |    "primaryMetric": {
@@ -183,7 +183,7 @@ object JmhJsonTest extends TestSuite {
         |    "measurementTime": "2 s",
         |    "measurementBatchSize": 1,
         |    "params": {
-        |      "Size": "654",
+        |      "The_Size": "654",
         |      "On": "F"
         |    },
         |    "primaryMetric": {

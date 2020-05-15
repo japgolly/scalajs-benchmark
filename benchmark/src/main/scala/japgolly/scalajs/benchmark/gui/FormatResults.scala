@@ -277,8 +277,9 @@ object FormatResults {
               val params: Option[Map[String, String]] =
                 if (hasParams)
                   Some {
-                    suite.params.renderParamsToText(key.param).iterator.zipWithIndex.map { case (param, idx) =>
-                      suite.params.headers(idx) -> param
+                    suite.params.renderParamsToText(key.param).iterator.zipWithIndex.map { case (paramValue, idx) =>
+                      val name = suite.params.headers(idx).replace(' ', '_') // jmh-visualizer doesn't like spaces in param names
+                      name -> paramValue
                     }.toMap
                   }
                 else
