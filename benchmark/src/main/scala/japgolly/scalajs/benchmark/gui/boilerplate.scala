@@ -21,6 +21,9 @@ abstract class GuiParamsBoilerplate {
     }
   }
 
+  final def tuple2[P1, E1, P2, E2](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2]): GuiParams[(P1, P2)] =
+    combine2(Iso.id[(P1, P2)])(p1, p2)
+
   final def combine3[P, P1, E1, P2, E2, P3, E3](iso: Iso[P, (P1, P2, P3)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3), P1](_._1)(n => t => (n, t._2, t._3)))
     val sp2 = SubParam(1, p2, iso ^|-> Lens[(P1, P2, P3), P2](_._2)(n => t => (t._1, n, t._3)))
@@ -36,6 +39,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3} yield iso.reverseGet((a1, a2, a3))
     }
   }
+
+  final def tuple3[P1, E1, P2, E2, P3, E3](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3]): GuiParams[(P1, P2, P3)] =
+    combine3(Iso.id[(P1, P2, P3)])(p1, p2, p3)
 
   final def combine4[P, P1, E1, P2, E2, P3, E3, P4, E4](iso: Iso[P, (P1, P2, P3, P4)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4), P1](_._1)(n => t => (n, t._2, t._3, t._4)))
@@ -54,6 +60,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4} yield iso.reverseGet((a1, a2, a3, a4))
     }
   }
+
+  final def tuple4[P1, E1, P2, E2, P3, E3, P4, E4](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4]): GuiParams[(P1, P2, P3, P4)] =
+    combine4(Iso.id[(P1, P2, P3, P4)])(p1, p2, p3, p4)
 
   final def combine5[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5](iso: Iso[P, (P1, P2, P3, P4, P5)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5)))
@@ -74,6 +83,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5} yield iso.reverseGet((a1, a2, a3, a4, a5))
     }
   }
+
+  final def tuple5[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5]): GuiParams[(P1, P2, P3, P4, P5)] =
+    combine5(Iso.id[(P1, P2, P3, P4, P5)])(p1, p2, p3, p4, p5)
 
   final def combine6[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6](iso: Iso[P, (P1, P2, P3, P4, P5, P6)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6)))
@@ -96,6 +108,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6} yield iso.reverseGet((a1, a2, a3, a4, a5, a6))
     }
   }
+
+  final def tuple6[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6]): GuiParams[(P1, P2, P3, P4, P5, P6)] =
+    combine6(Iso.id[(P1, P2, P3, P4, P5, P6)])(p1, p2, p3, p4, p5, p6)
 
   final def combine7[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7)))
@@ -120,6 +135,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7))
     }
   }
+
+  final def tuple7[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7]): GuiParams[(P1, P2, P3, P4, P5, P6, P7)] =
+    combine7(Iso.id[(P1, P2, P3, P4, P5, P6, P7)])(p1, p2, p3, p4, p5, p6, p7)
 
   final def combine8[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8)))
@@ -146,6 +164,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8))
     }
   }
+
+  final def tuple8[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8)] =
+    combine8(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8)])(p1, p2, p3, p4, p5, p6, p7, p8)
 
   final def combine9[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9)))
@@ -174,6 +195,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9))
     }
   }
+
+  final def tuple9[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9)] =
+    combine9(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9)])(p1, p2, p3, p4, p5, p6, p7, p8, p9)
 
   final def combine10[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10)))
@@ -204,6 +228,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10))
     }
   }
+
+  final def tuple10[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10)] =
+    combine10(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
 
   final def combine11[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11)))
@@ -236,6 +263,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11))
     }
   }
+
+  final def tuple11[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11)] =
+    combine11(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
 
   final def combine12[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12)))
@@ -270,6 +300,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12))
     }
   }
+
+  final def tuple12[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12)] =
+    combine12(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
 
   final def combine13[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13)))
@@ -306,6 +339,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13))
     }
   }
+
+  final def tuple13[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13)] =
+    combine13(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
 
   final def combine14[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14)))
@@ -344,6 +380,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14))
     }
   }
+
+  final def tuple14[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14)] =
+    combine14(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)
 
   final def combine15[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15)))
@@ -384,6 +423,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15))
     }
   }
+
+  final def tuple15[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15)] =
+    combine15(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)
 
   final def combine16[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16)))
@@ -426,6 +468,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16))
     }
   }
+
+  final def tuple16[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16)] =
+    combine16(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
 
   final def combine17[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17)))
@@ -470,6 +515,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16; a17 <- v17} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17))
     }
   }
+
+  final def tuple17[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17)] =
+    combine17(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)
 
   final def combine18[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18)))
@@ -516,6 +564,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16; a17 <- v17; a18 <- v18} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18))
     }
   }
+
+  final def tuple18[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18)] =
+    combine18(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
 
   final def combine19[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19)))
@@ -564,6 +615,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16; a17 <- v17; a18 <- v18; a19 <- v19} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19))
     }
   }
+
+  final def tuple19[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19)] =
+    combine19(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)
 
   final def combine20[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19, P20, E20](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19], p20: GuiParam[P20, E20]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20)))
@@ -614,6 +668,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16; a17 <- v17; a18 <- v18; a19 <- v19; a20 <- v20} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20))
     }
   }
+
+  final def tuple20[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19, P20, E20](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19], p20: GuiParam[P20, E20]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20)] =
+    combine20(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)
 
   final def combine21[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19, P20, E20, P21, E21](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19], p20: GuiParam[P20, E20], p21: GuiParam[P21, E21]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21)))
@@ -666,6 +723,9 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16; a17 <- v17; a18 <- v18; a19 <- v19; a20 <- v20; a21 <- v21} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21))
     }
   }
+
+  final def tuple21[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19, P20, E20, P21, E21](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19], p20: GuiParam[P20, E20], p21: GuiParam[P21, E21]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21)] =
+    combine21(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21)
 
   final def combine22[P, P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19, P20, E20, P21, E21, P22, E22](iso: Iso[P, (P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19], p20: GuiParam[P20, E20], p21: GuiParam[P21, E21], p22: GuiParam[P22, E22]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso ^|-> Lens[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22), P1](_._1)(n => t => (n, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21, t._22)))
@@ -720,4 +780,7 @@ abstract class GuiParamsBoilerplate {
           for {a1 <- v1; a2 <- v2; a3 <- v3; a4 <- v4; a5 <- v5; a6 <- v6; a7 <- v7; a8 <- v8; a9 <- v9; a10 <- v10; a11 <- v11; a12 <- v12; a13 <- v13; a14 <- v14; a15 <- v15; a16 <- v16; a17 <- v17; a18 <- v18; a19 <- v19; a20 <- v20; a21 <- v21; a22 <- v22} yield iso.reverseGet((a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22))
     }
   }
+
+  final def tuple22[P1, E1, P2, E2, P3, E3, P4, E4, P5, E5, P6, E6, P7, E7, P8, E8, P9, E9, P10, E10, P11, E11, P12, E12, P13, E13, P14, E14, P15, E15, P16, E16, P17, E17, P18, E18, P19, E19, P20, E20, P21, E21, P22, E22](p1: GuiParam[P1, E1], p2: GuiParam[P2, E2], p3: GuiParam[P3, E3], p4: GuiParam[P4, E4], p5: GuiParam[P5, E5], p6: GuiParam[P6, E6], p7: GuiParam[P7, E7], p8: GuiParam[P8, E8], p9: GuiParam[P9, E9], p10: GuiParam[P10, E10], p11: GuiParam[P11, E11], p12: GuiParam[P12, E12], p13: GuiParam[P13, E13], p14: GuiParam[P14, E14], p15: GuiParam[P15, E15], p16: GuiParam[P16, E16], p17: GuiParam[P17, E17], p18: GuiParam[P18, E18], p19: GuiParam[P19, E19], p20: GuiParam[P20, E20], p21: GuiParam[P21, E21], p22: GuiParam[P22, E22]): GuiParams[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22)] =
+    combine22(Iso.id[(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22)])(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22)
 }

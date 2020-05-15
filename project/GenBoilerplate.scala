@@ -10,6 +10,7 @@ object GenBoilerplate {
       (2 to 22).map { n =>
         val `Pn, En`               = (1 to n).map(i => s"P$i, E$i").mkString(", ")
         val `pn: GuiParam[Pn, En]` = (1 to n).map(i => s"p$i: GuiParam[P$i, E$i]").mkString(", ")
+        val pn                     = (1 to n).map(i => s"p$i").mkString(", ")
         val `(Pn)`                 = (1 to n).map(i => s"P$i").mkString("(", ", ", ")")
         val spn                    = (1 to n).map(i => s"sp$i").mkString(", ")
         val `an <- vn`             = (1 to n).map(i => s"a$i <- v$i").mkString("; ")
@@ -38,6 +39,9 @@ object GenBoilerplate {
            |          for {${`an <- vn`}} yield iso.reverseGet(($an))
            |    }
            |  }
+           |
+           |  final def tuple$n[${`Pn, En`}](${`pn: GuiParam[Pn, En]`}): GuiParams[${`(Pn)`}] =
+           |    combine$n(Iso.id[${`(Pn)`}])($pn)
          """.stripMargin.trim.replaceFirst("^", "  ")
       }
 
