@@ -49,6 +49,16 @@ object JmhJsonTest extends TestSuite {
     assertEqJson(actual, expect)
   }
 
+  private def testJmhJsonText[P](suite     : GuiSuite[P],
+                                 progress  : Progress[P],
+                                 results   : Map[PlanKey[P], BMStatus],
+                                 resultFmts: Vector[FormatResult],
+                                 expect    : String): Unit = {
+    val args = Args[P](suite, progress, results, resultFmts)
+    val actual = JmhJson.jsonText(JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent")))))
+    assertMultiline(actual, expect)
+  }
+
   private def itStats(times: Double*): IterationStats = {
     val b = new IterationStats.Builder
     times.foreach(b.add)
@@ -68,28 +78,28 @@ object JmhJsonTest extends TestSuite {
     val expect =
       s"""[
         |  {
-        |    "benchmark": "My_Suite.My_BM",
-        |    "mode": "avgt",
-        |    "threads": 1,
-        |    "forks": 1,
-        |    "jdkVersion": "1.8",
-        |    "vmName": "Scala.JS",
-        |    "vmVersion": "${ScalaJsInfo.version}",
-        |    "warmupIterations": 1,
-        |    "warmupTime": "2 s",
-        |    "warmupBatchSize": 1,
-        |    "measurementIterations": 4,
-        |    "measurementTime": "2 s",
-        |    "measurementBatchSize": 1,
-        |    "primaryMetric": {
-        |      "score": 12.2,
-        |      "scoreError": 0.589896,
-        |      "scoreConfidence": [
+        |    "benchmark" : "My_Suite.My_BM",
+        |    "mode" : "avgt",
+        |    "threads" : 1,
+        |    "forks" : 1,
+        |    "jdkVersion" : "1.8",
+        |    "vmName" : "Scala.JS",
+        |    "vmVersion" : "${ScalaJsInfo.version}",
+        |    "warmupIterations" : 1,
+        |    "warmupTime" : "2 s",
+        |    "warmupBatchSize" : 1,
+        |    "measurementIterations" : 4,
+        |    "measurementTime" : "2 s",
+        |    "measurementBatchSize" : 1,
+        |    "primaryMetric" : {
+        |      "score" : 12.2,
+        |      "scoreError" : 0.589896,
+        |      "scoreConfidence" : [
         |        11.610103,
         |        12.789896
         |      ],
-        |      "scoreUnit": "ms/op",
-        |      "rawData": [
+        |      "scoreUnit" : "ms/op",
+        |      "rawData" : [
         |        [
         |          12.15,
         |          12.25,
@@ -98,13 +108,13 @@ object JmhJsonTest extends TestSuite {
         |        ]
         |      ]
         |    },
-        |    "secondaryMetrics": {
+        |    "secondaryMetrics" : {
         |    }
         |  }
         |]
-        |""".stripMargin
+        |""".stripMargin.trim
 
-    testJmhJson[Unit](
+    testJmhJsonText[Unit](
       suite      = GuiSuite(suite),
       progress   = Progress(startTime, plan, 123, eo),
       results    = Map(bm1p0 -> BMDone(Right(bm1p0r))),

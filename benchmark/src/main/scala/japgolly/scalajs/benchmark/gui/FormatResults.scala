@@ -319,8 +319,13 @@ object FormatResults {
       benchmarksJson.asJson.deepDropNullValues
     }
 
+    def jsonText(json: Json): String =
+      json
+        .spaces2
+        .replaceAll("\n +\n", "\n") // Remove blank lines
+
     override def render[P](args: Args[P]): VdomElement = {
-      val text = json(args).spaces2
+      val text = jsonText(json(args))
       TextOutput.Props(
         text = text,
         mimeType = "application/json",
