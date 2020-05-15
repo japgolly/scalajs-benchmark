@@ -107,7 +107,7 @@ object JmhJsonTest extends TestSuite {
     val p2     = (654, false)
     val gp1    = GuiParam.int("Size", 5, 10)
     val gp2    = GuiParam.boolean("On")
-    val gps    = GuiParams.two(Iso.id[P], gp1, gp2)
+    val gps    = GuiParams.tuple2(gp1, gp2)
     val bm1    = Benchmark[P]("bm1", _ => ())
     val suite  = Suite[P]("Suite")(bm1)
     val plan   = Plan[P](suite, Vector(p1, p2))

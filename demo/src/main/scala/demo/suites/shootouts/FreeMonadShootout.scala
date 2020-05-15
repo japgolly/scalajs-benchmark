@@ -33,7 +33,7 @@ object FreeMonadShootout {
   val param2 = GuiParam.int("Size", 500)
 
   val iso = GenIso.fields[Params]
-  val params = GuiParams.two(iso, param1, param2)
+  val params = GuiParams.combine2(iso)(param1, param2)
 
   val suite = Suite[Params]("Free monads")(
     Benchmark.derive("Free --> Fn0 (foldMap)",       (_: Params).lib.freeFoldMap      )(_.size),

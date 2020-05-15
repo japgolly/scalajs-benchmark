@@ -48,7 +48,7 @@ object VectorIndex {
 
   val param1 = GuiParam.int("Size", 50)
   val param2 = GuiParam.int("Index", 0, 100)
-  val params = GuiParams.two(iso, param1, param2)
+  val params = GuiParams.combine2(iso)(param1, param2)
 
   val guiSuite = GuiSuite(suite, params).describe(
     <.div(<.div(^.marginBottom := "0.8em",

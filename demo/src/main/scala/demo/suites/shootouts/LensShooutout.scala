@@ -340,7 +340,7 @@ object LensShooutout {
   val param2 = GuiParam.enum[Size]("Size", Size0, Size3, Size6)(_.size.toString, initialValues = Seq(Size6))
 
   val iso = GenIso.fields[Params]
-  val params = GuiParams.two(iso, param1, param2)
+  val params = GuiParams.combine2(iso)(param1, param2)
 
   val guiSuite = GuiSuite(suite, params).describe(
     <.div(<.div(^.marginBottom := "0.8em",

@@ -113,7 +113,7 @@ object Examples {
 
     val param1 = GuiParam.int("Size", 5, 10)
     val param2 = GuiParam.boolean("Reverse")
-    val params = GuiParams.two(iso, param1, param2)
+    val params = GuiParams.combine2(iso)(param1, param2)
 
     GuiSuite(suite, params).describe(
       <.div(
