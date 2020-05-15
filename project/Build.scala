@@ -45,7 +45,9 @@ object ScalaJsBenchmark {
     "-language:implicitConversions",
     "-language:higherKinds",
     "-language:existentials",
-    "-opt:l:method")
+    "-opt:l:inline",
+    "-opt-inline-from:japgolly.scalajs.benchmark.**",
+    "-Wconf:msg=may.not.be.exhaustive:e") // Make non-exhaustive matches errors instead of warnings
 
   val commonSettings: PE =
     _.settings(
