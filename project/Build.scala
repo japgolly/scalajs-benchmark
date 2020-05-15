@@ -90,10 +90,14 @@ object ScalaJsBenchmark {
       libraryDependencies += "com.github.japgolly.microlibs" %%% "test-util" % Ver.Microlibs % Test,
       testFrameworks      := new TestFramework("utest.runner.Framework") :: Nil)
 
+  lazy val genBoilerplate = TaskKey[Unit]("genBoilerplate")
+
   lazy val root =
     Project("root", file("."))
       .configure(commonSettings, preventPublication)
       .aggregate(benchmark, demo)
+
+  // ===================================================================================================================
 
   lazy val benchmark =
     Project("benchmark", file("benchmark"))
@@ -101,6 +105,8 @@ object ScalaJsBenchmark {
       .enablePlugins(JSDependenciesPlugin)
       .configure(commonSettings, definesMacros, publicationSettings(ghProject), utestSettings)
       .settings(
+        addMacroParadisePlugin,
+
         libraryDependencies ++= Seq(
           "org.scala-lang.modules"            %%% "scala-collection-compat" % Ver.ScalaCollCompat,
           "com.github.japgolly.scalajs-react" %%% "core"                    % Ver.ScalaJsReact,
@@ -141,7 +147,10 @@ object ScalaJsBenchmark {
             /        "Chart.js"
             minified "Chart.min.js"),
 
-        addMacroParadisePlugin)
+        genBoilerplate := GenBoilerplate(sourceDirectory.value / "main" / "scala")
+      )
+
+  // ===================================================================================================================
 
   object Demo {
     def librariesFileTask = Def.task {

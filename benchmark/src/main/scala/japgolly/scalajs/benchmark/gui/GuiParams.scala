@@ -5,9 +5,9 @@ import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Lens}
 import scalaz.{\/-, \/}
 import scalaz.std.option.optionSyntax._
-import GuiParams._
 
 trait GuiParams[P] {
+  import GuiParams._
 
   def initialState: GenState
 
@@ -25,10 +25,10 @@ trait GuiParams[P] {
     " @ " + p.toString
 }
 
-object GuiParams {
+object GuiParams extends GuiParamsBoilerplate {
   type GenState = Vector[Any]
-  type GenEditor = Editor[GenState]
   type ParseResult[P] = Header \/ Vector[P]
+  type GenEditor = Editor[GenState]
 
   import Internals._
 
@@ -54,27 +54,13 @@ object GuiParams {
     }
   }
 
-  def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: GuiParam[P1, E1], param2: GuiParam[P2, E2]): GuiParams[P] = {
-    import monocle.function.Field1.first
-    import monocle.function.Field2.second
-    import monocle.std.tuple2._
-
-    val p1 = SubParam(0, param1, iso ^|-> first)
-    val p2 = SubParam(1, param2, iso ^|-> second)
-    val ps = Vector(p1, p2)
-
-    new MostlyGenericParams(ps) {
-      override def parseState(s: GenState): ParseResult[P] =
-        for {
-          v1 <- p1.parse(p1.key.get(s)) \/> p1.param.header
-          v2 <- p2.parse(p2.key.get(s)) \/> p2.param.header
-        } yield
-          for {a1 <- v1; a2 <- v2} yield iso.reverseGet((a1, a2))
-    }
-  }
+  @deprecated("Use .combine2", "0.6.1")
+  def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: GuiParam[P1, E1], param2: GuiParam[P2, E2]): GuiParams[P] =
+    combine2(iso)(param1, param2)
 
   // ===================================================================================================================
-  private[this] object Internals {
+
+  protected object Internals {
 
     def emptyState(size: Int): GenState =
       Vector.fill(size)(())
