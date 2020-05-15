@@ -14,10 +14,29 @@ final case class StatMath(samples: js.Array[Double]) {
   def size = samples.length
 
   /** Mean / Average. */
-  val mean = samples.sum / size
+  val mean = {
+    var sum = 0.0
+    var i = samples.length
+    while (i > 0) {
+      i -= 1
+      val d = samples(i)
+      sum += d
+    }
+    sum / size
+  }
 
   /** Sample variance */
-  val variance = samples.iterator.map(s => pow(s - mean, 2)).sum / (size - 1)
+  val variance = {
+    var sum = 0.0
+    var i = samples.length
+    while (i > 0) {
+      i -= 1
+      val d = samples(i) - mean
+      val sq = d * d
+      sum += sq
+    }
+    sum / (size - 1)
+  }
 
   /** Standard deviation */
   val stddev = sqrt(variance)
