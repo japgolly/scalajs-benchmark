@@ -2,7 +2,6 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
-import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.benchmark.gui.GuiParams.GenState
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
@@ -15,6 +14,7 @@ import scala.concurrent.duration._
 import scalacss.ScalaCssReact._
 import Styles.{Suite => *}
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import scala.util.{Success, Try}
 
 final class SuiteRunner[P] {
   import SuiteRunner._
@@ -99,6 +99,62 @@ object SuiteRunner {
 
     def at[P](k: PlanKey[P]): Optional[SuiteStatus[P], BMStatus] =
       running ^|-> runningAt(k)
+  }
+
+  // ===================================================================================================================
+
+  /** @return An [[AsyncCallback]] that completes when BMs actually start, and returns a new [[AsyncCallback]] that
+    *         completes when the entire suite of BMs is finished.
+    */
+  def run[P]($      : StateAccessPure[State[P]],
+             suite  : GuiSuite[P],
+             options: EngineOptions,
+             params : Vector[P]): AsyncCallback[AsyncCallback[SuiteDone[P]]] = {
+    val plan = Plan(suite.suite, params)
+
+    def actuallyStart(startTime: Long, onEnd: Try[SuiteDone[P]] => Callback): CallbackTo[AbortFn] =
+      Engine.run(plan, options) {
+
+        case BenchmarkPreparing(_, k) =>
+          $.modStateAsync(State.at(k) set BMPreparing)
+
+        case BenchmarkRunning(_, k) =>
+          $.modStateAsync(State.at(k) set BMRunning)
+
+        case BenchmarkFinished(p, k, r) =>
+          val setResult = State.at(k) set BMDone(r)
+          val setProgress = State.status[P].modify {
+            case sr: SuiteRunning[P] => sr.copy(progess = p)
+            case x                   => x
+          }
+          $.modStateAsync(setResult compose setProgress)
+
+        case SuiteStarting(_) =>
+          AsyncCallback.unit
+
+        case SuiteFinished(progress) =>
+          def modFn(endTime: Long, s: SuiteStatus[P]): SuiteDone[P] = {
+            val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
+            val time = FiniteDuration(endTime - startTime, MILLISECONDS)
+            SuiteDone(suite, progress, bm, time)
+          }
+          for {
+            endTime <- AsyncCallback.delay(System.currentTimeMillis())
+            s1      <- $.state.asAsyncCallback
+            done    <- AsyncCallback.pure(modFn(endTime, s1.status))
+            _       <- $.setStateAsync(s1.copy(status = done))
+            _       <- onEnd(Success(done)).asAsyncCallback
+          } yield ()
+      }
+
+    for {
+      startTime <- AsyncCallback.delay(System.currentTimeMillis())
+      promise   <- AsyncCallback.promise[SuiteDone[P]].asAsyncCallback
+      _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
+      abort     <- actuallyStart(startTime, promise._2).asAsyncCallback
+      running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress.start(plan, options), Map.empty, abort))
+      _         <- $.modStateAsync(State.status set running)
+    } yield promise._1
   }
 
   // ===================================================================================================================
@@ -255,7 +311,7 @@ object SuiteRunner {
           bms <- Some(selectedBMs).filter(_.nonEmpty)
         } yield {
           val s2 = guiSuiteBMs.set(bms)(p.suite)
-          val cb = start(s2, p.engineOptions, ps).toCallback
+          val cb = run($, s2, p.engineOptions, ps).toCallback
           val eta = p.engineOptions.estimatedMsPerBM * (ps.length * bms.length)
           (cb, eta)
         }
@@ -400,49 +456,6 @@ object SuiteRunner {
         <.h2(*.suiteName, p.suite.name),
         p.suite.desc.whenDefined(renderDesc),
         inner)
-    }
-
-    // =================================================================================================================
-
-    private def start(suite: GuiSuite[P], options: EngineOptions, params: Vector[P]): AsyncCallback[Unit] = {
-      val plan = Plan(suite.suite, params)
-
-      def actuallyStart(startTime: Long) =
-        Engine.run(plan, options) {
-
-          case BenchmarkPreparing(_, k) =>
-            $.modStateAsync(State.at(k) set BMPreparing)
-
-          case BenchmarkRunning(_, k) =>
-            $.modStateAsync(State.at(k) set BMRunning)
-
-          case BenchmarkFinished(p, k, r) =>
-            val setResult = State.at(k) set BMDone(r)
-            val setProgress = State.status[P].modify {
-              case sr: SuiteRunning => sr.copy(progess = p)
-              case x                => x
-            }
-            $.modStateAsync(setResult compose setProgress)
-
-          case SuiteStarting(_) =>
-            AsyncCallback.unit
-
-          case SuiteFinished(progress) =>
-            val endTime = System.currentTimeMillis()
-            $.modStateAsync(State.status.modify { (s: SuiteStatus) =>
-              val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
-              val time = FiniteDuration(endTime - startTime, MILLISECONDS)
-              SuiteDone(suite, progress, bm, time)
-            }(_))
-        }
-
-      for {
-        startTime <- AsyncCallback.delay(System.currentTimeMillis())
-        _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
-        abort     <- actuallyStart(startTime).asAsyncCallback
-        running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress.start(plan, options), Map.empty, abort))
-        _         <- $.modStateAsync(State.status set running)
-      } yield ()
     }
   }
 }
