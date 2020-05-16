@@ -1,5 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.react.Reusability
 import japgolly.univeq.UnivEq
 
 sealed trait Enabled {
@@ -19,6 +20,7 @@ case object Enabled extends Enabled {
   override def unary_! = Disabled
 
   implicit def univEq: UnivEq[Enabled] = UnivEq.derive
+  implicit val reusability: Reusability[Enabled] = Reusability.by_==
 }
 
 case object Disabled extends Enabled {

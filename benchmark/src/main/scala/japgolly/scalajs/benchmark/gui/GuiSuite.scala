@@ -1,6 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark._
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.VdomElement
 import monocle.Lens
 
@@ -33,4 +34,7 @@ object GuiSuite {
 
   def bms[P]: Lens[GuiSuite[P], Vector[Benchmark[P]]] =
     suite[P] ^|-> Suite.bms
+
+  implicit val reusability: Reusability[GuiSuite[_]] =
+    Reusability.byRef
 }
