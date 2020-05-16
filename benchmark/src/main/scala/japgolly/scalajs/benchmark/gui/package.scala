@@ -36,7 +36,7 @@ package object gui {
   object RenderTxt {
 
     val Int: RenderTxt[Int] =
-      TextUtil.prettyPrintNumber(_)
+      GuiUtil.prettyPrintNumber(_)
 
     val Bool: RenderTxt[Boolean] =
       b => if (b) "T" else "F"

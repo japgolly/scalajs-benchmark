@@ -125,7 +125,7 @@ object FormatResults {
     def formatNum[A](formatValue: FormatValue[A], value: A): String =
       decFmt match {
         case Some(fmt) =>
-          TextUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+          GuiUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
         case None =>
           if (prettyNumbers)
             formatValue.toTextPretty(value)
@@ -203,7 +203,7 @@ object FormatResults {
         else
           " "
 
-      val text = TextUtil.formatTable(rows, gap)
+      val text = GuiUtil.formatTable(rows, gap)
 
       TextOutput.Props(
         text = text,
@@ -348,7 +348,7 @@ object FormatResults {
         overridePrecision   = Some(decimalPoints),
         prettyNumbers       = false,
       )
-      val text = TextUtil.formatCSV(rows)
+      val text = GuiUtil.formatCSV(rows)
       TextOutput.Props(
         text = text,
         mimeType = "text/csv",

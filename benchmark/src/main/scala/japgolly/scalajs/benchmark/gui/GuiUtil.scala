@@ -1,9 +1,21 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.engine.TimeUtil
+import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js
 import scala.scalajs.js.|
 
-object TextUtil {
+object GuiUtil {
+
+  def formatETA(eta: FiniteDuration): String =
+    formatETA(TimeUtil.toMs(eta))
+
+  def formatETA(ms: Double): String = {
+    val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
+    val min = sec / 60
+    val hr  = min / 60
+    s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
+  }
 
   private val numberFmt = """^-?(\d[,.]?)+(?:[,.]\d+)?$""".r.pattern
 

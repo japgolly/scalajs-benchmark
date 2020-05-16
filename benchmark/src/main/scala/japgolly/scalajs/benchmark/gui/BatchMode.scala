@@ -26,6 +26,15 @@ object BatchMode {
     @inline def render: VdomElement = Component(this)
   }
 
+  final case class BatchPlan(guiPlans: Vector[GuiPlan]) {
+    val totalBMs: Int =
+      guiPlans.iterator.map(_.totalBMs).sum
+
+    def etaMs(o: EngineOptions): Double =
+      o.estimatedMsPerBM * totalBMs
+
+  }
+
   /** @param suiteId String in the format: { (folderIdx|suiteIdx) ~ ["." ~ (folderIdx|suiteIdx)]* }?
     *                Couldn't be arsed fucking around with Maps, nesting, and emptiness.
     */
@@ -43,7 +52,47 @@ object BatchMode {
 
   final class Backend($: BackendScope[Props, State]) {
 
-    private def renderItems(p: Props, allDisabledBMs: Set[BMKey]): VdomNode = {
+    private def planBatch(p: Props, s: State.Initial): BatchPlan = {
+      val plans = Vector.newBuilder[GuiPlan]
+
+      def go(items: Iterable[Item.NonBatchMode], suiteIdPrefix: String): Unit =
+        for ((item, idx) <- items.iterator.zipWithIndex) {
+          val suiteId = if (suiteIdPrefix.isEmpty) idx.toString else suiteIdPrefix + "." + idx
+          item match {
+            case folder: Item.Folder =>
+              go(folder.children, suiteId)
+            case i: Item.Suite =>
+              def process[P](guiSuite: GuiSuite[P]): Unit = {
+                val bms = guiSuite.suite.bms
+                val keys = bms.indices.iterator.map(BMKey(suiteId, _)).filterNot(s.disabledBMs.contains)
+                if (keys.hasNext) {
+                  val selectedBMs = keys.map(k => bms(k.bmIdx)).toVector
+                  val guiSuite2   = guiSuite.withBMs(selectedBMs)
+                  // plans += GuiPlan(guiSuite2)(params)
+                }
+              }
+              process(i.suite)
+          }
+        }
+
+      BatchPlan(plans.result())
+    }
+
+    private def renderStatus(p: Props, s: State.Initial): VdomNode = {
+      def kv(key: VdomNode, value: VdomNode) =
+        <.tr(<.td(key), <.td(value))
+
+      val batchPlan = planBatch(p, s)
+      val eta = batchPlan.etaMs(p.engineOptions)
+
+      <.table(
+        <.tbody(
+          kv("Benchmarks", batchPlan.totalBMs),
+          kv("ETA", GuiUtil.formatETA(eta)),
+        ))
+    }
+
+    private def renderTreeOfBMs(p: Props, allDisabledBMs: Set[BMKey]): VdomNode = {
       val ul = <.ul(*.menuUL)
 
       def deepKeys(items: Seq[Item.NonBatchMode], suiteId: String): Iterator[BMKey] =
@@ -182,7 +231,10 @@ object BatchMode {
     }
 
     private def renderInitial(p: Props, s: State.Initial): VdomNode = {
-      renderItems(p, s.disabledBMs)
+      <.div(
+        <.section(renderStatus(p, s)),
+        <.section(renderTreeOfBMs(p, s.disabledBMs)),
+      )
     }
 
     def render(p: Props, s: State): VdomNode =

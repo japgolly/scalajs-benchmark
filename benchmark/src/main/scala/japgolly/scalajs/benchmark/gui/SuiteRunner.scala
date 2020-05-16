@@ -107,10 +107,10 @@ object SuiteRunner {
     *         completes when the entire suite of BMs is finished.
     */
   def run[P]($      : StateAccessPure[State[P]],
-             suite  : GuiSuite[P],
-             options: EngineOptions,
-             params : Vector[P]): AsyncCallback[AsyncCallback[SuiteDone[P]]] = {
-    val plan = Plan(suite.suite, params)
+             guiPlan: GuiPlan.WithParam[P],
+             options: EngineOptions): AsyncCallback[AsyncCallback[SuiteDone[P]]] = {
+    import guiPlan.guiSuite
+    val plan = guiPlan.plan
 
     def actuallyStart(startTime: Long, onEnd: Try[SuiteDone[P]] => Callback): CallbackTo[AbortFn] =
       Engine.run(plan, options) {
@@ -136,7 +136,7 @@ object SuiteRunner {
           def modFn(endTime: Long, s: SuiteStatus[P]): SuiteDone[P] = {
             val bm = SuiteStatus.running.getOption(s).map(_.bm).getOrElse(Map.empty)
             val time = FiniteDuration(endTime - startTime, MILLISECONDS)
-            SuiteDone(suite, progress, bm, time)
+            SuiteDone(guiSuite, progress, bm, time)
           }
           for {
             endTime <- AsyncCallback.delay(System.currentTimeMillis())
@@ -152,7 +152,7 @@ object SuiteRunner {
       promise   <- AsyncCallback.promise[SuiteDone[P]].asAsyncCallback
       _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
       abort     <- actuallyStart(startTime, promise._2).asAsyncCallback
-      running   <- AsyncCallback.delay(SuiteRunning[P](suite, Progress.start(plan, options), Map.empty, abort))
+      running   <- AsyncCallback.delay(SuiteRunning[P](guiSuite, Progress.start(plan, options), Map.empty, abort))
       _         <- $.modStateAsync(State.status set running)
     } yield promise._1
   }
@@ -196,9 +196,6 @@ object SuiteRunner {
     // =================================================================================================================
     // Util
 
-    private val guiSuiteBMs =
-      GuiSuite.suite[P] ^|-> Suite.bms
-
     private val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
@@ -228,13 +225,6 @@ object SuiteRunner {
 
     // =================================================================================================================
     // Rendering
-
-    private def formatETA(ms: Double): String = {
-      val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
-      val min = sec / 60
-      val hr  = min / 60
-      s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
-    }
 
     private def renderSuitePending(p: Props, s: State): VdomElement = {
       val ev = StateSnapshot(s.editors)(updateEditorState)
@@ -307,13 +297,14 @@ object SuiteRunner {
           .toVector
 
         for {
-          ps <- params.parseState(ev.value).toOption.filter(_.nonEmpty)
-          bms <- Some(selectedBMs).filter(_.nonEmpty)
+          params <- params.parseState(ev.value).toOption.filter(_.nonEmpty)
+          bms    <- Some(selectedBMs).filter(_.nonEmpty)
         } yield {
-          val s2 = guiSuiteBMs.set(bms)(p.suite)
-          val cb = run($, s2, p.engineOptions, ps).toCallback
-          val eta = p.engineOptions.estimatedMsPerBM * (ps.length * bms.length)
-          (cb, eta)
+          val guiSuite2 = p.suite.withBMs(bms)
+          val guiPlan   = GuiPlan(guiSuite2)(params)
+          val runCB     = run($, guiPlan, p.engineOptions).toCallback
+          val eta       = guiPlan.etaMs(p.engineOptions)
+          (runCB, eta)
         }
       }
 
@@ -324,7 +315,7 @@ object SuiteRunner {
         startData.map(_._2)
 
       def renderETA = {
-        val eta = etaOption.fold("-")(formatETA)
+        val eta = etaOption.fold("-")(GuiUtil.formatETA)
         <.div(*.etaRow, "ETA: ", eta)
       }
 
@@ -360,7 +351,7 @@ object SuiteRunner {
 
       <.div(
         <.div(*.runningRow,
-          <.span("Benchmark running... ETA: ", formatETA(eta)),
+          <.span("Benchmark running... ETA: ", GuiUtil.formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
         renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
@@ -378,7 +369,7 @@ object SuiteRunner {
 
       <.div(
         <.div(*.doneRow,
-          <.span(s"Benchmark completed in ${formatETA(TimeUtil.toMs(r.totalTime))}."),
+          <.span(s"Benchmark completed in ${GuiUtil.formatETA(r.totalTime)}."),
           resetButton),
         renderFormatButtons(p, s),
         renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
