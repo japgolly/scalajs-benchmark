@@ -1,6 +1,5 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.gui.GuiSuite
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
@@ -12,13 +11,23 @@ object TableOfContents {
   sealed trait Item
 
   object Item {
+    sealed trait NonBatchMode extends Item
+
     sealed trait WithPage extends Item {
       val urlPath: String
     }
 
-    final case class Folder   (name: String, children: Seq[Item])   extends Item
-    final case class Suite    (urlPath: String, suite: GuiSuite[_]) extends WithPage
-    final case class BatchMode(urlPath: String)                     extends WithPage
+    final case class Folder(name: String, children: Vector[NonBatchMode]) extends NonBatchMode {
+      val deepBmCount: Int =
+        children.iterator.map {
+          case c: Folder => c.deepBmCount
+          case c: Suite  => c.suite.suite.bms.length
+        }.sum
+    }
+
+    final case class Suite(urlPath: String, suite: GuiSuite[_]) extends WithPage with NonBatchMode
+
+    final case class BatchMode(urlPath: String) extends WithPage
   }
 
   final case class Props(items      : Seq[Item],

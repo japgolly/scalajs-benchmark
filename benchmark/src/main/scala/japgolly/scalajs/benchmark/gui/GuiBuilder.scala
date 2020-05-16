@@ -5,12 +5,11 @@ import japgolly.scalajs.react.extra.router.{BaseUrl, Router => SJRRouter}
 
 object GuiBuilder {
 
-  def folder(name: String, urlFrag: UrlFrag = null)(c: MenuItem*): MenuItem.Folder = {
+  def folder(name: String, urlFrag: UrlFrag = null)(c: MenuItem.NonBatchMode*): MenuItem.Folder = {
     val cs = c.iterator
-      .map[((Int, String), MenuItem)] {
-        case m: MenuItem.Folder    => ((0, m.name), m)
-        case m: MenuItem.Suite     => ((1, m.suite.name), m)
-        case m@ MenuItem.BatchMode => ((2, ""), m)
+      .map[((Int, String), MenuItem.NonBatchMode)] {
+        case m: MenuItem.Folder => ((0, m.name), m)
+        case m: MenuItem.Suite  => ((1, m.suite.name), m)
       }
       .toVector
       .sortBy(_._1)
@@ -18,9 +17,9 @@ object GuiBuilder {
     folderUnsorted(name, urlFrag)(cs: _*)
   }
 
-  def folderUnsorted(name: String, urlFrag: UrlFrag = null)(c: MenuItem*): MenuItem.Folder = {
+  def folderUnsorted(name: String, urlFrag: UrlFrag = null)(c: MenuItem.NonBatchMode*): MenuItem.Folder = {
     val uf = Option(urlFrag).getOrElse(UrlFrag from name)
-    MenuItem.Folder(name, uf, c)
+    MenuItem.Folder(name, uf, c.toVector)
   }
 
   def router(baseUrl      : BaseUrl,
@@ -41,8 +40,9 @@ object GuiBuilder {
   sealed trait MenuItem
 
   object MenuItem {
-    final case class Suite(urlFrag: UrlFrag, suite: GuiSuite[_]) extends MenuItem
-    final case class Folder(name: String, urlFrag: UrlFrag, children: Seq[MenuItem]) extends MenuItem
+    trait NonBatchMode extends MenuItem
+    final case class Suite(urlFrag: UrlFrag, suite: GuiSuite[_]) extends NonBatchMode
+    final case class Folder(name: String, urlFrag: UrlFrag, children: Vector[NonBatchMode]) extends NonBatchMode
     case object BatchMode extends MenuItem
 
     implicit def autoLiftGuiSuite(s: GuiSuite[_]): Suite =
@@ -53,22 +53,33 @@ object GuiBuilder {
   }
 
   private def convertMenuItems(mis: Seq[MenuItem]): Seq[TableOfContents.Item] = {
-    def go(path: String, mi: MenuItem): TableOfContents.Item = {
+    def goNBM(path: String, mi: MenuItem.NonBatchMode): TableOfContents.Item.NonBatchMode = {
       def addFrag(suffix: UrlFrag): String =
         path + suffix.path
 
       mi match {
         case i: MenuItem.Folder =>
           val prefix = addFrag(i.urlFrag) + "/"
-          TableOfContents.Item.Folder(i.name, i.children.map(go(prefix, _)))
+          TableOfContents.Item.Folder(i.name, i.children.map(goNBM(prefix, _)))
 
         case i: MenuItem.Suite =>
           TableOfContents.Item.Suite(addFrag(i.urlFrag), i.suite)
+      }
+    }
+
+    def go(path: String, mi: MenuItem): TableOfContents.Item = {
+      def addFrag(suffix: UrlFrag): String =
+        path + suffix.path
+
+      mi match {
+        case i: MenuItem.NonBatchMode =>
+          goNBM(path, i)
 
         case MenuItem.BatchMode =>
           TableOfContents.Item.BatchMode(addFrag(UrlFrag.from("batch-mode"))) // TODO ensure unique
       }
     }
+
     mis map (go("#/", _))
   }
 }

@@ -1,7 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.engine.EngineOptions
-import japgolly.scalajs.benchmark.gui.{GuiOptions, LayoutConfig}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import org.scalajs.dom
@@ -43,7 +42,8 @@ object Router {
             q | staticRoute(path, Page.Suite(i)) ~> render(vdom)
 
           case (q, (path, i: Item.BatchMode)) =>
-            val props = BatchMode.Props()
+            val is = items.collect { case x: Item.NonBatchMode => x }
+            val props = BatchMode.Props(is, engineOptions, guiOptions)
             q | staticRoute(path, Page.BatchMode(i)) ~> render(props.render)
         }
 

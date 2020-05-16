@@ -6,6 +6,8 @@ import scalacss.ScalaCssReact._
 object Styles extends StyleSheet.Inline {
   import dsl._
 
+  val enabled = Domain.boolean.map(Enabled.when)
+
 //  val cssReset = style(scalacss.ext.CssReset.normaliseCss)
 
   object Suite {
@@ -228,7 +230,33 @@ object Styles extends StyleSheet.Inline {
 
   // ===================================================================================================================
 
+  object BatchMode {
+
+    private val menuSharedUL = styleS(
+      lineHeight(1.5 em),
+      listStyleType := "none",
+    )
+
+    val menuRootUL = style(
+      menuSharedUL,
+      paddingInlineStart(`0`),
+    )
+
+    val menuUL = style(
+      menuSharedUL,
+      paddingInlineStart(3.6 ex),
+    )
+
+    val menuLI = styleF(enabled)(e => styleS(
+      mixinIf(e is Disabled)(color(c"#bbb"))
+    ))
+
+  }
+
+  // ===================================================================================================================
+
   initInnerObjects(
+    BatchMode.menuUL,
     Menu.topNav,
     TextOutput.pre,
     Suite.resultTable)
