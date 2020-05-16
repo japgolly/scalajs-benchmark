@@ -86,17 +86,11 @@ object BatchMode {
             $.setState(State.Initial(newDisabledBMs))
           }
 
-//        val soleSelect = Callback.byName {
-//          val newDisabledBMs = allDeepKeys.filterNot(isChildKey).toSet
-//          $.setState(State.Initial(newDisabledBMs))
-//        }
-
         val liStyle =
           *.menuLI(Disabled.when(triState == TriStateCheckbox.Unchecked))
 
         val label =
           <.label(
-//            ^.onDoubleClick --> soleSelect,
             TriStateCheckbox.Props(triState, setNextState).render)
 
         (liStyle, label)
@@ -157,14 +151,9 @@ object BatchMode {
             }
           $.setState(State.Initial(newDisabledBMs))
         }
-//        val soleSelect = Callback.byName {
-//          val newDisabledBMs = allDeepKeys.toSet - key
-//          $.setState(State.Initial(newDisabledBMs))
-//        }
         TagMod(
           *.menuLI(enabled),
           <.label(
-//            ^.onDoubleClick --> soleSelect,
             <.input.checkbox(
               ^.checked := enabled.is(Enabled),
               ^.onChange --> toggle,
