@@ -7,19 +7,22 @@ import Styles.{BatchMode => *}
 
 object BatchModeControls {
 
-  final case class Props(completedBMs: Int,
-                         bms         : Int,
-                         elapsedMs   : Double,
-                         etaMs       : Double,
-                         start       : Option[Option[Reusable[Callback]]],
-                         abort       : Option[Reusable[Callback]],
-                         reset       : Option[Reusable[Callback]],
+  final case class Props(completedBMs : Int,
+                         bms          : Int,
+                         elapsedMs    : Double,
+                         etaMs        : Double,
+                         formats      : Map[FormatResults.Text, Enabled],
+                         updateFormats: Option[Map[FormatResults.Text, Enabled] ~=> Callback],
+                         start        : Option[Option[Reusable[Callback]]],
+                         abort        : Option[Reusable[Callback]],
+                         reset        : Option[Reusable[Callback]],
                         ) {
     @inline def render: VdomElement = Component(this)
   }
 
   implicit val reusabilityProps: Reusability[Props] = {
     implicit val d = Reusability.double(500)
+    implicit val f: Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
     Reusability.byRef || Reusability.derive
   }
 
@@ -48,6 +51,23 @@ object BatchModeControls {
         kv("ETA", GuiUtil.formatETA(p.etaMs))
       }
 
+    val formats =
+      kv("Save results as", {
+        val array = p.formats.toArray
+        array.sortInPlaceBy(_._1.label)
+        <.div(array.toTagMod { case (fmt, enabled) =>
+          <.div(
+            <.label(
+              *.controlFormat,
+              <.input.checkbox(
+                ^.checked := enabled.is(Enabled),
+                ^.disabled := p.updateFormats.isEmpty,
+                ^.onChange -->? p.updateFormats.map(_ (p.formats.updated(fmt, !enabled))),
+              ),
+              fmt.label))
+        })
+      })
+
     val startButton =
       p.start.whenDefined { oc =>
         button(
@@ -71,6 +91,7 @@ object BatchModeControls {
       <.h3("Controls"),
       <.table(*.controlTable,
         <.tbody(
+          formats,
           kv("Benchmarks", p.bms),
           completed,
           elapsed,

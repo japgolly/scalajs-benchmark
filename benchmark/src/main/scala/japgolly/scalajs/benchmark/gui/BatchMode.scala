@@ -29,10 +29,13 @@ object BatchMode {
   sealed trait State
   object State {
 
-    final case class Initial(items: Vector[Item[Unit, Unit]]) extends State
+    @Lenses
+    final case class Initial(items  : Vector[Item[Unit, Unit]],
+                             formats: Map[FormatResults.Text, Enabled]) extends State
 
     @Lenses
     final case class Running(items     : Vector[Item[SuiteState, Int]],
+                             formats   : Map[FormatResults.Text, Enabled],
                              startedAt : js.Date,
                              startedMs : Double,
                              batchPlans: BatchPlans,
@@ -64,13 +67,22 @@ object BatchMode {
     type SuiteState = Option[SuiteRunner.State[_]]
 
     def init(p: Props): State =
-      Initial(Item.fromTocItems(p.items))
+      init(p, p.guiOptions.formatResultsBatch)
+
+    def init(p: Props, formats: Map[FormatResults.Text, Enabled]): State =
+      Initial(Item.fromTocItems(p.items), formats)
 
     val unsafeRunningLens: Lens[State, State.Running] =
       GuiUtil.unsafeNarrowLens
 
     val unsafeRunningItemsLens =
       unsafeRunningLens ^|-> State.Running.items
+
+    val initial: Prism[State, Initial] =
+      GenPrism[State, Initial]
+
+    val initialItems: Optional[State, Vector[Item[Unit, Unit]]] =
+      initial ^|-> Initial.items
 
     val running: Prism[State, Running] =
       GenPrism[State, Running]
@@ -95,12 +107,18 @@ object BatchMode {
       }
   }
 
-  final case class BatchPlans(plans: Vector[BatchPlan], runnableItems: Vector[Item[State.SuiteState, Int]]) {
+  final case class BatchPlans(plans        : Vector[BatchPlan],
+                              runnableItems: Vector[Item[State.SuiteState, Int]],
+                              formats      : Map[FormatResults.Text, Enabled]) {
+
+    val enabledFormats: Vector[FormatResults.Text] =
+      formats.iterator.filter(_._2 is Enabled).map(_._1).toVector
 
     val newState: CallbackTo[State.Running] =
       CallbackTo {
         State.Running(
           items      = runnableItems,
+          formats    = formats,
           startedAt  = new js.Date,
           startedMs  = System.currentTimeMillis().toDouble,
           batchPlans = this,
@@ -109,8 +127,8 @@ object BatchMode {
         )
       }
 
-    def isEmpty =
-      totalBMs == 0
+    def isEmpty: Boolean =
+      totalBMs == 0 || enabledFormats.isEmpty
 
     val totalBMs: Int =
       plans.iterator.map(_.guiPlan.totalBMs).sum
@@ -154,6 +172,7 @@ object BatchMode {
       Callback.byName(startA($).toCallback)
   }
 
+  private implicit val reusabilityFormats: Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
   private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]] = Reusability.byRef
   implicit val reusabilityBatchPlan: Reusability[BatchPlan] = Reusability.byRef
   implicit val reusabilityBatchPlans: Reusability[BatchPlans] = Reusability.byRef
@@ -229,11 +248,20 @@ object BatchMode {
         }.toVector
 
       val item2s = loop(initialState.items, $.zoomStateL(State.unsafeRunningItemsLens))
-      BatchPlans(plans.result(), item2s)
+      BatchPlans(plans.result(), item2s, initialState.formats)
     }
 
-    private val initialSetState =
-      StateSnapshot.withReuse.prepare[Vector[Item[Unit, Unit]]]((os, cb) => $.setStateOption(os.map(State.Initial), cb))
+    private val setInitialItems =
+      StateSnapshot.withReuse.prepare[Vector[Item[Unit, Unit]]]((oi, cb) =>
+        $.modStateOption(s => oi.flatMap(State.initialItems.setOption(_)(s)), cb))
+
+    private val setInitialFormats: Map[FormatResults.Text, Enabled] ~=> Callback =
+      Reusable.byRef { f =>
+        $.modStateOption({
+          case s: State.Initial => Some(s.copy(formats = f))
+          case _                => None
+        })
+      }
 
     private val initialRenderItem: Item[Unit, Unit] ~=> VdomNode =
       Reusable.byRef(_.name)
@@ -318,17 +346,19 @@ object BatchMode {
       def startCB    = Reusable.implicitly(s).withLazyValue(batchPlans.start($))
 
       val controls = BatchModeControls.Props(
-        completedBMs = 0,
-        bms          = batchPlans.totalBMs,
-        elapsedMs    = 0,
-        etaMs        = batchPlans.totalBMs * p.engineOptions.estimatedMsPerBM,
-        start        = Some(if (batchPlans.isEmpty) None else Some(startCB)),
-        abort        = None,
-        reset        = None,
+        completedBMs  = 0,
+        bms           = batchPlans.totalBMs,
+        elapsedMs     = 0,
+        etaMs         = batchPlans.totalBMs * p.engineOptions.estimatedMsPerBM,
+        formats       = s.formats,
+        updateFormats = Some(setInitialFormats),
+        start         = Some(if (batchPlans.isEmpty) None else Some(startCB)),
+        abort         = None,
+        reset         = None,
       )
 
       val tree = BatchModeTree.Args(
-        state          = initialSetState(s.items),
+        state          = setInitialItems(s.items),
         renderItem     = initialRenderItem,
         renderBM       = initialRenderBM,
         enabled        = Enabled,
@@ -358,13 +388,15 @@ object BatchMode {
                   Callback.traverseOption(s.abortFn)(_.callback)))
 
             BatchModeControls.Props(
-              completedBMs = s.completedBMs,
-              bms          = batchPlans.totalBMs,
-              elapsedMs    = elapsedMs,
-              etaMs        = etaMs,
-              start        = None,
-              abort        = Some(abortCB),
-              reset        = None,
+              completedBMs  = s.completedBMs,
+              bms           = batchPlans.totalBMs,
+              elapsedMs     = elapsedMs,
+              etaMs         = etaMs,
+              formats       = s.formats,
+              updateFormats = None,
+              start         = None,
+              abort         = Some(abortCB),
+              reset         = None,
             )
 
           case RunningStatus.Aborted
@@ -373,17 +405,19 @@ object BatchMode {
             val reset =
               // No other change can happen in this state, no need for Reusability
               Reusable.callbackByRef {
-                Callback.byName($.setState(State.init(p)))
+                Callback.byName($.setState(State.init(p, s.formats)))
               }
 
             BatchModeControls.Props(
-              completedBMs = s.completedBMs,
-              bms          = batchPlans.totalBMs,
-              elapsedMs    = elapsedMs,
-              etaMs        = etaMs,
-              start        = None,
-              abort        = None,
-              reset        = Some(reset),
+              completedBMs  = s.completedBMs,
+              bms           = batchPlans.totalBMs,
+              elapsedMs     = elapsedMs,
+              etaMs         = etaMs,
+              formats       = s.formats,
+              updateFormats = None,
+              start         = None,
+              abort         = None,
+              reset         = Some(reset),
             )
         }
 

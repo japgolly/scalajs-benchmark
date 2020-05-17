@@ -4,8 +4,10 @@ import japgolly.scalajs.benchmark.Suite
 import japgolly.scalajs.benchmark.engine.Progress
 import scala.scalajs.LinkingInfo
 
+// TODO Rename these fields and classes
 final case class GuiOptions(formatResultsDefault    : FormatResults,
                             formatResults           : Seq[FormatResults],
+                            formatResultsBatch      : Map[FormatResults.Text, Enabled],
                             resultFilenameWithoutExt: (Suite[_], Progress[_]) => String,
                             allowBatchMode          : Boolean,
                            ) {
@@ -21,6 +23,7 @@ object GuiOptions {
     apply(
       formatResultsDefault     = FormatResults.Table,
       formatResults            = FormatResults.builtIn,
+      formatResultsBatch       = FormatResults.builtInBatch,
       resultFilenameWithoutExt = defaultFilename,
       allowBatchMode           = true,
     )

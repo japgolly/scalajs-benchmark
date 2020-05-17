@@ -297,6 +297,9 @@ object Styles extends StyleSheet.Inline {
     def controlKey   = Suite.settingsTableHeader
     def controlValue = Suite.settingsTableData
 
+    val controlFormat = style(
+      lineHeight(1.5 em))
+
     val controlButtonRow = style(
       textAlign.center)
 
