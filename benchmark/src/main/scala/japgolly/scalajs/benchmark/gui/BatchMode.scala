@@ -1,15 +1,16 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.Benchmark
 import japgolly.scalajs.benchmark.engine.{AbortFn, EngineOptions}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
-import scalacss.ScalaCssReact._
-import Styles.{BatchMode => *}
-import japgolly.scalajs.benchmark.Benchmark
 import monocle.{Lens, Optional, Prism}
 import monocle.macros.{GenPrism, Lenses}
+import scalacss.ScalaCssReact._
+import Styles.{BatchMode => *}
+import japgolly.scalajs.benchmark.gui.BatchMode.State.RunningStatus
 
 object BatchMode {
   import BatchModeTree.Item
@@ -282,21 +283,17 @@ object BatchMode {
       BatchPlans(plans.result(), item2s)
     }
 
-    private def renderStatus(p: Props, batchPlans: BatchPlans): VdomNode = {
-      def kv(key: VdomNode, value: VdomNode) =
-        <.tr(<.td(key), <.td(value))
-
-      val eta = batchPlans.etaMs(p.engineOptions)
-
-      <.table(
-        <.tbody(
-          kv("Benchmarks", batchPlans.totalBMs),
-          kv("ETA", GuiUtil.formatETA(eta)),
-        ))
-    }
-
     private def renderInitial(p: Props, s: State.Initial): VdomNode = {
       val batchPlans = planBatches(s, p.engineOptions, p.guiOptions)
+      def startCB    = Reusable.implicitly(s).withLazyValue(batchPlans.start($))
+
+      val controls = BatchModeControls.Props(
+        bms   = batchPlans.totalBMs,
+        etaMs = batchPlans.etaMs(p.engineOptions),
+        start = Some(if (batchPlans.isEmpty) None else Some(startCB)),
+        abort = None,
+        reset = None,
+      )
 
       val tree = BatchModeTree.Args(
         state          = initialSetState(s.items),
@@ -306,19 +303,49 @@ object BatchMode {
         showCheckboxes = true,
       )
 
-      val start =
-        <.button(
-          ^.disabled := batchPlans.isEmpty,
-          ^.onClick --> batchPlans.start($),
-          "Start")
-
-      <.div(
-        <.section(renderStatus(p, batchPlans), start),
-        <.section(tree.render),
-      )
+      <.div(*.root,
+        controls.render,
+        tree.render)
     }
 
     private def renderRunning(p: Props, s: State.Running): VdomNode = {
+      import s.batchPlans
+
+      val controls: BatchModeControls.Props =
+        s.status match {
+          case RunningStatus.Running =>
+
+            val abortCB =
+              Reusable.implicitly(s.abortFn).withLazyValue(
+                $.modState(State.runningStatus.set(State.RunningStatus.Aborted),
+                  Callback.traverseOption(s.abortFn)(_.callback)))
+
+            BatchModeControls.Props(
+              bms   = batchPlans.totalBMs,
+              etaMs = batchPlans.etaMs(p.engineOptions),
+              start = None,
+              abort = Some(abortCB),
+              reset = None,
+            )
+
+          case RunningStatus.Aborted
+             | RunningStatus.Complete =>
+
+            val reset =
+              // No other change can happen in this state, no need for Reusability
+              Reusable.callbackByRef {
+                Callback.byName($.setState(State.init(p)))
+              }
+
+            BatchModeControls.Props(
+              bms   = batchPlans.totalBMs,
+              etaMs = batchPlans.etaMs(p.engineOptions),
+              start = None,
+              abort = None,
+              reset = Some(reset),
+            )
+        }
+
       val tree = BatchModeTree.Args(
         state          = StateSnapshot.withReuse(s.items).readOnly,
         renderItem     = runningRenderItem,
@@ -327,15 +354,9 @@ object BatchMode {
         showCheckboxes = false,
       )
 
-      val abort =
-        <.button(
-          ^.onClick --> $.modState(State.runningStatus.set(State.RunningStatus.Aborted), Callback.traverseOption(s.abortFn)(_.callback)),
-          "Abort")
-
-      <.div(
-        <.section(renderStatus(p, s.batchPlans), abort),
-        <.section(tree.render),
-      )
+      <.div(*.root,
+        controls.render,
+        tree.render)
     }
 
     def render(p: Props, s: State): VdomNode =

@@ -282,22 +282,38 @@ object Styles extends StyleSheet.Inline {
 
     private val menuSharedUL = styleS(
       lineHeight(1.5 em),
-      listStyleType := "none",
-    )
+      listStyleType := "none")
+
+    val root = style(
+      display.flex)
+
+    val controlsSection = style(
+      paddingRight(4.8 rem))
+
+    val controlTable = style(
+      borderCollapse.collapse,
+      marginBottom(2 em))
+
+    def controlKey   = Suite.settingsTableHeader
+    def controlValue = Suite.settingsTableData
+
+    val controlButtonRow = style(
+      textAlign.center)
+
+    val controlButton = style(
+      fontSize(120 %%),
+      padding(0.4 em, 2 ex))
 
     val menuRootUL = style(
       menuSharedUL,
-      paddingInlineStart(`0`),
-    )
+      paddingInlineStart(`0`))
 
     val menuUL = style(
       menuSharedUL,
-      paddingInlineStart(3.6 ex),
-    )
+      paddingInlineStart(3.6 ex))
 
     val menuLI = styleF(enabled)(e => styleS(
-      mixinIf(e is Disabled)(color(c"#bbb"))
-    ))
+      mixinIf(e is Disabled)(color(c"#bbb"))))
 
     val runningItem = styleF(Status.domain)(s => styleS(
       display.inlineBlock,
@@ -315,8 +331,9 @@ object Styles extends StyleSheet.Inline {
   // ===================================================================================================================
 
   initInnerObjects(
+    Suite.resultTable,
     BatchMode.menuUL,
     Menu.topNav,
     TextOutput.pre,
-    Suite.resultTable)
+  )
 }

@@ -212,9 +212,11 @@ object BatchModeTree {
         child(ss.unsafeWiden[Item[A, B]])
       }
 
-      <.ul(
-        *.menuRootUL,
-        <.li(all(p.state)))
+      <.section(
+        <.h3("Benchmarks"),
+        <.ul(
+          *.menuRootUL,
+          <.li(all(p.state))))
     }
   }
 
