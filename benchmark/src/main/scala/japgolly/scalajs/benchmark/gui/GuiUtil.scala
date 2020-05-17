@@ -1,7 +1,9 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.engine.TimeUtil
+import monocle.Lens
 import scala.concurrent.duration.FiniteDuration
+import scala.reflect.ClassTag
 import scala.scalajs.js
 import scala.scalajs.js.|
 
@@ -95,4 +97,13 @@ object GuiUtil {
 
   def removeTrailingZeros(str: String): String =
     str.replaceFirst("0+$", "").replaceFirst("\\.$", "")
+
+  def vectorIndex[A](idx: Int): Lens[Vector[A], A] =
+    Lens[Vector[A], A](_(idx))(a => _.patch(idx, a :: Nil, 1))
+
+  def unsafeNarrowLens[A, B <: A: ClassTag]: Lens[A, B] =
+    Lens[A, B]({
+      case b: B => b
+      case a => throw new RuntimeException("Invalid subtype: " + a)
+    })(b => _ => b)
 }

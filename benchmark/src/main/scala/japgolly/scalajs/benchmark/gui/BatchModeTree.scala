@@ -15,7 +15,7 @@ import Styles.{BatchMode => *}
 
 object BatchModeTree {
 
-  sealed trait Item[A] {
+  sealed trait Item[A, B] {
     def name: String
     def bmCount: Int
     def enabledBMs: Int
@@ -24,52 +24,52 @@ object BatchModeTree {
   object Item {
 
     @Lenses
-    final case class Folder[A](name: String, children: Vector[Item[A]]) extends Item[A] {
+    final case class Folder[A, B](name: String, children: Vector[Item[A, B]]) extends Item[A, B] {
       override val bmCount    = children.iterator.map(_.bmCount).sum
       override val enabledBMs = children.iterator.map(_.enabledBMs).sum
     }
 
     @Lenses
-    final case class Suite[A](suite: GuiSuite[_], bms: Vector[BM[A]]) extends Item[A] {
+    final case class Suite[A, B](suite: GuiSuite[_], bms: Vector[BM[B]], value: A) extends Item[A, B] {
       override def name       = suite.name
       override def bmCount    = bms.length
       override val enabledBMs = bms.count(_.enabled is Enabled)
     }
 
     @Lenses
-    final case class BM[A](enabled: Enabled, value: A)
+    final case class BM[B](enabled: Enabled, value: B)
 
-    implicit def reusabilityB[A: Reusability]: Reusability[BM    [A]] = Reusability.derive
-    implicit def reusabilityS[A: Reusability]: Reusability[Suite [A]] = Reusability.derive
-    implicit def reusabilityF[A: Reusability]: Reusability[Folder[A]] = Reusability.derive
-    implicit def reusability [A: Reusability]: Reusability[Item  [A]] = {
+    implicit def reusabilityB[                B: Reusability]: Reusability[BM    [   B]] = Reusability.derive
+    implicit def reusabilityS[A: Reusability, B: Reusability]: Reusability[Suite [A, B]] = Reusability.derive
+    implicit def reusabilityF[A: Reusability, B: Reusability]: Reusability[Folder[A, B]] = Reusability.derive
+    implicit def reusability [A: Reusability, B: Reusability]: Reusability[Item  [A, B]] = {
       // TODO https://github.com/japgolly/scalajs-react/issues/717
-      Reusability.byRef[Item[A]] || Reusability[Item[A]]((x, y) => x match {
-        case i: Folder[A] => y match {
-          case j: Folder[A] => i ~=~ j
-          case _            => false
+      Reusability.byRef[Item[A, B]] || Reusability[Item[A, B]]((x, y) => x match {
+        case i: Folder[A, B] => y match {
+          case j: Folder[A, B] => i ~=~ j
+          case _               => false
         }
-        case i: Suite[A] => y match {
-          case j: Suite[A] => i ~=~ j
-          case _           => false
+        case i: Suite[A, B] => y match {
+          case j: Suite[A, B] => i ~=~ j
+          case _              => false
         }
       })
     }
 
-    def bmsT[A]: Traversal[Item[A], BM[A]] =
-      new Traversal[Item[A], BM[A]] {
-        override def modifyF[F[_]](f: BM[A] => F[BM[A]])(s: Item[A])(implicit F: Applicative[F]): F[Item[A]] =
+    def bmsT[A, B]: Traversal[Item[A, B], BM[B]] =
+      new Traversal[Item[A, B], BM[B]] {
+        override def modifyF[F[_]](f: BM[B] => F[BM[B]])(s: Item[A, B])(implicit F: Applicative[F]): F[Item[A, B]] =
           s match {
-            case i: Folder[A] => i.children.traverse(modifyF(f)).map(n => i.copy(children = n))
-            case i: Suite [A] => i.bms.traverse(f).map(n => i.copy(bms = n))
+            case i: Folder[A, B] => i.children.traverse(modifyF(f)).map(n => i.copy(children = n))
+            case i: Suite [A, B] => i.bms.traverse(f).map(n => i.copy(bms = n))
           }
       }
 
-    private val _enabledT: Traversal[Item[Any], Enabled] =
-      bmsT[Any] ^|-> BM.enabled[Any]
+    private val _enabledT: Traversal[Item[Any, Any], Enabled] =
+      bmsT[Any, Any] ^|-> BM.enabled[Any]
 
-    def enabledT[A]: Traversal[Item[A], Enabled] =
-      _enabledT.asInstanceOf[Traversal[Item[A], Enabled]]
+    def enabledT[A, B]: Traversal[Item[A, B], Enabled] =
+      _enabledT.asInstanceOf[Traversal[Item[A, B], Enabled]]
 
     private val bmUnitEnabled = BM(Enabled, ())
     private val bmUnitDisabled = BM(Disabled, ())
@@ -78,55 +78,52 @@ object BatchModeTree {
       case Disabled => bmUnitDisabled
     }
 
-    def fromTocItems(items: Seq[TableOfContents.Item.NonBatchMode]): Vector[Item[Unit]] =
+    def fromTocItems(items: Seq[TableOfContents.Item.NonBatchMode]): Vector[Item[Unit, Unit]] =
       items.iterator.map {
         case i: TableOfContents.Item.Folder => Folder(i.name, fromTocItems(i.children))
-        case i: TableOfContents.Item.Suite  => Suite(i.suite, i.suite.suite.bms.map(bm => bmUnit(Disabled.when(bm.isDisabledByDefault))))
+        case i: TableOfContents.Item.Suite  => Suite(i.suite, i.suite.suite.bms.map(bm => bmUnit(Disabled.when(bm.isDisabledByDefault))), ())
       }.toVector
   }
 
   // ===================================================================================================================
 
-  final case class RenderBM[A](suiteItem: Item.Suite[A], idx: Int) {
+  final case class RenderBM[A, B](suiteItem: Item.Suite[A, B], idx: Int) {
     def bmItem   = suiteItem.bms(idx)
     def guiSuite = suiteItem.suite
     def bm       = guiSuite.suite.bms(idx)
     def name     = bm.name
   }
 
-  final case class Args[A](state     : StateSnapshot[Vector[Item[A]]],
-                           renderItem: Item[A] ~=> VdomNode,
-                           renderBM  : RenderBM[A] ~=> VdomNode,
-                           enabled   : Enabled) {
+  final case class Args[A, B](state     : StateSnapshot[Vector[Item[A, B]]],
+                              renderItem: Item[A, B] ~=> VdomNode,
+                              renderBM  : RenderBM[A, B] ~=> VdomNode,
+                              enabled   : Enabled) {
 
-    def toProps(implicit r: Reusability[Args[A]]): Props =
+    def toProps(implicit r: Reusability[Args[A, B]]): Props =
       Reusable.implicitly(this)
 
-    def render(implicit r: Reusability[Args[A]]): VdomElement =
+    def render(implicit r: Reusability[Args[A, B]]): VdomElement =
       Component(toProps)
   }
 
   object Args {
-    implicit def reusability[A: Reusability]: Reusability[Args[A]] =
+    implicit def reusability[A: Reusability, B: Reusability]: Reusability[Args[A, B]] =
       Reusability.byRef || Reusability.derive
   }
 
-  type Props = Reusable[Args[_]]
+  type Props = Reusable[Args[_, _]]
 
   // ===================================================================================================================
 
   final class Backend {
     private val ul = <.ul(*.menuUL)
 
-    private def vectorIndex[A](idx: Int): Lens[Vector[A], A] =
-      Lens[Vector[A], A](_(idx))(a => _.patch(idx, a :: Nil, 1))
-
     def render(p: Props): VdomNode =
       renderA(p.value)
 
-    private def renderA[A](p: Args[A]): VdomNode = {
+    private def renderA[A, B](p: Args[A, B]): VdomNode = {
 
-      def triStateCheckbox(ss: StateSnapshot[Item[A]]) = {
+      def triStateCheckbox(ss: StateSnapshot[Item[A, B]]) = {
         val item = ss.value
 
         val triState =
@@ -144,7 +141,7 @@ object BatchModeTree {
                 case TriStateCheckbox.Checked   => Enabled
                 case TriStateCheckbox.Unchecked => Disabled
               }
-            ss.modState(Item.enabledT[A].set(nextState)).when_(p.enabled is Enabled)
+            ss.modState(Item.enabledT[A, B].set(nextState)).when_(p.enabled is Enabled)
           }
 
         val liStyle =
@@ -157,27 +154,27 @@ object BatchModeTree {
         (liStyle, label)
       }
 
-      def children(ss: StateSnapshot[Vector[Item[A]]]): VdomTag =
+      def children(ss: StateSnapshot[Vector[Item[A, B]]]): VdomTag =
         ul(
-          ss.value.iterator.zipWithIndex.toVdomArray { case (item, idx) =>
+          ss.value.indices.toVdomArray { idx =>
             <.li(
               ^.key := idx,
-              child(ss.zoomStateL(vectorIndex(idx))))
+              child(ss.zoomStateL(GuiUtil.vectorIndex(idx))))
           }
         )
 
-      def child(ss: StateSnapshot[Item[A]]): TagMod = {
+      def child(ss: StateSnapshot[Item[A, B]]): TagMod = {
         val (liStyle, label) = triStateCheckbox(ss)
         ss.value match {
-          case folder: Item.Folder[A] =>
-            val ss2 = ss.narrowOption[Item.Folder[A]].get
+          case folder: Item.Folder[A, B] =>
+            val ss2 = ss.narrowOption[Item.Folder[A, B]].get
             TagMod(
               liStyle,
               <.div(label(folder.name)),
               children(ss2.zoomStateL(Item.Folder.children)))
 
-          case i: Item.Suite[A] =>
-            val ss2 = ss.narrowOption[Item.Suite[A]].get
+          case i: Item.Suite[A, B] =>
+            val ss2 = ss.narrowOption[Item.Suite[A, B]].get
             val suite = i.suite.suite
             val isValid = i.suite.defaultParams.isRight
             TagMod(
@@ -193,11 +190,11 @@ object BatchModeTree {
         }
       }
 
-      def benchmark(ss: StateSnapshot[Item.Suite[A]], idx: Int, isValid: Boolean): TagMod = {
+      def benchmark(ss: StateSnapshot[Item.Suite[A, B]], idx: Int, isValid: Boolean): TagMod = {
         val bm = ss.value.bms(idx)
         val enabled = bm.enabled && Enabled.when(isValid)
         val editing = p.enabled && Enabled.when(isValid)
-        def lens = Item.Suite.bms[A] ^|-> vectorIndex(idx) ^|-> Item.BM.enabled
+        def lens = Item.Suite.bms[A, B] ^|-> GuiUtil.vectorIndex(idx) ^|-> Item.BM.enabled
         TagMod(
           *.menuLI(enabled),
           <.label(
@@ -209,9 +206,9 @@ object BatchModeTree {
             p.renderBM(RenderBM(ss.value, idx))))
       }
 
-      def all(ss1: StateSnapshot[Vector[Item[A]]]): TagMod = {
+      def all(ss1: StateSnapshot[Vector[Item[A, B]]]): TagMod = {
         val ss = ss1.zoomState(Item.Folder("All", _))(f2 => _ => f2.children)
-        child(ss.unsafeWiden[Item[A]])
+        child(ss.unsafeWiden[Item[A, B]])
       }
 
       <.ul(

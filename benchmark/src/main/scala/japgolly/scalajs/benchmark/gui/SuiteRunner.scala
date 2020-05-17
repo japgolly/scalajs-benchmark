@@ -106,12 +106,11 @@ object SuiteRunner {
 
   // ===================================================================================================================
 
-  /** @return An [[AsyncCallback]] that completes when BMs actually start, and returns a new [[AsyncCallback]] that
-    *         completes when the entire suite of BMs is finished.
-    */
+  final case class RunCtrls[P](abortFn: AbortFn, onCompletion: AsyncCallback[SuiteDone[P]])
+
   def run(guiPlan: GuiPlan)
          ($      : StateAccessPure[State[guiPlan.Param]],
-          options: EngineOptions): AsyncCallback[AsyncCallback[SuiteDone[guiPlan.Param]]] = {
+          options: EngineOptions): AsyncCallback[RunCtrls[guiPlan.Param]] = {
     type P = guiPlan.Param
     import guiPlan.guiSuite
     val plan = guiPlan.plan
@@ -158,7 +157,7 @@ object SuiteRunner {
       abort     <- actuallyStart(startTime, promise._2).asAsyncCallback
       running   <- AsyncCallback.delay(SuiteRunning[P](guiSuite, Progress.start(plan, options), Map.empty, abort))
       _         <- $.modStateAsync(State.status set running)
-    } yield promise._1
+    } yield RunCtrls(abort, promise._1)
   }
 
   // ===================================================================================================================
