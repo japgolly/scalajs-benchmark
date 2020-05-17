@@ -97,7 +97,7 @@ object SuiteRunner {
 
     def runningAt[P](k: PlanKey[P]): Lens[SuiteRunning[P], BMStatus] =
       Lens[SuiteRunning[P], BMStatus](
-        _.bm.getOrElse(k, BMPending))(
+        _.bm.getOrElse(k, BMStatus.Pending))(
         s => r => r.copy(bm = r.bm.updated(k, s)))
 
     def at[P](k: PlanKey[P]): Optional[SuiteStatus[P], BMStatus] =
@@ -120,13 +120,13 @@ object SuiteRunner {
       Engine.run(plan, options) {
 
         case BenchmarkPreparing(_, k) =>
-          $.modStateAsync(State.at(k) set BMPreparing)
+          $.modStateAsync(State.at(k) set BMStatus.Preparing)
 
         case BenchmarkRunning(_, k) =>
-          $.modStateAsync(State.at(k) set BMRunning)
+          $.modStateAsync(State.at(k) set BMStatus.Running)
 
         case BenchmarkFinished(p, k, r) =>
-          val setResult = State.at(k) set BMDone(r)
+          val setResult = State.at(k) set BMStatus.Done(r)
           val setProgress = State.status[P].modify {
             case sr: SuiteRunning[P] => sr.copy(progess = p)
             case x                   => x
@@ -219,7 +219,7 @@ object SuiteRunner {
         keys
           .iterator
           .flatMap(m.get)
-          .collect { case BMDone(Right(s)) => s.average }
+          .collect { case BMStatus.Done(Right(s)) => s.average }
           .reduceOption(_.min(_))
           .getOrElse(Duration.Zero)
 
@@ -419,12 +419,12 @@ object SuiteRunner {
         .toVector
 
       val dataPoints = keys.iterator.map[Chart.Value](k =>
-        m.getOrElse(k, BMPending) match {
-          case BMDone(Right(stats)) => fmt.score.getDouble(stats.score) getOrElse 0
-          case BMDone(Left(_))
-             | BMPending
-             | BMRunning
-             | BMPreparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
+        m.getOrElse(k, BMStatus.Pending) match {
+          case BMStatus.Done(Right(stats)) => fmt.score.getDouble(stats.score) getOrElse 0
+          case BMStatus.Done(Left(_))
+             | BMStatus.Pending
+             | BMStatus.Running
+             | BMStatus.Preparing => -0.1 // 0 puts a thick bar above the axis which looks like a small result
         }
       ).take(bmsToShow).toVector
 

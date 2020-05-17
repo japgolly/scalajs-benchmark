@@ -69,16 +69,16 @@ object FormatResults {
 
       def rows =
         keys.map { k =>
-          val status = results.getOrElse(k, BMPending)
+          val status = results.getOrElse(k, BMStatus.Pending)
           var hs = Vector.empty[VdomTag]
           hs :+= resultTD(k.bm.name)
           hs ++= suite.params.renderParams(k.param).map(resultTD(_))
           hs ++= (status match {
-            case BMPending        => whenBMPending
-            case BMPreparing      => whenBMPreparing
-            case BMRunning        => whenBMRunning
+            case BMStatus.Pending        => whenBMPending
+            case BMStatus.Preparing      => whenBMPreparing
+            case BMStatus.Running        => whenBMRunning
 
-            case BMDone(Left(err)) =>
+            case BMStatus.Done(Left(err)) =>
               val showError = Callback {
                 err.printStackTrace()
               }
@@ -91,7 +91,7 @@ object FormatResults {
                   ^.cursor.pointer,
                   ^.onDoubleClick --> showError))
 
-            case BMDone(Right(stats)) =>
+            case BMStatus.Done(Right(stats)) =>
               runsCell(stats.samples) +:
                 resultFmts.flatMap(f => Vector(
                   resultTD(f.score render stats.score),
@@ -151,17 +151,17 @@ object FormatResults {
 
     for (k <- keys) {
       var cells = Vector.empty[String]
-      val status = results.getOrElse(k, BMPending)
+      val status = results.getOrElse(k, BMStatus.Pending)
 
       cells :+= k.bm.name
       cells ++= suite.params.renderParamsToText(k.param)
 
       status match {
-        case BMPending        => ()
-        case BMPreparing      => cells :+= "Preparing..."
-        case BMRunning        => cells :+= "Running..."
-        case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
-        case BMDone(Right(s)) =>
+        case BMStatus.Pending        => ()
+        case BMStatus.Preparing      => cells :+= "Preparing..."
+        case BMStatus.Running        => cells :+= "Running..."
+        case BMStatus.Done(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
+        case BMStatus.Done(Right(s)) =>
           cells :+= formatNum(FormatValue.Integer, s.samples)
           for (f <- resultFmts) {
             val score = formatNum(f.score, s.score)
@@ -275,7 +275,7 @@ object FormatResults {
           val hasParams     = suite.params.editors.nonEmpty
           val engineOptions = progress.engineOptions
           results.iterator.collect {
-            case (key, BMDone(Right(stats))) =>
+            case (key, BMStatus.Done(Right(stats))) =>
 
               val params: Option[Map[String, String]] =
                 if (hasParams)

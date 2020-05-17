@@ -4,7 +4,7 @@ import io.circe._
 import io.circe.parser._
 import japgolly.microlibs.testutil.TestUtil._
 import japgolly.scalajs.benchmark.engine._
-import japgolly.scalajs.benchmark.gui.{BMDone, BMStatus, FormatResult, GuiOptions, GuiParam, GuiParams, GuiSuite}
+import japgolly.scalajs.benchmark.gui.{BMStatus, FormatResult, GuiOptions, GuiParam, GuiParams, GuiSuite}
 import japgolly.scalajs.benchmark.gui.FormatResults.{Args, JmhJson}
 import scala.concurrent.duration._
 import scala.scalajs.js
@@ -115,7 +115,7 @@ object JmhJsonTest extends TestSuite {
     testJmhJsonText[Unit](
       suite      = GuiSuite(suite),
       progress   = Progress(startTime, plan, 123, eo),
-      results    = Map(bm1p0 -> BMDone(Right(bm1p0r))),
+      results    = Map(bm1p0 -> BMStatus.Done(Right(bm1p0r))),
       resultFmts = Vector(FormatResult.MillisPerOp),
       expect     = expect,
     )
@@ -220,7 +220,7 @@ object JmhJsonTest extends TestSuite {
     testJmhJson[P](
       suite      = GuiSuite(suite, gps),
       progress   = Progress(startTime, plan, 123, eo),
-      results    = Map(bm1p1 -> BMDone(Right(bm1p1r)), bm1p2 -> BMDone(Right(bm1p2r))),
+      results    = Map(bm1p1 -> BMStatus.Done(Right(bm1p1r)), bm1p2 -> BMStatus.Done(Right(bm1p2r))),
       resultFmts = Vector(FormatResult.MicrosPerOp, FormatResult.OpsPerSec),
       expect     = expect,
     )
