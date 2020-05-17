@@ -1,6 +1,5 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine.EngineOptions
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.MonocleReact._
@@ -8,6 +7,7 @@ import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 import Styles.{BatchMode => *}
+import japgolly.scalajs.benchmark.Benchmark
 import monocle.Lens
 import monocle.macros.Lenses
 
@@ -30,7 +30,7 @@ object BatchMode {
     final case class Initial(items: Vector[Item[Unit, Unit]]) extends State
 
     @Lenses
-    final case class Running(batchPlans: BatchPlans, items: Vector[Item[SuiteState, Unit]]) extends State
+    final case class Running(batchPlans: BatchPlans, items: Vector[Item[SuiteState, Int]]) extends State
 
     case object Finished extends State
 
@@ -53,7 +53,7 @@ object BatchMode {
       }
   }
 
-  final case class BatchPlans(plans: Vector[BatchPlan], runnableItems: Vector[Item[State.SuiteState, Unit]]) {
+  final case class BatchPlans(plans: Vector[BatchPlan], runnableItems: Vector[Item[State.SuiteState, Int]]) {
 
     val newState =
       State.Running(this, runnableItems)
@@ -68,7 +68,7 @@ object BatchMode {
       o.estimatedMsPerBM * totalBMs
 
     def startA($: StateAccessPure[State]): AsyncCallback[Unit] =
-      $.setStateAsync(newState) >> plans.foldLeft(AsyncCallback.unit)((q, p) => q >> p.start.void)
+      $.setStateAsync(newState) >> plans.foldLeft(AsyncCallback.unit)((q, p) => q >> p.start.flatMap(_.onCompletion).void)
 
     def start($: StateAccessPure[State]): Callback =
       Callback.byName(startA($).toCallback)
@@ -96,43 +96,76 @@ object BatchMode {
     private val initialRenderBM: BatchModeTree.RenderBM[Unit, Unit] ~=> VdomNode =
       Reusable.byRef(_.name)
 
-    private val runningRenderItem: Item[SuiteState, Unit] ~=> VdomNode =
-      Reusable.byRef {
-        case i: Item.Folder[SuiteState, Unit] => i.name
-        case i: Item.Suite [SuiteState, Unit] =>
-          i.value match {
-            case Some(ss) =>
-              ss.status match {
-                case SuiteRunner.SuitePending       => i.name
-                case SuiteRunner.SuiteWillStart     => i.name + " (starting)"
-                case _: SuiteRunner.SuiteRunning[_] => i.name + " (running)"
-                case _: SuiteRunner.SuiteDone[_]    => i.name + " (done)"
-              }
-            case None => i.name
-          }
-      }
-    // TODO ↕ do this properly later ↕
-    private val runningRenderBM: BatchModeTree.RenderBM[SuiteState, Unit] ~=> VdomNode =
-      Reusable.byRef { i =>
-        i.suiteItem.value match {
+    private lazy val statusOfItem: Item[SuiteState, Int] => *.Status = {
+      case i: Item.Folder[SuiteState, Int] =>
+        if (i.children.isEmpty)
+          *.Status.Disabled
+        else
+          i.children.iterator.map(statusOfItem).reduce(_ merge _)
+
+      case i: Item.Suite [SuiteState, Int] =>
+        i.value match {
           case Some(ss) =>
             ss.status match {
-              case SuiteRunner.SuitePending       => i.name
-              case SuiteRunner.SuiteWillStart     => i.name
-              case s: SuiteRunner.SuiteRunning[_] =>
-                val status =
-                  s.bm.iterator.filter(_._1.bmIndex == i.idx).map(_._2)
-                  .foldLeft[BMStatus](BMStatus.Pending)(_ merge _)
-                status match {
-                  case BMStatus.Pending   => i.name
-                  case BMStatus.Preparing => i.name + " (starting)"
-                  case BMStatus.Running   => i.name + " (running)"
-                  case _: BMStatus.Done   => i.name + " (done)"
-                }
-              case _: SuiteRunner.SuiteDone[_] => i.name + " (done)"
+              case SuiteRunner.SuitePending       => *.Status.Pending
+              case SuiteRunner.SuiteWillStart     => *.Status.Preparing
+              case _: SuiteRunner.SuiteRunning[_] => *.Status.Running
+              case _: SuiteRunner.SuiteDone[_]    => *.Status.Done
             }
-          case None => i.name
+          case None => *.Status.Disabled
         }
+    }
+
+    private val runningRenderItem: Item[SuiteState, Int] ~=> VdomNode =
+      Reusable.byRef { item =>
+        val status = statusOfItem(item)
+        <.div(*.runningItem(status), item.name)
+      }
+
+    private val bmStatusToStyleStatus: BMStatus => *.Status = {
+      case BMStatus.Pending   => *.Status.Pending
+      case BMStatus.Preparing => *.Status.Preparing
+      case BMStatus.Running   => *.Status.Running
+      case _: BMStatus.Done   => *.Status.Done
+    }
+
+    private val runningRenderBM: BatchModeTree.RenderBM[SuiteState, Int] ~=> VdomNode =
+      Reusable.byRef { i =>
+        var suffix = EmptyVdom
+        val status: *.Status =
+          i.bmItem.enabled match {
+            case Enabled =>
+              i.suiteItem.value match {
+                case Some(ss) =>
+                  ss.status match {
+                    case SuiteRunner.SuitePending       => *.Status.Pending
+                    case SuiteRunner.SuiteWillStart     => *.Status.Preparing
+                    case _: SuiteRunner.SuiteDone[_]    => *.Status.Done
+                    case s: SuiteRunner.SuiteRunning[_] =>
+                      val bmIdx = i.bmItem.value
+                      val statuses =
+                        s.bm
+                          .iterator
+                          .filter(_._1.bmIndex == bmIdx)
+                          .map(_._2)
+                          .map(bmStatusToStyleStatus)
+                          .toVector
+                      var status = statuses.foldLeft[*.Status](*.Status.Done)(_ merge _)
+                      val runs   = statuses.length
+                      val params = s.plan.params.length
+                      if (runs < params && status == *.Status.Done)
+                        // This BM is Done with previous params but there are more to come
+                        status = if (runs == 0) *.Status.Pending else *.Status.Incomplete
+                      if (runs > 0 && params > 1)
+                        suffix = s" ($runs/$params)"
+                      status
+                  }
+                case None => *.Status.Disabled
+              }
+            case Disabled =>
+              *.Status.Disabled
+          }
+        <.div(*.runningItem(status), i.name, suffix)
       }
 
     private val unsafeStateRunningLens: Lens[State, State.Running] =
@@ -145,9 +178,9 @@ object BatchMode {
                             engineOptions: EngineOptions,
                             guiOptions   : GuiOptions): BatchPlans = {
       type Item1 = Item[Unit, Unit]
-      type Item2 = Item[SuiteState, Unit]
+      type Item2 = Item[SuiteState, Int]
       type Suite1 = Item.Suite[Unit, Unit]
-      type Suite2 = Item.Suite[SuiteState, Unit]
+      type Suite2 = Item.Suite[SuiteState, Int]
 
       val plans = Vector.newBuilder[BatchPlan]
 
@@ -156,31 +189,36 @@ object BatchMode {
 
       def planSuite[P](i: Suite1, guiSuite: GuiSuite[P], $$: StateAccessPure[Suite2]): Suite2 = {
         import i.{bms => bmItems}
-        var suiteState: SuiteState = None
+        var result: Suite2 = null
         for (params <- guiSuite.defaultParams) {
-          val bms =
-            bmItems
-              .indices
-              .iterator
-              .filter(bmItems(_).enabled is Enabled)
-              .map(guiSuite.suite.bms)
-              .toVector
-          if (bms.nonEmpty) {
-            val guiSuite2 = guiSuite.withBMs(bms)
+          var enabledBMs = Vector.empty[Benchmark[P]]
+          val newBmItems =
+            bmItems.iterator.zipWithIndex.map { case (bmItem, idx) =>
+              if (bmItem.enabled is Enabled) {
+                enabledBMs :+= guiSuite.suite.bms(idx)
+                bmItem.copy(value = enabledBMs.length - 1)
+              } else
+                bmItem.copy(value = -1)
+            }.toVector
+          if (enabledBMs.nonEmpty) {
+            val guiSuite2 = guiSuite.withBMs(enabledBMs)
             val guiPlan = GuiPlan(guiSuite2)(params)
             val stateAccess = $$.zoomStateL(runStateLens[P])
             val run = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
             val batchPlan = BatchPlan(guiPlan)(run)
             plans += batchPlan
             val initialRunState = SuiteRunner.State.init(guiSuite2, guiOptions, respectDisabledByDefault = false)
-            suiteState = Some(initialRunState)
+            result = i.copy(value = Some(initialRunState), bms = newBmItems)
           }
         }
-        i.copy(value = suiteState)
+        if (result eq null)
+          i.copy(value = None, bms = i.bms.map(_.copy(value = -1)))
+        else
+          result
       }
 
       val folderItems: Lens[Item2, Vector[Item2]] =
-        GuiUtil.unsafeNarrowLens[Item2, Item.Folder[SuiteState, Unit]] ^|-> Item.Folder.children
+        GuiUtil.unsafeNarrowLens[Item2, Item.Folder[SuiteState, Int]] ^|-> Item.Folder.children
 
       val castSuiteL: Lens[Item2, Suite2] =
         GuiUtil.unsafeNarrowLens
@@ -215,10 +253,11 @@ object BatchMode {
       val batchPlans = planBatches(s, p.engineOptions, p.guiOptions)
 
       val tree = BatchModeTree.Args(
-        state      = initialSetState(s.items),
-        renderItem = initialRenderItem,
-        renderBM   = initialRenderBM,
-        enabled    = Enabled,
+        state          = initialSetState(s.items),
+        renderItem     = initialRenderItem,
+        renderBM       = initialRenderBM,
+        enabled        = Enabled,
+        showCheckboxes = true,
       )
 
       val start =
@@ -235,10 +274,11 @@ object BatchMode {
 
     private def renderRunning(p: Props, s: State.Running): VdomNode = {
       val tree = BatchModeTree.Args(
-        state      = StateSnapshot.withReuse(s.items).readOnly,
-        renderItem = runningRenderItem,
-        renderBM   = runningRenderBM,
-        enabled    = Disabled,
+        state          = StateSnapshot.withReuse(s.items).readOnly,
+        renderItem     = runningRenderItem,
+        renderBM       = runningRenderBM,
+        enabled        = Disabled,
+        showCheckboxes = false,
       )
 
       <.div(

@@ -1,6 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
 import CssSettings._
+import japgolly.univeq.UnivEq
 import scalacss.ScalaCssReact._
 
 object Styles extends StyleSheet.Inline {
@@ -232,6 +233,53 @@ object Styles extends StyleSheet.Inline {
 
   object BatchMode {
 
+    sealed trait Status {
+      import Status._
+
+      final def merge(s: Status): Status =
+        (this, s) match {
+          case (Disabled, x) => x
+          case (x, Disabled) => x
+
+          case (Done, x@(Pending | Preparing | Running | Incomplete | Done)) => x
+          case (x@(Pending | Preparing | Running | Incomplete), Done) => x
+
+          case (Pending, x@(Pending | Preparing | Running)) => x
+          case (x@(Preparing | Running), Pending) => x
+
+          case (Pending, Incomplete) => Incomplete
+          case (Incomplete, Pending) => Incomplete
+
+          case (Incomplete, x@(Incomplete | Preparing | Running)) => x
+          case (x@(Preparing | Running), Incomplete) => x
+
+          // These cases shouldn't happen in practice
+          case (Running, Running | Preparing) => Running
+          case (Preparing, Running)           => Running
+          case (Preparing, Preparing)         => Preparing
+        }
+    }
+
+    object Status {
+      case object Disabled   extends Status
+      case object Pending    extends Status
+      case object Incomplete extends Status
+      case object Preparing  extends Status
+      case object Running    extends Status
+      case object Done       extends Status
+
+      val domain = Domain.ofValues[Status](
+        Disabled,
+        Pending,
+        Incomplete,
+        Preparing,
+        Running,
+        Done,
+      )
+
+      implicit def univEq: UnivEq[Status] = UnivEq.derive
+    }
+
     private val menuSharedUL = styleS(
       lineHeight(1.5 em),
       listStyleType := "none",
@@ -251,6 +299,17 @@ object Styles extends StyleSheet.Inline {
       mixinIf(e is Disabled)(color(c"#bbb"))
     ))
 
+    val runningItem = styleF(Status.domain)(s => styleS(
+      display.inlineBlock,
+      s match {
+        case Status.Disabled   => styleS()
+        case Status.Pending    => styleS()
+        case Status.Incomplete => styleS(color(c"#7db2e8"))
+        case Status.Preparing  => styleS(color(c"#ef9d06"), &.before(content := "'➜ '"))
+        case Status.Running    => styleS(color(c"#ef9d06"), &.before(content := "'➜ '"))
+        case Status.Done       => styleS(color(c"#008800"), &.before(content := "'✓ '"))
+      }
+    ))
   }
 
   // ===================================================================================================================

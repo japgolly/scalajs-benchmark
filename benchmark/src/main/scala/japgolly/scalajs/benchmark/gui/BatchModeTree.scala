@@ -94,10 +94,11 @@ object BatchModeTree {
     def name     = bm.name
   }
 
-  final case class Args[A, B](state     : StateSnapshot[Vector[Item[A, B]]],
-                              renderItem: Item[A, B] ~=> VdomNode,
-                              renderBM  : RenderBM[A, B] ~=> VdomNode,
-                              enabled   : Enabled) {
+  final case class Args[A, B](state         : StateSnapshot[Vector[Item[A, B]]],
+                              renderItem    : Item[A, B] ~=> VdomNode,
+                              renderBM      : RenderBM[A, B] ~=> VdomNode,
+                              enabled       : Enabled,
+                              showCheckboxes: Boolean) {
 
     def toProps(implicit r: Reusability[Args[A, B]]): Props =
       Reusable.implicitly(this)
@@ -149,7 +150,7 @@ object BatchModeTree {
 
         val label =
           <.label(
-            TriStateCheckbox.Props(triState, setNextState).render)
+            TriStateCheckbox.Props(triState, setNextState).render.when(p.showCheckboxes))
 
         (liStyle, label)
       }
@@ -170,7 +171,7 @@ object BatchModeTree {
             val ss2 = ss.narrowOption[Item.Folder[A, B]].get
             TagMod(
               liStyle,
-              <.div(label(folder.name)),
+              <.div(label(p.renderItem(folder))),
               children(ss2.zoomStateL(Item.Folder.children)))
 
           case i: Item.Suite[A, B] =>
@@ -179,7 +180,7 @@ object BatchModeTree {
             val isValid = i.suite.defaultParams.isRight
             TagMod(
               liStyle,
-              <.div(label(i.suite.name)),
+              <.div(label(p.renderItem(i))),
               ul(
                 suite.bms.indices.toVdomArray { idx =>
                   <.li(
@@ -202,7 +203,7 @@ object BatchModeTree {
               ^.checked := enabled.is(Enabled),
               ^.disabled := editing.is(Disabled),
               ^.onChange --> ss.modState(lens.modify(!_)),
-            ),
+            ).when(p.showCheckboxes),
             p.renderBM(RenderBM(ss.value, idx))))
       }
 
