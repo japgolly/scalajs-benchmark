@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.EngineOptions
+import japgolly.scalajs.benchmark.engine.{AbortFn, EngineOptions}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.extra.StateSnapshot
@@ -8,8 +8,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 import Styles.{BatchMode => *}
 import japgolly.scalajs.benchmark.Benchmark
-import monocle.Lens
-import monocle.macros.Lenses
+import monocle.{Lens, Optional, Prism}
+import monocle.macros.{GenPrism, Lenses}
 
 object BatchMode {
   import BatchModeTree.Item
@@ -30,14 +30,37 @@ object BatchMode {
     final case class Initial(items: Vector[Item[Unit, Unit]]) extends State
 
     @Lenses
-    final case class Running(batchPlans: BatchPlans, items: Vector[Item[SuiteState, Int]]) extends State
+    final case class Running(items     : Vector[Item[SuiteState, Int]],
+                             batchPlans: BatchPlans,
+                             status    : RunningStatus,
+                             abortFn   : Option[AbortFn]) extends State
 
-    case object Finished extends State
+    sealed trait RunningStatus
+    object RunningStatus {
+      case object Running extends RunningStatus
+      case object Aborted extends RunningStatus
+      case object Complete extends RunningStatus
+    }
 
     type SuiteState = Option[SuiteRunner.State[_]]
 
     def init(p: Props): State =
       Initial(Item.fromTocItems(p.items))
+
+    val unsafeRunningLens: Lens[State, State.Running] =
+      GuiUtil.unsafeNarrowLens
+
+    val unsafeRunningItemsLens =
+      unsafeRunningLens ^|-> State.Running.items
+
+    val running: Prism[State, Running] =
+      GenPrism[State, Running]
+
+    val abortFn: Optional[State, Option[AbortFn]] =
+      running ^|-> Running.abortFn
+
+    val runningStatus: Optional[State, RunningStatus] =
+      running ^|-> Running.status
   }
 
   sealed trait BatchPlan {
@@ -56,7 +79,7 @@ object BatchMode {
   final case class BatchPlans(plans: Vector[BatchPlan], runnableItems: Vector[Item[State.SuiteState, Int]]) {
 
     val newState =
-      State.Running(this, runnableItems)
+      State.Running(runnableItems, this, State.RunningStatus.Running, None)
 
     def isEmpty =
       totalBMs == 0
@@ -67,8 +90,37 @@ object BatchMode {
     def etaMs(o: EngineOptions): Double =
       o.estimatedMsPerBM * totalBMs
 
-    def startA($: StateAccessPure[State]): AsyncCallback[Unit] =
-      $.setStateAsync(newState) >> plans.foldLeft(AsyncCallback.unit)((q, p) => q >> p.start.flatMap(_.onCompletion).void)
+    def startA($: StateAccessPure[State]): AsyncCallback[Unit] = {
+      val keepRunning: AsyncCallback[Boolean] =
+        $.state.map {
+          case s: State.Running => s.status == State.RunningStatus.Running
+          case _                => false
+        }.asAsyncCallback
+
+      def runPlan(p: BatchPlan): AsyncCallback[Unit] =
+        for {
+          ctls <- p.start
+          _    <- $.modStateAsync(State.abortFn.set(Some(ctls.abortFn)))
+          _    <- ctls.onCompletion
+        } yield ()
+
+      def runPlanUnlessAborted(p: BatchPlan): AsyncCallback[Unit] =
+        keepRunning.flatMap {
+          case true  => runPlan(p)
+          case false => AsyncCallback.unit
+        }
+
+      val runAll: AsyncCallback[Unit] =
+        plans.foldLeft(AsyncCallback.unit)(_ >> runPlanUnlessAborted(_))
+
+      val markAsCompleted: AsyncCallback[Unit] =
+        $.modStateAsync(State.runningStatus.modify {
+          case State.RunningStatus.Aborted => State.RunningStatus.Aborted
+          case _                           => State.RunningStatus.Complete
+        })
+
+      $.setStateAsync(newState) >> runAll >> markAsCompleted
+    }
 
     def start($: StateAccessPure[State]): Callback =
       Callback.byName(startA($).toCallback)
@@ -77,9 +129,9 @@ object BatchMode {
   private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]] = Reusability.byRef
   implicit val reusabilityBatchPlan: Reusability[BatchPlan] = Reusability.byRef
   implicit val reusabilityBatchPlans: Reusability[BatchPlans] = Reusability.byRef
+  implicit val reusabilityStateRS: Reusability[State.RunningStatus] = Reusability.derive
   implicit val reusabilityStateI: Reusability[State.Initial] = Reusability.derive
   implicit val reusabilityStateR: Reusability[State.Running] = Reusability.derive
-  implicit val reusabilityStateF: Reusability[State.Finished.type] = Reusability.derive
   implicit val reusabilityState: Reusability[State] = Reusability.derive
 
   // ===================================================================================================================
@@ -168,12 +220,6 @@ object BatchMode {
         <.div(*.runningItem(status), i.name, suffix)
       }
 
-    private val unsafeStateRunningLens: Lens[State, State.Running] =
-      GuiUtil.unsafeNarrowLens
-
-    private val unsafeStateRunningItemsLens =
-      unsafeStateRunningLens ^|-> State.Running.items
-
     private def planBatches(initialState : State.Initial,
                             engineOptions: EngineOptions,
                             guiOptions   : GuiOptions): BatchPlans = {
@@ -232,7 +278,7 @@ object BatchMode {
           }
         }.toVector
 
-      val item2s = loop(initialState.items, $.zoomStateL(unsafeStateRunningItemsLens))
+      val item2s = loop(initialState.items, $.zoomStateL(State.unsafeRunningItemsLens))
       BatchPlans(plans.result(), item2s)
     }
 
@@ -281,8 +327,13 @@ object BatchMode {
         showCheckboxes = false,
       )
 
+      val abort =
+        <.button(
+          ^.onClick --> $.modState(State.runningStatus.set(State.RunningStatus.Aborted), Callback.traverseOption(s.abortFn)(_.callback)),
+          "Abort")
+
       <.div(
-        <.section(renderStatus(p, s.batchPlans)),
+        <.section(renderStatus(p, s.batchPlans), abort),
         <.section(tree.render),
       )
     }
@@ -291,7 +342,6 @@ object BatchMode {
       s match {
         case s: State.Initial => renderInitial(p, s)
         case s: State.Running => renderRunning(p, s)
-        case State.Finished => "?"
       }
   }
 
