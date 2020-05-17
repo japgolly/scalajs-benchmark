@@ -72,12 +72,6 @@ object BatchMode {
     def init(p: Props, formats: Map[FormatResults.Text, Enabled]): State =
       Initial(Item.fromTocItems(p.items), formats)
 
-    val unsafeRunningLens: Lens[State, State.Running] =
-      GuiUtil.unsafeNarrowLens
-
-    val unsafeRunningItemsLens =
-      unsafeRunningLens ^|-> State.Running.items
-
     val initial: Prism[State, Initial] =
       GenPrism[State, Initial]
 
@@ -89,6 +83,9 @@ object BatchMode {
 
     val abortFn: Optional[State, Option[AbortFn]] =
       running ^|-> Running.abortFn
+
+    val runningItems: Lens[State, Vector[Item[SuiteState, Int]]] =
+      GuiUtil.optionalToLens(running ^|-> State.Running.items)(Vector.empty)
 
     val runningStatus: Optional[State, RunningStatus] =
       running ^|-> Running.status
@@ -264,7 +261,7 @@ object BatchMode {
           }
         }.toVector
 
-      val item2s = loop(initialState.items, $.zoomStateL(State.unsafeRunningItemsLens))
+      val item2s = loop(initialState.items, $.zoomStateL(State.runningItems))
       BatchPlans(plans.result(), item2s, initialState.formats)
     }
 

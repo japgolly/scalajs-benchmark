@@ -3,7 +3,7 @@ package japgolly.scalajs.benchmark.gui
 import japgolly.scalajs.benchmark.engine.TimeUtil
 import japgolly.scalajs.benchmark.vendor.FileSaver
 import japgolly.scalajs.react.Callback
-import monocle.Lens
+import monocle.{Lens, Optional}
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
@@ -109,6 +109,9 @@ object GuiUtil {
       case b: B => b
       case a => throw new RuntimeException("Invalid subtype: " + a)
     })(b => _ => b)
+
+  def optionalToLens[S, A](o: Optional[S, A])(default: => A): Lens[S, A] =
+    Lens[S, A](o.getOption(_).getOrElse(default))(o.set)
 
   def saveFile(text: String, filename: String, mimeType: String): Callback =
     Callback {
