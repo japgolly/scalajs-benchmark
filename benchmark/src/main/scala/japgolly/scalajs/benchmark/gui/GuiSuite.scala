@@ -15,6 +15,9 @@ final class GuiSuite[P](val suite : Suite[P],
 
   @inline def name = suite.name
 
+  val defaultParams =
+    params.parseState(params.initialState)
+
   def describe(e: VdomElement): GuiSuite[P] =
     new GuiSuite(suite, params, Some(e))
 

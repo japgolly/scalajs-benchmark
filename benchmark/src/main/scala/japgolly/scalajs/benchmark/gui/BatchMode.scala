@@ -1,13 +1,12 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.Benchmark
+import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine.EngineOptions
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.extra.components.TriStateCheckbox
+import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
 import Styles.{BatchMode => *}
-import japgolly.scalajs.react.extra.StateSnapshot
 
 object BatchMode {
   import BatchModeTree.Item
@@ -20,67 +19,85 @@ object BatchMode {
     @inline def render: VdomElement = Component(this)
   }
 
-  final case class BatchPlan(guiPlans: Vector[GuiPlan]) {
-    val totalBMs: Int =
-      guiPlans.iterator.map(_.totalBMs).sum
-
-    def etaMs(o: EngineOptions): Double =
-      o.estimatedMsPerBM * totalBMs
-
-  }
-
+  // ===================================================================================================================
 
   sealed trait State
   object State {
     final case class Initial(items: Vector[Item[Unit]]) extends State
-    case object Running extends State
+    final case class Running(items: Vector[Item[Unit]]) extends State
     case object Finished extends State
 
     def init(p: Props): State =
       Initial(Item.fromTocItems(p.items))
 
     implicit val reusabilityI: Reusability[Initial] = Reusability.derive
-    implicit val reusabilityR: Reusability[Running.type] = Reusability.derive
+    implicit val reusabilityR: Reusability[Running] = Reusability.derive
     implicit val reusabilityF: Reusability[Finished.type] = Reusability.derive
     implicit val reusability: Reusability[State] = Reusability.derive
   }
 
-  final class Backend($: BackendScope[Props, State]) {
+  // ===================================================================================================================
 
-    private val setStateInitial =
-      StateSnapshot.withReuse.prepare[Vector[Item[Unit]]]((os, cb) => $.setStateOption(os.map(State.Initial), cb))
+  final case class BatchPlan(guiPlans: Vector[GuiPlan]) {
+    def isEmpty =
+      totalBMs == 0
 
-    private def planBatch(p: Props, s: State.Initial): BatchPlan = {
+    val totalBMs: Int =
+      guiPlans.iterator.map(_.totalBMs).sum
+
+    def etaMs(o: EngineOptions): Double =
+      o.estimatedMsPerBM * totalBMs
+  }
+
+  object BatchPlan {
+    def from(s: State.Initial): BatchPlan = {
       val plans = Vector.newBuilder[GuiPlan]
 
-//      def go(items: Iterable[Item.NonBatchMode], suiteIdPrefix: String): Unit =
-//        for ((item, idx) <- items.iterator.zipWithIndex) {
-//          val suiteId = if (suiteIdPrefix.isEmpty) idx.toString else suiteIdPrefix + "." + idx
-//          item match {
-//            case folder: Item.Folder =>
-//              go(folder.children, suiteId)
-//            case i: Item.Suite =>
-//              def process[P](guiSuite: GuiSuite[P]): Unit = {
-//                val bms = guiSuite.suite.bms
-//                val keys = bms.indices.iterator.map(BMKey(suiteId, _)).filterNot(s.disabledBMs.contains)
-//                if (keys.hasNext) {
-//                  val selectedBMs = keys.map(k => bms(k.bmIdx)).toVector
-//                  val guiSuite2   = guiSuite.withBMs(selectedBMs)
-//                  // plans += GuiPlan(guiSuite2)(params)
-//                }
-//              }
-//              process(i.suite)
-//          }
-//        }
+      def process[P](guiSuite: GuiSuite[P], bmItems: Vector[Item.BM[Unit]]): Unit =
+        for (params <- guiSuite.defaultParams) {
+          val bms =
+            bmItems
+              .indices
+              .iterator
+              .filter(bmItems(_).enabled is Enabled)
+              .map(guiSuite.suite.bms)
+              .toVector
+          if (bms.nonEmpty) {
+            val guiSuite2 = guiSuite.withBMs(bms)
+            plans += GuiPlan(guiSuite2)(params)
+          }
+        }
+
+      def go(items: Vector[Item[Unit]]): Unit =
+        items.foreach {
+          case i: Item.Suite [Unit] => process(i.suite, i.bms)
+          case i: Item.Folder[Unit] => go(i.children)
+        }
+
+      go(s.items)
 
       BatchPlan(plans.result())
     }
+  }
 
-    private def renderStatus(p: Props, s: State.Initial): VdomNode = {
+  // ===================================================================================================================
+
+  final class Backend($: BackendScope[Props, State]) {
+
+    private val initialSetState =
+      StateSnapshot.withReuse.prepare[Vector[Item[Unit]]]((os, cb) => $.setStateOption(os.map(State.Initial), cb))
+
+    private val initialRenderItem: Item[Unit] ~=> VdomNode =
+      Reusable.byRef(_.name)
+
+    private val initialRenderBM: BatchModeTree.RenderBM[Unit] ~=> VdomNode =
+      Reusable.byRef(_.name)
+
+
+    private def renderStatus(p: Props, batchPlan: BatchPlan): VdomNode = {
       def kv(key: VdomNode, value: VdomNode) =
         <.tr(<.td(key), <.td(value))
 
-      val batchPlan = planBatch(p, s)
       val eta = batchPlan.etaMs(p.engineOptions)
 
       <.table(
@@ -90,18 +107,37 @@ object BatchMode {
         ))
     }
 
-
     private def renderInitial(p: Props, s: State.Initial): VdomNode = {
+      val batchPlan = BatchPlan.from(s)
+      val tree = BatchModeTree.Args(
+        state      = initialSetState(s.items),
+        renderItem = initialRenderItem,
+        renderBM   = initialRenderBM,
+        enabled    = Enabled,
+      )
+
+      if (!batchPlan.isEmpty) {
+        batchPlan
+          .guiPlans
+          .map(guiPlan => {
+            val s = SuiteRunner.State.init(guiPlan.guiSuite, p.guiOptions, respectDisabledByDefault = false)
+            // ↑ store above in state
+            // ↓ $.zoomState
+            SuiteRunner.run(guiPlan)(ss, p.engineOptions)
+          })
+      }
+
+
       <.div(
-        <.section(renderStatus(p, s)),
-        <.section(BatchModeTree.Args(setStateInitial(s.items), Enabled).render),
+        <.section(renderStatus(p, batchPlan)),
+        <.section(tree.render),
       )
     }
 
     def render(p: Props, s: State): VdomNode =
       s match {
         case s: State.Initial => renderInitial(p, s)
-        case State.Running
+        case _: State.Running
            | State.Finished => "?"
       }
   }

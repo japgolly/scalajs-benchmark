@@ -60,12 +60,15 @@ object SuiteRunner {
       bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
 
     def init[P](p: Props[P]): State[P] =
+      init(p.suite, p.guiOptions, true)
+
+    def init[P](suite: GuiSuite[P], guiOptions: GuiOptions, respectDisabledByDefault: Boolean): State[P] =
       State[P](
         status        = SuitePending,
-        editors       = p.suite.params.initialState,
-        disabledBMs   = initDisabledBMs(p.suite.suite.bms),
+        editors       = suite.params.initialState,
+        disabledBMs   = if (respectDisabledByDefault) initDisabledBMs(suite.suite.bms) else Set.empty,
         oldTitle      = None,
-        formatResults = p.guiOptions.formatResultsDefault)
+        formatResults = guiOptions.formatResultsDefault)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -106,9 +109,10 @@ object SuiteRunner {
   /** @return An [[AsyncCallback]] that completes when BMs actually start, and returns a new [[AsyncCallback]] that
     *         completes when the entire suite of BMs is finished.
     */
-  def run[P]($      : StateAccessPure[State[P]],
-             guiPlan: GuiPlan.WithParam[P],
-             options: EngineOptions): AsyncCallback[AsyncCallback[SuiteDone[P]]] = {
+  def run(guiPlan: GuiPlan)
+         ($      : StateAccessPure[State[guiPlan.Param]],
+          options: EngineOptions): AsyncCallback[AsyncCallback[SuiteDone[guiPlan.Param]]] = {
+    type P = guiPlan.Param
     import guiPlan.guiSuite
     val plan = guiPlan.plan
 
@@ -302,7 +306,7 @@ object SuiteRunner {
         } yield {
           val guiSuite2 = p.suite.withBMs(bms)
           val guiPlan   = GuiPlan(guiSuite2)(params)
-          val runCB     = run($, guiPlan, p.engineOptions).toCallback
+          val runCB     = run(guiPlan)($, p.engineOptions).toCallback
           val eta       = guiPlan.etaMs(p.engineOptions)
           (runCB, eta)
         }

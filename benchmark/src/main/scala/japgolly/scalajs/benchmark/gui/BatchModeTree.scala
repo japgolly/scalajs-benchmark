@@ -87,8 +87,17 @@ object BatchModeTree {
 
   // ===================================================================================================================
 
-  final case class Args[A](state  : StateSnapshot[Vector[Item[A]]],
-                           enabled: Enabled) {
+  final case class RenderBM[A](suiteItem: Item.Suite[A], idx: Int) {
+    def bmItem   = suiteItem.bms(idx)
+    def guiSuite = suiteItem.suite
+    def bm       = guiSuite.suite.bms(idx)
+    def name     = bm.name
+  }
+
+  final case class Args[A](state     : StateSnapshot[Vector[Item[A]]],
+                           renderItem: Item[A] ~=> VdomNode,
+                           renderBM  : RenderBM[A] ~=> VdomNode,
+                           enabled   : Enabled) {
 
     def toProps(implicit r: Reusability[Args[A]]): Props =
       Reusable.implicitly(this)
@@ -106,15 +115,18 @@ object BatchModeTree {
 
   // ===================================================================================================================
 
-  final class Backend($: BackendScope[Props, Unit]) {
+  final class Backend {
     private val ul = <.ul(*.menuUL)
 
     private def vectorIndex[A](idx: Int): Lens[Vector[A], A] =
       Lens[Vector[A], A](_(idx))(a => _.patch(idx, a :: Nil, 1))
 
-    def render(p: Props): VdomNode = {
+    def render(p: Props): VdomNode =
+      renderA(p.value)
 
-      def triStateCheckbox[A](ss: StateSnapshot[Item[A]]) = {
+    private def renderA[A](p: Args[A]): VdomNode = {
+
+      def triStateCheckbox(ss: StateSnapshot[Item[A]]) = {
         val item = ss.value
 
         val triState =
@@ -145,7 +157,7 @@ object BatchModeTree {
         (liStyle, label)
       }
 
-      def children[A](ss: StateSnapshot[Vector[Item[A]]]): VdomTag =
+      def children(ss: StateSnapshot[Vector[Item[A]]]): VdomTag =
         ul(
           ss.value.iterator.zipWithIndex.toVdomArray { case (item, idx) =>
             <.li(
@@ -154,7 +166,7 @@ object BatchModeTree {
           }
         )
 
-      def child[A](ss: StateSnapshot[Item[A]]): TagMod = {
+      def child(ss: StateSnapshot[Item[A]]): TagMod = {
         val (liStyle, label) = triStateCheckbox(ss)
         ss.value match {
           case folder: Item.Folder[A] =>
@@ -167,35 +179,37 @@ object BatchModeTree {
           case i: Item.Suite[A] =>
             val ss2 = ss.narrowOption[Item.Suite[A]].get
             val suite = i.suite.suite
+            val isValid = i.suite.defaultParams.isRight
             TagMod(
               liStyle,
               <.div(label(i.suite.name)),
               ul(
-                suite.bms.iterator.zipWithIndex.toVdomArray { case (bm, idx) =>
+                suite.bms.indices.toVdomArray { idx =>
                   <.li(
                     ^.key := idx,
-                    benchmark(ss2, idx))
+                    benchmark(ss2, idx, isValid))
                 }
               ))
         }
       }
 
-      def benchmark[A](ss: StateSnapshot[Item.Suite[A]], idx: Int): TagMod = {
+      def benchmark(ss: StateSnapshot[Item.Suite[A]], idx: Int, isValid: Boolean): TagMod = {
         val bm = ss.value.bms(idx)
+        val enabled = bm.enabled && Enabled.when(isValid)
+        val editing = p.enabled && Enabled.when(isValid)
         def lens = Item.Suite.bms[A] ^|-> vectorIndex(idx) ^|-> Item.BM.enabled
         TagMod(
-          *.menuLI(bm.enabled),
+          *.menuLI(enabled),
           <.label(
             <.input.checkbox(
-              ^.checked := bm.enabled.is(Enabled),
-              ^.disabled := p.enabled.is(Disabled),
+              ^.checked := enabled.is(Enabled),
+              ^.disabled := editing.is(Disabled),
               ^.onChange --> ss.modState(lens.modify(!_)),
             ),
-            ss.value.suite.suite.bms(idx).name)
-        )
+            p.renderBM(RenderBM(ss.value, idx))))
       }
 
-      def all[A](ss1: StateSnapshot[Vector[Item[A]]]): TagMod = {
+      def all(ss1: StateSnapshot[Vector[Item[A]]]): TagMod = {
         val ss = ss1.zoomState(Item.Folder("All", _))(f2 => _ => f2.children)
         child(ss.unsafeWiden[Item[A]])
       }

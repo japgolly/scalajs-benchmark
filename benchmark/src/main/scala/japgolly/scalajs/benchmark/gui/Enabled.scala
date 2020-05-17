@@ -5,6 +5,7 @@ import japgolly.univeq.UnivEq
 
 sealed trait Enabled {
   def unary_! : Enabled
+  def &&(e: Enabled): Enabled
 
   final def is(e: Enabled): Boolean =
     this eq e
@@ -18,6 +19,7 @@ sealed trait Enabled {
 
 case object Enabled extends Enabled {
   override def unary_! = Disabled
+  override def &&(e: Enabled) = e
 
   implicit def univEq: UnivEq[Enabled] = UnivEq.derive
   implicit val reusability: Reusability[Enabled] = Reusability.by_==
@@ -25,4 +27,5 @@ case object Enabled extends Enabled {
 
 case object Disabled extends Enabled {
   override def unary_! = Enabled
+  override def &&(e: Enabled) = this
 }
