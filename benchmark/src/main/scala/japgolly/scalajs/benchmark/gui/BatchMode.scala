@@ -11,6 +11,7 @@ import monocle.macros.{GenPrism, Lenses}
 import scalacss.ScalaCssReact._
 import Styles.{BatchMode => *}
 import japgolly.scalajs.benchmark.gui.BatchMode.State.RunningStatus
+import scala.scalajs.js
 
 object BatchMode {
   import BatchModeTree.Item
@@ -32,9 +33,26 @@ object BatchMode {
 
     @Lenses
     final case class Running(items     : Vector[Item[SuiteState, Int]],
+                             startedAt : js.Date,
+                             startedMs : Double,
                              batchPlans: BatchPlans,
                              status    : RunningStatus,
-                             abortFn   : Option[AbortFn]) extends State
+                             abortFn   : Option[AbortFn]) extends State {
+
+      val completedBMs: Int = {
+        var x = 0
+        def go(items: Vector[Item[State.SuiteState, Int]]): Unit =
+          items.foreach {
+            case i: Item.Suite[State.SuiteState, Int] =>
+              for (s <- i.value)
+                x += s.status.runs
+            case i: Item.Folder[State.SuiteState, Int] =>
+              go(i.children)
+          }
+        go(items)
+        x
+      }
+    }
 
     sealed trait RunningStatus
     object RunningStatus {
@@ -79,17 +97,23 @@ object BatchMode {
 
   final case class BatchPlans(plans: Vector[BatchPlan], runnableItems: Vector[Item[State.SuiteState, Int]]) {
 
-    val newState =
-      State.Running(runnableItems, this, State.RunningStatus.Running, None)
+    val newState: CallbackTo[State.Running] =
+      CallbackTo {
+        State.Running(
+          items      = runnableItems,
+          startedAt  = new js.Date,
+          startedMs  = System.currentTimeMillis().toDouble,
+          batchPlans = this,
+          status     = State.RunningStatus.Running,
+          abortFn    = None,
+        )
+      }
 
     def isEmpty =
       totalBMs == 0
 
     val totalBMs: Int =
       plans.iterator.map(_.guiPlan.totalBMs).sum
-
-    def etaMs(o: EngineOptions): Double =
-      o.estimatedMsPerBM * totalBMs
 
     def startA($: StateAccessPure[State]): AsyncCallback[Unit] = {
       val keepRunning: AsyncCallback[Boolean] =
@@ -111,6 +135,9 @@ object BatchMode {
           case false => AsyncCallback.unit
         }
 
+      val markAsStarted: AsyncCallback[Unit] =
+        newState.asAsyncCallback.flatMap($.setStateAsync)
+
       val runAll: AsyncCallback[Unit] =
         plans.foldLeft(AsyncCallback.unit)(_ >> runPlanUnlessAborted(_))
 
@@ -120,7 +147,7 @@ object BatchMode {
           case _                           => State.RunningStatus.Complete
         })
 
-      $.setStateAsync(newState) >> runAll >> markAsCompleted
+      markAsStarted >> runAll >> markAsCompleted
     }
 
     def start($: StateAccessPure[State]): Callback =
@@ -132,13 +159,78 @@ object BatchMode {
   implicit val reusabilityBatchPlans: Reusability[BatchPlans] = Reusability.byRef
   implicit val reusabilityStateRS: Reusability[State.RunningStatus] = Reusability.derive
   implicit val reusabilityStateI: Reusability[State.Initial] = Reusability.derive
-  implicit val reusabilityStateR: Reusability[State.Running] = Reusability.derive
+  implicit val reusabilityStateR: Reusability[State.Running] = {
+    implicit val x: Reusability[Double] = Reusability.by_==
+    Reusability.derive
+  }
   implicit val reusabilityState: Reusability[State] = Reusability.derive
 
   // ===================================================================================================================
 
   final class Backend($: BackendScope[Props, State]) {
     import State.SuiteState
+
+    private def planBatches(initialState : State.Initial,
+                            engineOptions: EngineOptions,
+                            guiOptions   : GuiOptions): BatchPlans = {
+      type Item1 = Item[Unit, Unit]
+      type Item2 = Item[SuiteState, Int]
+      type Suite1 = Item.Suite[Unit, Unit]
+      type Suite2 = Item.Suite[SuiteState, Int]
+
+      val plans = Vector.newBuilder[BatchPlan]
+
+      def runStateLens[P]: Lens[Suite2, SuiteRunner.State[P]] =
+        Lens((_: Suite2).value.get.asInstanceOf[SuiteRunner.State[P]])(a => _.copy(value = Some(a)))
+
+      def planSuite[P](i: Suite1, guiSuite: GuiSuite[P], $$: StateAccessPure[Suite2]): Suite2 = {
+        import i.{bms => bmItems}
+        var result: Suite2 = null
+        for (params <- guiSuite.defaultParams) {
+          var enabledBMs = Vector.empty[Benchmark[P]]
+          val newBmItems =
+            bmItems.iterator.zipWithIndex.map { case (bmItem, idx) =>
+              if (bmItem.enabled is Enabled) {
+                enabledBMs :+= guiSuite.suite.bms(idx)
+                bmItem.copy(value = enabledBMs.length - 1)
+              } else
+                bmItem.copy(value = -1)
+            }.toVector
+          if (enabledBMs.nonEmpty) {
+            val guiSuite2   = guiSuite.withBMs(enabledBMs)
+            val guiPlan     = GuiPlan(guiSuite2)(params)
+            val stateAccess = $$.zoomStateL(runStateLens[P])
+            val run         = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
+            val batchPlan   = BatchPlan(guiPlan)(run)
+            plans += batchPlan
+            val initialRunState = SuiteRunner.State.init(guiSuite2, guiOptions, respectDisabledByDefault = false)
+            result = i.copy(value = Some(initialRunState), bms = newBmItems)
+          }
+        }
+        if (result eq null)
+          i.copy(value = None, bms = i.bms.map(_.copy(value = -1)))
+        else
+          result
+      }
+
+      val folderItems: Lens[Item2, Vector[Item2]] =
+        GuiUtil.unsafeNarrowLens[Item2, Item.Folder[SuiteState, Int]] ^|-> Item.Folder.children
+
+      val castSuiteL: Lens[Item2, Suite2] =
+        GuiUtil.unsafeNarrowLens
+
+      def loop(in: Vector[Item1], $$: StateAccessPure[Vector[Item2]]): Vector[Item2] =
+        in.indices.iterator.map { idx =>
+          val $$$ = $$.zoomStateL(GuiUtil.vectorIndex(idx))
+          in(idx) match {
+            case i: Item.Folder[Unit, Unit] => i.copy(children = loop(i.children, $$$.zoomStateL(folderItems)))
+            case i: Item.Suite [Unit, Unit] => planSuite(i, i.suite, $$$.zoomStateL(castSuiteL))
+          }
+        }.toVector
+
+      val item2s = loop(initialState.items, $.zoomStateL(State.unsafeRunningItemsLens))
+      BatchPlans(plans.result(), item2s)
+    }
 
     private val initialSetState =
       StateSnapshot.withReuse.prepare[Vector[Item[Unit, Unit]]]((os, cb) => $.setStateOption(os.map(State.Initial), cb))
@@ -221,78 +313,18 @@ object BatchMode {
         <.div(*.runningItem(status), i.name, suffix)
       }
 
-    private def planBatches(initialState : State.Initial,
-                            engineOptions: EngineOptions,
-                            guiOptions   : GuiOptions): BatchPlans = {
-      type Item1 = Item[Unit, Unit]
-      type Item2 = Item[SuiteState, Int]
-      type Suite1 = Item.Suite[Unit, Unit]
-      type Suite2 = Item.Suite[SuiteState, Int]
-
-      val plans = Vector.newBuilder[BatchPlan]
-
-      def runStateLens[P]: Lens[Suite2, SuiteRunner.State[P]] =
-        Lens((_: Suite2).value.get.asInstanceOf[SuiteRunner.State[P]])(a => _.copy(value = Some(a)))
-
-      def planSuite[P](i: Suite1, guiSuite: GuiSuite[P], $$: StateAccessPure[Suite2]): Suite2 = {
-        import i.{bms => bmItems}
-        var result: Suite2 = null
-        for (params <- guiSuite.defaultParams) {
-          var enabledBMs = Vector.empty[Benchmark[P]]
-          val newBmItems =
-            bmItems.iterator.zipWithIndex.map { case (bmItem, idx) =>
-              if (bmItem.enabled is Enabled) {
-                enabledBMs :+= guiSuite.suite.bms(idx)
-                bmItem.copy(value = enabledBMs.length - 1)
-              } else
-                bmItem.copy(value = -1)
-            }.toVector
-          if (enabledBMs.nonEmpty) {
-            val guiSuite2 = guiSuite.withBMs(enabledBMs)
-            val guiPlan = GuiPlan(guiSuite2)(params)
-            val stateAccess = $$.zoomStateL(runStateLens[P])
-            val run = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
-            val batchPlan = BatchPlan(guiPlan)(run)
-            plans += batchPlan
-            val initialRunState = SuiteRunner.State.init(guiSuite2, guiOptions, respectDisabledByDefault = false)
-            result = i.copy(value = Some(initialRunState), bms = newBmItems)
-          }
-        }
-        if (result eq null)
-          i.copy(value = None, bms = i.bms.map(_.copy(value = -1)))
-        else
-          result
-      }
-
-      val folderItems: Lens[Item2, Vector[Item2]] =
-        GuiUtil.unsafeNarrowLens[Item2, Item.Folder[SuiteState, Int]] ^|-> Item.Folder.children
-
-      val castSuiteL: Lens[Item2, Suite2] =
-        GuiUtil.unsafeNarrowLens
-
-      def loop(in: Vector[Item1], $$: StateAccessPure[Vector[Item2]]): Vector[Item2] =
-        in.indices.iterator.map { idx =>
-          val $$$ = $$.zoomStateL(GuiUtil.vectorIndex(idx))
-          in(idx) match {
-            case i: Item.Folder[Unit, Unit] => i.copy(children = loop(i.children, $$$.zoomStateL(folderItems)))
-            case i: Item.Suite [Unit, Unit] => planSuite(i, i.suite, $$$.zoomStateL(castSuiteL))
-          }
-        }.toVector
-
-      val item2s = loop(initialState.items, $.zoomStateL(State.unsafeRunningItemsLens))
-      BatchPlans(plans.result(), item2s)
-    }
-
     private def renderInitial(p: Props, s: State.Initial): VdomNode = {
       val batchPlans = planBatches(s, p.engineOptions, p.guiOptions)
       def startCB    = Reusable.implicitly(s).withLazyValue(batchPlans.start($))
 
       val controls = BatchModeControls.Props(
-        bms   = batchPlans.totalBMs,
-        etaMs = batchPlans.etaMs(p.engineOptions),
-        start = Some(if (batchPlans.isEmpty) None else Some(startCB)),
-        abort = None,
-        reset = None,
+        completedBMs = 0,
+        bms          = batchPlans.totalBMs,
+        elapsedMs    = 0,
+        etaMs        = batchPlans.totalBMs * p.engineOptions.estimatedMsPerBM,
+        start        = Some(if (batchPlans.isEmpty) None else Some(startCB)),
+        abort        = None,
+        reset        = None,
       )
 
       val tree = BatchModeTree.Args(
@@ -311,6 +343,11 @@ object BatchMode {
     private def renderRunning(p: Props, s: State.Running): VdomNode = {
       import s.batchPlans
 
+      val elapsedMs    = System.currentTimeMillis().toDouble - s.startedMs
+      val remainingBMs = batchPlans.totalBMs - s.completedBMs
+      val msPerBM      = if (s.completedBMs > 0) elapsedMs / s.completedBMs else p.engineOptions.estimatedMsPerBM
+      val etaMs        = remainingBMs * msPerBM
+
       val controls: BatchModeControls.Props =
         s.status match {
           case RunningStatus.Running =>
@@ -321,11 +358,13 @@ object BatchMode {
                   Callback.traverseOption(s.abortFn)(_.callback)))
 
             BatchModeControls.Props(
-              bms   = batchPlans.totalBMs,
-              etaMs = batchPlans.etaMs(p.engineOptions),
-              start = None,
-              abort = Some(abortCB),
-              reset = None,
+              completedBMs = s.completedBMs,
+              bms          = batchPlans.totalBMs,
+              elapsedMs    = elapsedMs,
+              etaMs        = etaMs,
+              start        = None,
+              abort        = Some(abortCB),
+              reset        = None,
             )
 
           case RunningStatus.Aborted
@@ -338,11 +377,13 @@ object BatchMode {
               }
 
             BatchModeControls.Props(
-              bms   = batchPlans.totalBMs,
-              etaMs = batchPlans.etaMs(p.engineOptions),
-              start = None,
-              abort = None,
-              reset = Some(reset),
+              completedBMs = s.completedBMs,
+              bms          = batchPlans.totalBMs,
+              elapsedMs    = elapsedMs,
+              etaMs        = etaMs,
+              start        = None,
+              abort        = None,
+              reset        = Some(reset),
             )
         }
 

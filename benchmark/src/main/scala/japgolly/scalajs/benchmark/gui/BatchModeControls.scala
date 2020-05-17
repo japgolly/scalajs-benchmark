@@ -7,11 +7,13 @@ import Styles.{BatchMode => *}
 
 object BatchModeControls {
 
-  final case class Props(bms  : Int,
-                         etaMs: Double,
-                         start: Option[Option[Reusable[Callback]]],
-                         abort: Option[Reusable[Callback]],
-                         reset: Option[Reusable[Callback]],
+  final case class Props(completedBMs: Int,
+                         bms         : Int,
+                         elapsedMs   : Double,
+                         etaMs       : Double,
+                         start       : Option[Option[Reusable[Callback]]],
+                         abort       : Option[Reusable[Callback]],
+                         reset       : Option[Reusable[Callback]],
                         ) {
     @inline def render: VdomElement = Component(this)
   }
@@ -29,6 +31,22 @@ object BatchModeControls {
       <.tr(
         <.td(*.controlKey, key + ":"),
         <.td(*.controlValue, value))
+
+    val completed =
+      TagMod.when(p.start.isEmpty) {
+        val pct = p.completedBMs * 100 / p.bms
+        kv("Completed", s"${p.completedBMs} (${pct}%)")
+      }
+
+    val elapsed =
+      TagMod.when(p.start.isEmpty) {
+        kv("Elapsed", GuiUtil.formatETA(p.elapsedMs))
+      }
+
+    val eta =
+      TagMod.when(p.reset.isEmpty) {
+        kv("ETA", GuiUtil.formatETA(p.etaMs))
+      }
 
     val startButton =
       p.start.whenDefined { oc =>
@@ -54,7 +72,9 @@ object BatchModeControls {
       <.table(*.controlTable,
         <.tbody(
           kv("Benchmarks", p.bms),
-          kv("ETA", GuiUtil.formatETA(p.etaMs)),
+          completed,
+          elapsed,
+          eta,
         )
       ),
       <.div(*.controlButtonRow,

@@ -73,22 +73,32 @@ object SuiteRunner {
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
 
-  sealed trait SuiteStatus[+P]
-  case object SuitePending   extends SuiteStatus[Nothing]
-  case object SuiteWillStart extends SuiteStatus[Nothing]
+  sealed trait SuiteStatus[+P] {
+    def runs: Int
+  }
 
-  final case class SuiteRunning[P](suite  : GuiSuite[P],
-                                   progess: Progress[P],
-                                   bm     : EachBMStatus[P],
-                                   abortFn: AbortFn) extends SuiteStatus[P] {
-    @inline def plan = progess.plan
+  case object SuitePending extends SuiteStatus[Nothing] {
+    override def runs = 0
+  }
+
+  case object SuiteWillStart extends SuiteStatus[Nothing]  {
+    override def runs = 0
+  }
+
+  final case class SuiteRunning[P](suite   : GuiSuite[P],
+                                   progress: Progress[P],
+                                   bm      : EachBMStatus[P],
+                                   abortFn : AbortFn) extends SuiteStatus[P] {
+    override def runs = progress.runs
+    @inline def plan = progress.plan
   }
 
   final case class SuiteDone[P](suite    : GuiSuite[P],
-                                progess  : Progress[P],
+                                progress : Progress[P],
                                 bm       : EachBMStatus[P],
                                 totalTime: FiniteDuration) extends SuiteStatus[P] {
-    @inline def plan = progess.plan
+    override def runs = progress.runs
+    @inline def plan = progress.plan
   }
 
   object SuiteStatus {
@@ -127,7 +137,7 @@ object SuiteRunner {
         case BenchmarkFinished(p, k, r) =>
           val setResult = State.at(k) set BMStatus.Done(r)
           val setProgress = State.status[P].modify {
-            case sr: SuiteRunning[P] => sr.copy(progess = p)
+            case sr: SuiteRunning[P] => sr.copy(progress = p)
             case x                   => x
           }
           $.modStateAsync(setResult compose setProgress)
@@ -341,10 +351,10 @@ object SuiteRunner {
     }
 
     private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
-      val resultFmts = deriveResultFmts(r.progess, r.bm)
+      val resultFmts = deriveResultFmts(r.progress, r.bm)
 
       val eta =
-        p.engineOptions.estimatedMsPerBM * r.progess.remaining
+        p.engineOptions.estimatedMsPerBM * r.progress.remaining
 
       def abortButton =
         <.button(
@@ -357,12 +367,12 @@ object SuiteRunner {
           <.span("Benchmark running... ETA: ", GuiUtil.formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
-        renderGraph(p.suite, r.progess, r.bm, resultFmts))
+        renderResults(s.formatResults, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
+        renderGraph(p.suite, r.progress, r.bm, resultFmts))
     }
 
     private def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
-      val resultFmts = deriveResultFmts(r.progess, r.bm)
+      val resultFmts = deriveResultFmts(r.progress, r.bm)
 
       def resetButton =
         <.button(
@@ -375,8 +385,8 @@ object SuiteRunner {
           <.span(s"Benchmark completed in ${GuiUtil.formatETA(r.totalTime)}."),
           resetButton),
         renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progess, r.bm, resultFmts, p.guiOptions),
-        renderGraph(p.suite, r.progess, r.bm, resultFmts))
+        renderResults(s.formatResults, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
+        renderGraph(p.suite, r.progress, r.bm, resultFmts))
     }
 
     private def renderFormatButtons(p: Props, s: State) =

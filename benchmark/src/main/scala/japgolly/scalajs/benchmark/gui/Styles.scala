@@ -313,7 +313,7 @@ object Styles extends StyleSheet.Inline {
       paddingInlineStart(3.6 ex))
 
     val menuLI = styleF(enabled)(e => styleS(
-      mixinIf(e is Disabled)(color(c"#bbb"))))
+      mixinIf(e is Disabled)(color(c"#ccc"))))
 
     val runningItem = styleF(Status.domain)(s => styleS(
       display.inlineBlock,
