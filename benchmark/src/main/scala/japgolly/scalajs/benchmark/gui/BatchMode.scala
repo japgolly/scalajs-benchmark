@@ -372,6 +372,7 @@ object BatchMode {
         start         = Some(if (batchPlans.isEmpty) None else Some(startCB)),
         abort         = None,
         reset         = None,
+        downloadTest  = true,
       )
 
       val tree = BatchModeTree.Args(
@@ -414,6 +415,7 @@ object BatchMode {
               start         = None,
               abort         = Some(abortCB),
               reset         = None,
+              downloadTest  = false,
             )
 
           case RunningStatus.Aborted
@@ -435,6 +437,7 @@ object BatchMode {
               start         = None,
               abort         = None,
               reset         = Some(reset),
+              downloadTest  = false,
             )
         }
 

@@ -291,8 +291,7 @@ object Styles extends StyleSheet.Inline {
       paddingRight(4.8 rem))
 
     val controlTable = style(
-      borderCollapse.collapse,
-      marginBottom(2 em))
+      borderCollapse.collapse)
 
     def controlKey   = Suite.settingsTableHeader
     def controlValue = Suite.settingsTableData
@@ -301,10 +300,14 @@ object Styles extends StyleSheet.Inline {
       lineHeight(1.5 em))
 
     val controlButtonRow = style(
+      marginTop(2 em),
       textAlign.center)
 
     val controlButton = style(
       fontSize(120 %%),
+      padding(0.4 em, 2 ex))
+
+    val controlDownloadPrepButton = style(
       padding(0.4 em, 2 ex))
 
     val menuRootUL = style(

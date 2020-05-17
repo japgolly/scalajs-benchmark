@@ -16,6 +16,7 @@ object BatchModeControls {
                          start        : Option[Option[Reusable[Callback]]],
                          abort        : Option[Reusable[Callback]],
                          reset        : Option[Reusable[Callback]],
+                         downloadTest : Boolean,
                         ) {
     @inline def render: VdomElement = Component(this)
   }
@@ -86,6 +87,22 @@ object BatchModeControls {
         button(^.onClick --> cb, "Reset")
       }
 
+    // Chrome, for example, will save one file then display a popup asking if
+    // its ok to save the rest. This button allows users to give permission
+    // before starting a BM (so that they can walk away after hitting start).
+    val downloadPrepButton =
+      TagMod.when(p.downloadTest) {
+        val save = Callback.byName {
+          Callback.traverse(List(1, 2))(i =>
+            GuiUtil.saveFile(text = "", filename = s"test-$i.tmp", "text/plain"))
+        }
+        <.div(*.controlButtonRow,
+          <.button(
+            *.controlDownloadPrepButton,
+            ^.onClick --> save,
+            "Test download of", <.br, "multiple files"))
+      }
+
     <.section(
       *.controlsSection,
       <.h3("Controls"),
@@ -102,7 +119,8 @@ object BatchModeControls {
         startButton,
         abortButton,
         resetButton,
-      )
+      ),
+      downloadPrepButton,
     )
   }
 
