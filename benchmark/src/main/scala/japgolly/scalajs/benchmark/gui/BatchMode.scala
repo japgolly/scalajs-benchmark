@@ -133,23 +133,42 @@ object BatchMode {
     val totalBMs: Int =
       plans.iterator.map(_.guiPlan.totalBMs).sum
 
-    def startA($: StateAccessPure[State]): AsyncCallback[Unit] = {
+    def start($: StateAccessPure[State], guiOptions: GuiOptions): Callback =
+      Callback.byName(startA($, guiOptions).toCallback)
+
+    def startA($: StateAccessPure[State], guiOptions: GuiOptions): AsyncCallback[Unit] = {
       val keepRunning: AsyncCallback[Boolean] =
         $.state.map {
           case s: State.Running => s.status == State.RunningStatus.Running
           case _                => false
         }.asAsyncCallback
 
-      def runPlan(p: BatchPlan): AsyncCallback[Unit] =
+      def saveAll[P](done: SuiteRunner.SuiteDone[P], startedAt: js.Date): Callback = {
+        val progress = done.progress.copy(startedAt = startedAt)
+        val resultFmts = SuiteRunner.deriveResultFmts(progress, done.bm)
+        Callback.traverse(enabledFormats) { f =>
+          val args = FormatResults.Args(
+            suite      = done.suite,
+            progress   = progress,
+            results    = done.bm,
+            resultFmts = resultFmts,
+            guiOptions = guiOptions,
+          )
+          f.save(args)
+        }
+      }
+
+      def runPlan(p: BatchPlan, startedAt: js.Date): AsyncCallback[Unit] =
         for {
-          ctls <- p.start
-          _    <- $.modStateAsync(State.abortFn.set(Some(ctls.abortFn)))
-          _    <- ctls.onCompletion
+          ctls      <- p.start
+          _         <- $.modStateAsync(State.abortFn.set(Some(ctls.abortFn)))
+          done      <- ctls.onCompletion
+          _         <- saveAll(done, startedAt).asAsyncCallback
         } yield ()
 
-      def runPlanUnlessAborted(p: BatchPlan): AsyncCallback[Unit] =
+      def runPlanUnlessAborted(p: BatchPlan, startedAt: js.Date): AsyncCallback[Unit] =
         keepRunning.flatMap {
-          case true  => runPlan(p)
+          case true  => runPlan(p, startedAt)
           case false => AsyncCallback.unit
         }
 
@@ -157,7 +176,8 @@ object BatchMode {
         newState.asAsyncCallback.flatMap($.setStateAsync)
 
       val runAll: AsyncCallback[Unit] =
-        plans.foldLeft(AsyncCallback.unit)(_ >> runPlanUnlessAborted(_))
+        AsyncCallback.delay(new js.Date).flatMap(startedAt =>
+          plans.foldLeft(AsyncCallback.unit)(_ >> runPlanUnlessAborted(_, startedAt)))
 
       val markAsCompleted: AsyncCallback[Unit] =
         $.modStateAsync(State.runningStatus.modify {
@@ -167,9 +187,6 @@ object BatchMode {
 
       markAsStarted >> runAll >> markAsCompleted
     }
-
-    def start($: StateAccessPure[State]): Callback =
-      Callback.byName(startA($).toCallback)
   }
 
   private implicit val reusabilityFormats: Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
@@ -343,7 +360,7 @@ object BatchMode {
 
     private def renderInitial(p: Props, s: State.Initial): VdomNode = {
       val batchPlans = planBatches(s, p.engineOptions, p.guiOptions)
-      def startCB    = Reusable.implicitly(s).withLazyValue(batchPlans.start($))
+      def startCB    = Reusable.implicitly(s).withLazyValue(batchPlans.start($, p.guiOptions))
 
       val controls = BatchModeControls.Props(
         completedBMs  = 0,

@@ -5,6 +5,7 @@ import io.circe.syntax._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
+import japgolly.scalajs.benchmark.vendor.FileSaver
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import java.util.concurrent.TimeUnit
@@ -47,6 +48,7 @@ object FormatResults {
   abstract class Text(label: String,
                       final val mimeType: String,
                       final val fileExt: String) extends FormatResults(label) {
+
     def renderToText[P](args: Args[P]): String
 
     override def render[P](args: Args[P]): VdomElement =
@@ -55,6 +57,13 @@ object FormatResults {
         mimeType = mimeType,
         filename = args.filename(fileExt),
       ).render
+
+    def save[P](args: Args[P]): Callback =
+      GuiUtil.saveFile(
+        text     = renderToText(args),
+        filename = args.filename(fileExt),
+        mimeType = mimeType,
+      )
   }
 
   implicit val reusabilityText: Reusability[Text] =

@@ -170,6 +170,21 @@ object SuiteRunner {
     } yield RunCtrls(abort, promise._1)
   }
 
+  def deriveResultFmts[P](progress: Progress[P], m: EachBMStatus[P]): Vector[FormatResult] = {
+    val keys = progress.plan.keys
+
+    val minAvg =
+      keys
+        .iterator
+        .flatMap(m.get)
+        .collect { case BMStatus.Done(Right(s)) => s.average }
+        .reduceOption(_.min(_))
+        .getOrElse(Duration.Zero)
+
+    val mainFmt = FormatResult.choose(minAvg)
+    Vector(mainFmt, FormatResult.OpsPerSec)
+  }
+
   // ===================================================================================================================
 
   final class Backend[P]($: BackendScope[Props[P], State[P]]) {
@@ -178,8 +193,6 @@ object SuiteRunner {
     type SuiteStatus  = SuiteRunner.SuiteStatus[P]
     type SuiteRunning = SuiteRunner.SuiteRunning[P]
     type SuiteDone    = SuiteRunner.SuiteDone[P]
-
-    private type ResultFmts = Vector[FormatResult]
 
     def onMount: Callback = {
       def storeCurrentTitle =
@@ -220,21 +233,6 @@ object SuiteRunner {
       $.props.flatMap(p =>
         $.modState(State.disabledBMs.set(
           p.suite.suite.bms.indices.toSet - i)(_)))
-
-    private def deriveResultFmts(progress: Progress[P], m: EachBMStatus[P]): ResultFmts = {
-      val keys = progress.plan.keys
-
-      val minAvg =
-        keys
-          .iterator
-          .flatMap(m.get)
-          .collect { case BMStatus.Done(Right(s)) => s.average }
-          .reduceOption(_.min(_))
-          .getOrElse(Duration.Zero)
-
-      val mainFmt = FormatResult.choose(minAvg)
-      Vector(mainFmt, FormatResult.OpsPerSec)
-    }
 
     // =================================================================================================================
     // Rendering
@@ -406,11 +404,11 @@ object SuiteRunner {
                               suite     : GuiSuite[P],
                               progress  : Progress[P],
                               results   : EachBMStatus[P],
-                              resultFmts: ResultFmts,
+                              resultFmts: Vector[FormatResult],
                               guiOptions: GuiOptions): VdomElement =
       fmt.render(FormatResults.Args(suite, progress, results, resultFmts, guiOptions))
 
-    private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: ResultFmts): VdomElement = {
+    private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: Vector[FormatResult]): VdomElement = {
       import ReactChart._
       val keys = progress.plan.keys
       val fmt = resultFmts.head

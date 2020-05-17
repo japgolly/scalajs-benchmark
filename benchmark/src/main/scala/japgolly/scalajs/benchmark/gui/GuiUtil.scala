@@ -1,7 +1,10 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.engine.TimeUtil
+import japgolly.scalajs.benchmark.vendor.FileSaver
+import japgolly.scalajs.react.Callback
 import monocle.Lens
+import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.scalajs.js
@@ -106,4 +109,12 @@ object GuiUtil {
       case b: B => b
       case a => throw new RuntimeException("Invalid subtype: " + a)
     })(b => _ => b)
+
+  def saveFile(text: String, filename: String, mimeType: String): Callback =
+    Callback {
+      val body = js.Array[js.Any](text)
+      val mime = BlobPropertyBag(mimeType + ";charset=utf-8")
+      val blob = new Blob(body, mime)
+      FileSaver.saveAs(blob, filename)
+    }
 }
