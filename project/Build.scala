@@ -53,6 +53,7 @@ object ScalaJsBenchmark {
 
   def scalac213Flags = Seq(
     "-Wconf:msg=may.not.be.exhaustive:e",            // Make non-exhaustive matches errors instead of warnings
+    "-Wunused:imports",                              // Warn if an import selector is not referenced.
     "-Xmixin-force-forwarders:false",                // Only generate mixin forwarders required for program correctness.
     "-Yjar-compression-level", "9",                  // compression level to use when writing jar files
     "-Ymacro-annotations"                            // Enable support for macro annotations, formerly in macro paradise.
