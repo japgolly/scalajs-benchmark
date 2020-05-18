@@ -4,32 +4,33 @@ import japgolly.scalajs.benchmark.Suite
 import japgolly.scalajs.benchmark.engine.Progress
 import scala.scalajs.LinkingInfo
 
-// TODO Rename these fields and classes
-final case class GuiOptions(formatResultsDefault    : FormatResults,
-                            formatResults           : Seq[FormatResults],
-                            formatResultsBatch      : Map[FormatResults.Text, Enabled],
-                            resultFilenameWithoutExt: (Suite[_], Progress[_]) => String,
-                            allowBatchMode          : Boolean,
+final case class GuiOptions(defaultSuiteResultsFormat: SuiteResultsFormat,
+                            suiteResultsFormats      : Seq[SuiteResultsFormat],
+                            resultFilenameWithoutExt : GuiOptions.FilenameFormat,
+                            batchModeFormats         : Map[SuiteResultsFormat.Text, Enabled],
+                            allowBatchMode           : Boolean,
                            ) {
 
   assert(
-    formatResults.contains(formatResultsDefault),
-    s"The default format [${formatResultsDefault.label}] isn't in the list of choices ${formatResults.map(_.label).mkString("[", ", ", "]")}")
+    suiteResultsFormats.contains(defaultSuiteResultsFormat),
+    s"The default format [${defaultSuiteResultsFormat.label}] isn't in the list of choices ${suiteResultsFormats.map(_.label).mkString("[", ", ", "]")}")
 }
 
 object GuiOptions {
 
+  type FilenameFormat = (Suite[_], Progress[_]) => String
+
   val default: GuiOptions =
     apply(
-      formatResultsDefault     = FormatResults.Table,
-      formatResults            = FormatResults.builtIn,
-      formatResultsBatch       = FormatResults.builtInBatch,
-      resultFilenameWithoutExt = defaultFilename,
-      allowBatchMode           = true,
+      defaultSuiteResultsFormat = SuiteResultsFormat.Table,
+      suiteResultsFormats       = SuiteResultsFormat.builtIn,
+      resultFilenameWithoutExt  = defaultFilenameFormat,
+      batchModeFormats          = SuiteResultsFormat.builtInBatch,
+      allowBatchMode            = true,
     )
 
-  // Access this via `default.resultFilenameWithoutExt`
-  private def defaultFilename: (Suite[_], Progress[_]) => String =
+  // Access this via `GuiOptions.default.resultFilenameWithoutExt`
+  private def defaultFilenameFormat: FilenameFormat =
     (s, p) => {
       val mode =
         if (LinkingInfo.developmentMode)

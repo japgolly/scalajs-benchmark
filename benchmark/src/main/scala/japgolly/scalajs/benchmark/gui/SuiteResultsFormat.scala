@@ -5,7 +5,6 @@ import io.circe.syntax._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
-import japgolly.scalajs.benchmark.vendor.FileSaver
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import java.util.concurrent.TimeUnit
@@ -15,16 +14,16 @@ import scalacss.ScalaCssReact._
 
 /** Format for a number of results.
   */
-abstract class FormatResults(final val label: String) {
-  def render[P](args: FormatResults.Args[P]): VdomElement
+abstract class SuiteResultsFormat(final val label: String) {
+  def render[P](args: SuiteResultsFormat.Args[P]): VdomElement
 }
 
-object FormatResults {
+object SuiteResultsFormat {
 
-  val builtIn: Vector[FormatResults] =
+  val builtIn: Vector[SuiteResultsFormat] =
     Vector(Table, JmhText, JmhJson, CSV(8))
 
-  val builtInBatch: Map[FormatResults.Text, Enabled] =
+  val builtInBatch: Map[SuiteResultsFormat.Text, Enabled] =
     Map(
       JmhJson -> Enabled,
       JmhText -> Enabled,
@@ -34,7 +33,7 @@ object FormatResults {
   final case class Args[P](suite     : GuiSuite[P],
                            progress  : Progress[P],
                            results   : Map[PlanKey[P], BMStatus],
-                           resultFmts: Vector[FormatResult],
+                           resultFmts: Vector[BmResultFormat],
                            guiOptions: GuiOptions) {
 
     val resultFmtCount = resultFmts.length
@@ -45,9 +44,12 @@ object FormatResults {
     }
   }
 
+  // ===================================================================================================================
+
+  /** A format that generates text. */
   abstract class Text(label: String,
                       final val mimeType: String,
-                      final val fileExt: String) extends FormatResults(label) {
+                      final val fileExt: String) extends SuiteResultsFormat(label) {
 
     def renderToText[P](args: Args[P]): String
 
@@ -71,7 +73,7 @@ object FormatResults {
 
   // ===================================================================================================================
 
-  case object Table extends FormatResults("Table") {
+  case object Table extends SuiteResultsFormat("Table") {
     private val resultBlock1  = ^.colSpan := 3
     private val resultTD      = <.td(*.resultData)
     private val plusMinusCell = resultTD("±")
@@ -97,7 +99,7 @@ object FormatResults {
       }
 
       def runsCell(runs: Int) =
-        resultTD(FormatValue.Integer render runs)
+        resultTD(ValueFormat.Integer render runs)
 
       def rows =
         keys.map { k =>
@@ -154,15 +156,15 @@ object FormatResults {
     val decFmt =
       overridePrecision.map { dp => "%." + dp + "f" }
 
-    def formatNum[A](formatValue: FormatValue[A], value: A): String =
+    def formatNum[A](valueFormat: ValueFormat[A], value: A): String =
       decFmt match {
         case Some(fmt) =>
-          GuiUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+          GuiUtil.removeTrailingZeros(fmt.format(valueFormat.toDouble(value)))
         case None =>
           if (prettyNumbers)
-            formatValue.toTextPretty(value)
+            valueFormat.toTextPretty(value)
           else
-            formatValue.toTextBasic(value)
+            valueFormat.toTextBasic(value)
       }
 
     val keys = progress.plan.keys
@@ -194,7 +196,7 @@ object FormatResults {
         case BMStatus.Running        => cells :+= "Running..."
         case BMStatus.Done(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
         case BMStatus.Done(Right(s)) =>
-          cells :+= formatNum(FormatValue.Integer, s.samples)
+          cells :+= formatNum(ValueFormat.Integer, s.samples)
           for (f <- resultFmts) {
             val score = formatNum(f.score, s.score)
             val error = formatNum(f.scoreError, s.scoreError)

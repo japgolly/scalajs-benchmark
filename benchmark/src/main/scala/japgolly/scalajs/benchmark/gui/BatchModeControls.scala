@@ -11,8 +11,8 @@ object BatchModeControls {
                          bms          : Int,
                          elapsedMs    : Double,
                          etaMs        : Double,
-                         formats      : Map[FormatResults.Text, Enabled],
-                         updateFormats: Option[Map[FormatResults.Text, Enabled] ~=> Callback],
+                         formats      : Map[SuiteResultsFormat.Text, Enabled],
+                         updateFormats: Option[Map[SuiteResultsFormat.Text, Enabled] ~=> Callback],
                          start        : Option[Option[Reusable[Callback]]],
                          abort        : Option[Reusable[Callback]],
                          reset        : Option[Reusable[Callback]],
@@ -23,7 +23,7 @@ object BatchModeControls {
 
   implicit val reusabilityProps: Reusability[Props] = {
     implicit val d = Reusability.double(499) // 499ms tolerance because we're rendering ETA with second-precision
-    implicit val f: Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
+    implicit val f: Reusability[Map[SuiteResultsFormat.Text, Enabled]] = Reusability.byRef
     Reusability.byRef || Reusability.derive
   }
 

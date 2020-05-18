@@ -31,11 +31,11 @@ object BatchMode {
 
     @Lenses
     final case class Initial(items  : Vector[Item[Unit, Unit]],
-                             formats: Map[FormatResults.Text, Enabled]) extends State
+                             formats: Map[SuiteResultsFormat.Text, Enabled]) extends State
 
     @Lenses
     final case class Running(items     : Vector[Item[SuiteState, Int]],
-                             formats   : Map[FormatResults.Text, Enabled],
+                             formats   : Map[SuiteResultsFormat.Text, Enabled],
                              startedAt : js.Date,
                              startedMs : Double,
                              batchPlans: BatchPlans,
@@ -67,9 +67,9 @@ object BatchMode {
     type SuiteState = Option[SuiteRunner.State[_]]
 
     def init(p: Props): State =
-      init(p, p.guiOptions.formatResultsBatch)
+      init(p, p.guiOptions.batchModeFormats)
 
-    def init(p: Props, formats: Map[FormatResults.Text, Enabled]): State =
+    def init(p: Props, formats: Map[SuiteResultsFormat.Text, Enabled]): State =
       Initial(Item.fromTocItems(p.items), formats)
 
     val initial: Prism[State, Initial] =
@@ -106,9 +106,9 @@ object BatchMode {
 
   final case class BatchPlans(plans        : Vector[BatchPlan],
                               runnableItems: Vector[Item[State.SuiteState, Int]],
-                              formats      : Map[FormatResults.Text, Enabled]) {
+                              formats      : Map[SuiteResultsFormat.Text, Enabled]) {
 
-    val enabledFormats: Vector[FormatResults.Text] =
+    val enabledFormats: Vector[SuiteResultsFormat.Text] =
       formats.iterator.filter(_._2 is Enabled).map(_._1).toVector
 
     val newState: CallbackTo[State.Running] =
@@ -144,7 +144,7 @@ object BatchMode {
         val progress = done.progress.copy(startedAt = startedAt)
         val resultFmts = SuiteRunner.deriveResultFmts(progress, done.bm)
         Callback.traverse(enabledFormats) { f =>
-          val args = FormatResults.Args(
+          val args = SuiteResultsFormat.Args(
             suite      = done.suite,
             progress   = progress,
             results    = done.bm,
@@ -186,12 +186,12 @@ object BatchMode {
     }
   }
 
-  private implicit val reusabilityFormats         : Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
-  private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]]             = Reusability.byRef
-  private implicit val reusabilityBatchPlan       : Reusability[BatchPlan]                        = Reusability.byRef
-  private implicit val reusabilityBatchPlans      : Reusability[BatchPlans]                       = Reusability.byRef
-  private implicit val reusabilityStateRS         : Reusability[State.RunningStatus]              = Reusability.derive
-  private implicit val reusabilityStateI          : Reusability[State.Initial]                    = Reusability.derive
+  private implicit val reusabilityFormats         : Reusability[Map[SuiteResultsFormat.Text, Enabled]] = Reusability.byRef
+  private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]]                  = Reusability.byRef
+  private implicit val reusabilityBatchPlan       : Reusability[BatchPlan]                             = Reusability.byRef
+  private implicit val reusabilityBatchPlans      : Reusability[BatchPlans]                            = Reusability.byRef
+  private implicit val reusabilityStateRS         : Reusability[State.RunningStatus]                   = Reusability.derive
+  private implicit val reusabilityStateI          : Reusability[State.Initial]                         = Reusability.derive
   private implicit val reusabilityStateR          : Reusability[State.Running] = {
     implicit val x: Reusability[Double] = Reusability.by_==
     Reusability.derive
@@ -269,7 +269,7 @@ object BatchMode {
       StateSnapshot.withReuse.prepare[Vector[Item[Unit, Unit]]]((oi, cb) =>
         $.modStateOption(s => oi.flatMap(State.initialItems.setOption(_)(s)), cb))
 
-    private val setInitialFormats: Map[FormatResults.Text, Enabled] ~=> Callback =
+    private val setInitialFormats: Map[SuiteResultsFormat.Text, Enabled] ~=> Callback =
       Reusable.byRef { f =>
         $.modStateOption(_ match {
           case s: State.Initial => Some(s.copy(formats = f))

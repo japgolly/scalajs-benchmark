@@ -4,17 +4,17 @@ import java.util.concurrent.TimeUnit
 import japgolly.scalajs.benchmark.engine.{TimeUtil, Stats}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-/** Format for a result derived from [[Stats]].
+/** Format for the result of a single benchmark.
   *
   * Eg. ops/sec: 2058.8 ± 8.1
   *
   * @param score Formatter for the score itself.
   * @param scoreError Formatter for the error in (score ± error).
   */
-final case class FormatResult(header       : String,
-                              score        : FormatValue[Duration],
-                              scoreError   : FormatValue[Duration],
-                              lowerIsBetter: Boolean) {
+final case class BmResultFormat(header       : String,
+                                score        : ValueFormat[Duration],
+                                scoreError   : ValueFormat[Duration],
+                                lowerIsBetter: Boolean) {
 
   def higherIsBetter = !lowerIsBetter
 
@@ -25,7 +25,7 @@ final case class FormatResult(header       : String,
     s"$header ($whichIsBetter)"
 }
 
-object FormatResult {
+object BmResultFormat {
 
   def abbrev(t: TimeUnit): String =
     t match {
@@ -54,19 +54,23 @@ object FormatResult {
       case TimeUnit.DAYS         => _ / 3660000 / 24
     }
 
-  def duration(header: String, lowerIsBetter: Boolean, getUnits: FiniteDuration => Double, scoreDP: Int, errorDP: Int): FormatResult =
-    FormatResult(
+  def duration(header       : String,
+               lowerIsBetter: Boolean,
+               getUnits     : FiniteDuration => Double,
+               scoreDP      : Int,
+               errorDP      : Int): BmResultFormat =
+    BmResultFormat(
       header,
-      FormatValue.duration(getUnits, scoreDP),
-      FormatValue.duration(getUnits, errorDP),
+      ValueFormat.duration(getUnits, scoreDP),
+      ValueFormat.duration(getUnits, errorDP),
       lowerIsBetter)
 
-  def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult = {
+  def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat = {
     val one = FiniteDuration(1, t)
     duration("ops/" + abbrev(t), false, one / _, scoreDP, errorDP)
   }
 
-  def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): FormatResult =
+  def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
   val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 0, 0)
@@ -75,7 +79,7 @@ object FormatResult {
   val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 3)
   val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 3)
 
-  def choose(minDur: Duration): FormatResult =
+  def choose(minDur: Duration): BmResultFormat =
     if (minDur.toMicros < 1000)
       MicrosPerOp
     else if (minDur.toMillis < 1000)

@@ -50,7 +50,7 @@ object SuiteRunner {
                             editors      : GenState,
                             disabledBMs  : Set[Int],
                             oldTitle     : Option[String],
-                            formatResults: FormatResults)
+                            resultsFormat: SuiteResultsFormat)
 
   object State {
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
@@ -68,7 +68,7 @@ object SuiteRunner {
         editors       = suite.params.initialState,
         disabledBMs   = if (respectDisabledByDefault) initDisabledBMs(suite.suite.bms) else Set.empty,
         oldTitle      = None,
-        formatResults = guiOptions.formatResultsDefault)
+        resultsFormat = guiOptions.defaultSuiteResultsFormat)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -170,7 +170,7 @@ object SuiteRunner {
     } yield RunCtrls(abort, promise._1)
   }
 
-  def deriveResultFmts[P](progress: Progress[P], m: EachBMStatus[P]): Vector[FormatResult] = {
+  def deriveResultFmts[P](progress: Progress[P], m: EachBMStatus[P]): Vector[BmResultFormat] = {
     val keys = progress.plan.keys
 
     val minAvg =
@@ -181,8 +181,8 @@ object SuiteRunner {
         .reduceOption(_.min(_))
         .getOrElse(Duration.Zero)
 
-    val mainFmt = FormatResult.choose(minAvg)
-    Vector(mainFmt, FormatResult.OpsPerSec)
+    val mainFmt = BmResultFormat.choose(minAvg)
+    Vector(mainFmt, BmResultFormat.OpsPerSec)
   }
 
   // ===================================================================================================================
@@ -365,7 +365,7 @@ object SuiteRunner {
           <.span("Benchmark running... ETA: ", GuiUtil.formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
+        renderResults(s.resultsFormat, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
         renderGraph(p.suite, r.progress, r.bm, resultFmts))
     }
 
@@ -383,7 +383,7 @@ object SuiteRunner {
           <.span(s"Benchmark completed in ${GuiUtil.formatETA(r.totalTime)}."),
           resetButton),
         renderFormatButtons(p, s),
-        renderResults(s.formatResults, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
+        renderResults(s.resultsFormat, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
         renderGraph(p.suite, r.progress, r.bm, resultFmts))
     }
 
@@ -391,24 +391,24 @@ object SuiteRunner {
       <.div(
         *.resultFormatRow,
         "Result format: ",
-        p.guiOptions.formatResults.toTagMod { f =>
+        p.guiOptions.suiteResultsFormats.toTagMod { f =>
           <.label(
             *.resultFormat,
             <.input.radio(
-              ^.checked := (s.formatResults == f),
-              ^.onChange --> $.modState(_.copy(formatResults = f))),
+              ^.checked := (s.resultsFormat == f),
+              ^.onChange --> $.modState(_.copy(resultsFormat = f))),
             f.label)
         }
       )
-    private def renderResults(fmt       : FormatResults,
+    private def renderResults(fmt       : SuiteResultsFormat,
                               suite     : GuiSuite[P],
                               progress  : Progress[P],
                               results   : EachBMStatus[P],
-                              resultFmts: Vector[FormatResult],
+                              resultFmts: Vector[BmResultFormat],
                               guiOptions: GuiOptions): VdomElement =
-      fmt.render(FormatResults.Args(suite, progress, results, resultFmts, guiOptions))
+      fmt.render(SuiteResultsFormat.Args(suite, progress, results, resultFmts, guiOptions))
 
-    private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: Vector[FormatResult]): VdomElement = {
+    private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: Vector[BmResultFormat]): VdomElement = {
       import ReactChart._
       val keys = progress.plan.keys
       val fmt = resultFmts.head
@@ -436,8 +436,8 @@ object SuiteRunner {
       ).take(bmsToShow).toVector
 
       val dataset = ScalaDataset(fmt.header, dataPoints)
-      val bardata = ScalaBarData(titles, Vector(dataset))
-      val props   = ReactChart.Props(*.graph, *.graphInner(bardata))
+      val barData = ScalaBarData(titles, Vector(dataset))
+      val props   = ReactChart.Props(*.graph, *.graphInner(barData))
 
       <.div(*.graphContainer,
         <.div(*.graphHeader, fmt.graphHeader),

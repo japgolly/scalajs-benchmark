@@ -4,8 +4,8 @@ import io.circe._
 import io.circe.parser._
 import japgolly.microlibs.testutil.TestUtil._
 import japgolly.scalajs.benchmark.engine._
-import japgolly.scalajs.benchmark.gui.{BMStatus, FormatResult, GuiOptions, GuiParam, GuiParams, GuiSuite}
-import japgolly.scalajs.benchmark.gui.FormatResults.{Args, JmhJson}
+import japgolly.scalajs.benchmark.gui.{BMStatus, BmResultFormat, GuiOptions, GuiParam, GuiParams, GuiSuite}
+import japgolly.scalajs.benchmark.gui.SuiteResultsFormat.{Args, JmhJson}
 import scala.concurrent.duration._
 import scala.scalajs.js
 import utest._
@@ -40,7 +40,7 @@ object JmhJsonTest extends TestSuite {
   private def testJmhJson[P](suite     : GuiSuite[P],
                              progress  : Progress[P],
                              results   : Map[PlanKey[P], BMStatus],
-                             resultFmts: Vector[FormatResult],
+                             resultFmts: Vector[BmResultFormat],
                              expect    : String): Unit = {
     val args = Args[P](suite, progress, results, resultFmts, GuiOptions.default)
     val actual = JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent"))))
@@ -50,7 +50,7 @@ object JmhJsonTest extends TestSuite {
   private def testJmhJsonText[P](suite     : GuiSuite[P],
                                  progress  : Progress[P],
                                  results   : Map[PlanKey[P], BMStatus],
-                                 resultFmts: Vector[FormatResult],
+                                 resultFmts: Vector[BmResultFormat],
                                  expect    : String): Unit = {
     val args = Args[P](suite, progress, results, resultFmts, GuiOptions.default)
     val actual = JmhJson.jsonText(JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent")))))
@@ -116,7 +116,7 @@ object JmhJsonTest extends TestSuite {
       suite      = GuiSuite(suite),
       progress   = Progress(startTime, plan, 123, eo),
       results    = Map(bm1p0 -> BMStatus.Done(Right(bm1p0r))),
-      resultFmts = Vector(FormatResult.MillisPerOp),
+      resultFmts = Vector(BmResultFormat.MillisPerOp),
       expect     = expect,
     )
   }
@@ -221,7 +221,7 @@ object JmhJsonTest extends TestSuite {
       suite      = GuiSuite(suite, gps),
       progress   = Progress(startTime, plan, 123, eo),
       results    = Map(bm1p1 -> BMStatus.Done(Right(bm1p1r)), bm1p2 -> BMStatus.Done(Right(bm1p2r))),
-      resultFmts = Vector(FormatResult.MicrosPerOp, FormatResult.OpsPerSec),
+      resultFmts = Vector(BmResultFormat.MicrosPerOp, BmResultFormat.OpsPerSec),
       expect     = expect,
     )
   }
