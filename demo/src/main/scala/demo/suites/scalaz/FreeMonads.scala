@@ -75,13 +75,13 @@ object FreeMonads {
   val bmFn0FoldMap =
     bm(prefix + "Fn0 (foldMap)"){ p1 =>
       val p2: Function0[Int] = p1.foldMap(makeRealFn0)
-      val r: Int = p2()
+      p2(): Int
     }
 
   val bmFn0MapSuspension =
     bm(prefix + "Fn0 (mapSuspension)"){ p1 =>
       val p2: Free[Function0, Int] = p1.mapSuspension(makeRealFn0)
-      val r: Int = p2.run
+      p2.run: Int
     }
 
   val bms = Vector[Benchmark[Int]](
@@ -90,17 +90,17 @@ object FreeMonads {
 
     bm(prefix + "Reader[Fn0]"){ p1 =>
       val p2: ReaderF[Int] = p1.foldMap(CmdToReaderF)
-      val r: Int = p2.run(new TheRealDeal)()
+      p2.run(new TheRealDeal)(): Int
     },
 
     bm(prefix + "IO"){ p1 =>
       val p2: IO[Int] = p1.foldMap(makeRealIO)
-      val r: Int = p2.unsafePerformIO()
+      p2.unsafePerformIO(): Int
     },
 
     bm(prefix + "Reader[IO]"){ p1 =>
       val p2: ReaderIO[Int] = p1.foldMap(CmdToReaderIO)
-      val r: Int = p2.run(new TheRealDeal).unsafePerformIO()
+      p2.run(new TheRealDeal).unsafePerformIO(): Int
     }
   )
 

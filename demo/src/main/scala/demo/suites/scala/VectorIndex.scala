@@ -20,11 +20,11 @@ object VectorIndex {
       Vector.fill(cfg.vectorSize)(0),
       cfg.index))
 
-  private def bh(o: Option[Int]): Unit = ()
+  @inline private def ensureType(o: Option[Int]) = o
 
   val suite = Suite("Vector index")(
 
-    bm("try/catch")(d => bh(
+    bm("try/catch")(d => ensureType(
       try
         Some(d.vector(d.index))
       catch {
@@ -32,14 +32,14 @@ object VectorIndex {
       }
     )),
 
-    bm("check length")(d => bh(
+    bm("check length")(d => ensureType(
       if (d.index >= 0 && d.index < d.vector.length)
         Some(d.vector(d.index))
       else
         None
     )),
 
-    bm("lift")(d => bh(
+    bm("lift")(d => ensureType(
       d.vector.lift(d.index)
     ))
   )

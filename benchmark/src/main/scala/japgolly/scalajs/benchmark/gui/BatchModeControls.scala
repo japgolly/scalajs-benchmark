@@ -3,6 +3,7 @@ package japgolly.scalajs.benchmark.gui
 import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import scala.annotation.nowarn
 import scalacss.ScalaCssReact._
 
 object BatchModeControls {
@@ -22,8 +23,8 @@ object BatchModeControls {
   }
 
   implicit val reusabilityProps: Reusability[Props] = {
-    implicit val d = Reusability.double(499) // 499ms tolerance because we're rendering ETA with second-precision
-    implicit val f: Reusability[Map[SuiteResultsFormat.Text, Enabled]] = Reusability.byRef
+    @nowarn("cat=unused") implicit val d = Reusability.double(499) // 499ms tolerance because we're rendering ETA with second-precision
+    @nowarn("cat=unused") implicit val f: Reusability[Map[SuiteResultsFormat.Text, Enabled]] = Reusability.byRef
     Reusability.byRef || Reusability.derive
   }
 

@@ -17,15 +17,20 @@ trait StatelessClock extends Clock {
   /** @return difference in milliseconds */
   def duration(start: Time, end: Time): Double
 
-  // val bh = new Blackhole
+  private var last: Any = 123 // serving the same purpose as BlackHole
+
+  override def toString =
+    last match {
+      case notGonnaHappen: Clock => notGonnaHappen.toString
+      case _                     => "StatelessClock"
+    }
 
   override def time(c: CallbackTo[_]): CallbackTo[Double] = {
     val f = c.toScalaFn
     CallbackTo {
       val a = unsafeGet()
-      val x = f()
+      last = f()
       val b = unsafeGet()
-      // bh.consumeA(x)
       duration(a, b)
     }
   }

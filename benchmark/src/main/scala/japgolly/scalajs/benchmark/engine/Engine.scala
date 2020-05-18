@@ -2,7 +2,7 @@ package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo, Reusability}
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
@@ -40,7 +40,7 @@ final case class AbortFn(value: AsyncCallback[Unit]) {
 
 object AbortFn {
   implicit val reusability: Reusability[AbortFn] = {
-    implicit val x = Reusability.asyncCallbackByRef[Unit]
+    @nowarn("cat=unused") implicit val x = Reusability.asyncCallbackByRef[Unit]
     Reusability.derive
   }
 }

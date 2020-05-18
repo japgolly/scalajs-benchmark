@@ -10,6 +10,7 @@ import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.{GenPrism, Lenses}
 import monocle.{Lens, Optional, Prism}
+import scala.annotation.nowarn
 import scala.scalajs.js
 import scalacss.ScalaCssReact._
 
@@ -186,16 +187,29 @@ object BatchMode {
     }
   }
 
-  private implicit val reusabilityFormats         : Reusability[Map[SuiteResultsFormat.Text, Enabled]] = Reusability.byRef
-  private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]]                  = Reusability.byRef
-  private implicit val reusabilityBatchPlan       : Reusability[BatchPlan]                             = Reusability.byRef
-  private implicit val reusabilityBatchPlans      : Reusability[BatchPlans]                            = Reusability.byRef
-  private implicit val reusabilityStateRS         : Reusability[State.RunningStatus]                   = Reusability.derive
-  private implicit val reusabilityStateI          : Reusability[State.Initial]                         = Reusability.derive
-  private implicit val reusabilityStateR          : Reusability[State.Running] = {
-    implicit val x: Reusability[Double] = Reusability.by_==
+  @nowarn("cat=unused") private implicit val reusabilityFormats: Reusability[Map[SuiteResultsFormat.Text, Enabled]] =
+    Reusability.byRef
+
+  @nowarn("cat=unused") private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]] =
+    Reusability.byRef
+
+  @nowarn("cat=unused") private implicit val reusabilityBatchPlan: Reusability[BatchPlan] =
+    Reusability.byRef
+
+  @nowarn("cat=unused") private implicit val reusabilityBatchPlans: Reusability[BatchPlans] =
+    Reusability.byRef
+
+  @nowarn("cat=unused") private implicit val reusabilityStateRS: Reusability[State.RunningStatus] =
+    Reusability.derive
+
+  @nowarn("cat=unused") private implicit val reusabilityStateI: Reusability[State.Initial] =
+    Reusability.derive
+
+  @nowarn("cat=unused") private implicit val reusabilityStateR: Reusability[State.Running] = {
+    @nowarn("cat=unused") implicit val x: Reusability[Double] = Reusability.by_==
     Reusability.derive
   }
+
   implicit val reusabilityState: Reusability[State] = Reusability.derive
 
   // ===================================================================================================================

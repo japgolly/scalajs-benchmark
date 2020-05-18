@@ -100,7 +100,7 @@ object Router {
         )
         cfg.suite(args)
 
-      case Page.BatchMode(i) =>
+      case Page.BatchMode(_) =>
         val args = LayoutConfig.ArgsWithNav(
           nav = renderNav(BatchMode.name),
           page = res.render()

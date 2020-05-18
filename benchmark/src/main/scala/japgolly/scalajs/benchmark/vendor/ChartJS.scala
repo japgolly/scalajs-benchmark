@@ -1,18 +1,21 @@
 package japgolly.scalajs.benchmark.vendor.chartjs
 
-import japgolly.scalajs.benchmark.vendor.chartjs.Chart.{Labels, Value, Values}
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart.{Labels, Values}
 import org.scalajs.dom.html.Canvas
+import scala.annotation.nowarn
 import scala.scalajs.js
 import scala.scalajs.js.annotation._
 import scala.scalajs.js.{Object, UndefOr, native, |}
 
 @JSGlobal("Chart")
 @native
+@nowarn("cat=unused")
 class Chart(ctx: js.Dynamic | js.Array[Canvas]) extends Object {
   def Bar(data: BarData, options: Chart.BarOptions = native): BarChart = native
 }
 
 @native
+@nowarn("cat=unused")
 trait BarChart extends Object {
   // def getBarsAtEvent(event)
   // eachBars : function(callback){
@@ -29,6 +32,7 @@ trait BarChart extends Object {
 }
 
 @native
+@nowarn("cat=unused")
 trait ChartElement1 extends Object {
   var height: Int = native
   var width: Int = native
@@ -39,6 +43,7 @@ trait ChartElement1 extends Object {
 }
 
 @native
+@nowarn("cat=unused")
 trait ChartElement2 extends Object {
   var value: Chart.Value = native
   var fillColor: String = native
@@ -48,15 +53,20 @@ trait ChartElement2 extends Object {
 }
 
 @native
+@nowarn("cat=unused")
 trait BarData extends Object {
   var labels: Labels = native
   var datasets: js.Array[Dataset] = native
 }
+
 @native
+@nowarn("cat=unused")
 trait DatasetB extends Dataset {
   def bars: UndefOr[js.Array[ChartElement2]] = native
 }
+
 @native
+@nowarn("cat=unused")
 trait Dataset extends Object {
   var label: String = native
   var fillColor: String = native
@@ -68,6 +78,7 @@ trait Dataset extends Object {
 
 @JSGlobal("Chart")
 @native
+@nowarn("cat=unused")
 object Chart extends Object {
   type Value = Double
   type Values = js.Array[Value]
@@ -75,6 +86,7 @@ object Chart extends Object {
   type Labels = js.Array[Label]
 
   @native
+  @nowarn("cat=unused")
   trait GlobalOptions extends Object {
 
     /** Whether to animate the chart */
@@ -203,6 +215,7 @@ object Chart extends Object {
   }
 
   @native
+  @nowarn("cat=unused")
   trait BarOptions extends GlobalOptions {
     /** Whether grid lines are shown across the chart */
     var scaleShowGridLines: Boolean = native
@@ -236,6 +249,7 @@ object Chart extends Object {
   }
 
   @native
+  @nowarn("cat=unused")
   trait LineOptions extends GlobalOptions {
     /** Whether grid lines are shown across the chart */
     var scaleShowGridLines: Boolean = native
@@ -284,6 +298,7 @@ object Chart extends Object {
   }
 
   @native
+  @nowarn("cat=unused")
   trait PieDoughnutOptions extends GlobalOptions {
     /** Whether we should show a stroke on each segment */
     var segmentShowStroke: Boolean = native
@@ -308,8 +323,9 @@ object Chart extends Object {
   }
 
 
-    @native
+  @native
   object defaults extends Object {
+
     @native
     object global extends GlobalOptions
   }
