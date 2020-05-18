@@ -87,6 +87,7 @@ object BmResultFormat {
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
   val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 0, 0)
+  val OpsPerSec3  = opsPerT(TimeUnit.SECONDS, 3, 3)
   val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 3)
   val SecPerOp3   = timePerOp(TimeUnit.SECONDS, 3, 3)
   val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 3)
