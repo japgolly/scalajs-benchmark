@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.engine.{Stats, TimeUtil}
 import java.util.concurrent.TimeUnit
-import japgolly.scalajs.benchmark.engine.{TimeUtil, Stats}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 /** Format for the result of a single benchmark.
@@ -12,8 +12,9 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
   * @param scoreError Formatter for the error in (score ± error).
   */
 final case class BmResultFormat(header       : String,
-                                score        : ValueFormat[Duration],
-                                scoreError   : ValueFormat[Duration],
+                                score        : ValueFormat[Stats],
+                                scoreError   : ValueFormat[Stats],
+                                scoreErrorDur: ValueFormat[Duration],
                                 lowerIsBetter: Boolean) {
 
   def higherIsBetter = !lowerIsBetter
@@ -58,16 +59,28 @@ object BmResultFormat {
                lowerIsBetter: Boolean,
                getUnits     : FiniteDuration => Double,
                scoreDP      : Int,
-               errorDP      : Int): BmResultFormat =
+               errorDP      : Int): BmResultFormat = {
+    val scoreErrorDur = ValueFormat.duration(getUnits, errorDP)
     BmResultFormat(
-      header,
-      ValueFormat.duration(getUnits, scoreDP),
-      ValueFormat.duration(getUnits, errorDP),
-      lowerIsBetter)
+      header        = header,
+      score         = ValueFormat.duration(getUnits, scoreDP).contramap(_.score),
+      scoreError    = scoreErrorDur.contramap(_.scoreError),
+      scoreErrorDur = scoreErrorDur,
+      lowerIsBetter = lowerIsBetter)
+    }
 
   def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat = {
-    val one = FiniteDuration(1, t)
-    duration("ops/" + abbrev(t), false, one / _, scoreDP, errorDP)
+    val getUnits                      = this.getUnits(TimeUnit.SECONDS)
+    val scoreErrorDur                 = ValueFormat.duration(getUnits, errorDP)
+    val inverse   : Stats => Stats    = _.map(1000000 / _)
+    val score     : Stats => Duration = inverse(_).score
+    val scoreError: Stats => Duration = inverse(_).scoreError
+    BmResultFormat(
+      header        = "ops/" + abbrev(t),
+      score         = ValueFormat.duration(getUnits, scoreDP).contramap(score),
+      scoreError    = scoreErrorDur.contramap(scoreError),
+      scoreErrorDur = scoreErrorDur,
+      lowerIsBetter = false)
   }
 
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat =

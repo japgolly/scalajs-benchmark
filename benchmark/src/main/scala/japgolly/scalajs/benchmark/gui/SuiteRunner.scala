@@ -427,7 +427,7 @@ object SuiteRunner {
 
       val dataPoints = keys.iterator.map[Chart.Value](k =>
         m.getOrElse(k, BMStatus.Pending) match {
-          case BMStatus.Done(Right(stats)) => fmt.score.getDouble(stats.score) getOrElse 0
+          case BMStatus.Done(Right(stats)) => fmt.score.getDouble(stats) getOrElse 0
           case BMStatus.Done(Left(_))
              | BMStatus.Pending
              | BMStatus.Running

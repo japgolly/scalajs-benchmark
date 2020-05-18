@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.engine
 
-import japgolly.microlibs.testutil.TestUtil.assertEqWithTolerance
+import japgolly.scalajs.benchmark.TestUtil._
 import utest._
 
 object StatMathTest extends TestSuite {
@@ -40,6 +40,14 @@ object StatMathTest extends TestSuite {
       assertEqWithTolerance(t(28), 3.6739064007013247)
       assertEqWithTolerance(t(29), 3.6594050194663867)
       assertEqWithTolerance(t(30), 3.6459586350420787)
+    }
+
+    "sameAsJmh" - {
+      val s = stats(1337.911, 1748.364, 1332.656, 1316.026, 1380.979, 1307.462, 1302.26, 1306.425, 1309.876)
+      assertEqWithTolerance(s.score, 1371.328777)
+      assertEqWithTolerance(s.scoreError, 241.156949)
+      assertEqWithTolerance(s.scoreConfidence._1, 1130.171828)
+      assertEqWithTolerance(s.scoreConfidence._2, 1612.485726)
     }
   }
 }

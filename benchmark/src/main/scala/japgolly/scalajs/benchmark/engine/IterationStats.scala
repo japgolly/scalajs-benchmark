@@ -2,6 +2,9 @@ package japgolly.scalajs.benchmark.engine
 
 final case class IterationStats(samples: Int, sumMs: Double) {
   val mean = sumMs / samples.toDouble
+
+  def map(f: Double => Double): IterationStats =
+    copy(sumMs = f(sumMs))
 }
 
 object IterationStats {

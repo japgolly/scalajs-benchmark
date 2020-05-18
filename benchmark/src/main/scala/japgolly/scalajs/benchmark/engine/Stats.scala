@@ -5,6 +5,9 @@ import scala.scalajs.js
 
 final case class Stats(rawData: Vector[IterationStats]) {
 
+  def map(f: Double => Double): Stats =
+    Stats(rawData.map(_.map(f)))
+
   override def toString() = {
     def toOpsPerSec(d: FiniteDuration): Double =
       TimeUtil.toMs(d) * 1000 / 1000000L.toDouble
@@ -41,7 +44,7 @@ final case class Stats(rawData: Vector[IterationStats]) {
 
   val average: Duration =
     if (times.isEmpty)
-      Duration.Inf
+      Duration.Undefined
     else
       totalTime / samples
 
@@ -57,7 +60,7 @@ final case class Stats(rawData: Vector[IterationStats]) {
 
   def getMeanErrorAt(confidence: Double): Duration =
     if (samples <= 2)
-      Duration.Inf
+      Duration.Undefined
     else
       TimeUtil.fromMs(meanErrorMsAt(confidence))
 
