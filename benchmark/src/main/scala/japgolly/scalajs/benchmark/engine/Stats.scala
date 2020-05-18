@@ -1,20 +1,11 @@
 package japgolly.scalajs.benchmark.engine
 
-import scala.concurrent.duration._
 import scala.scalajs.js
 
 final case class Stats(rawData: Vector[IterationStats]) {
 
-  override def toString() = {
-    def toOpsPerSec(d: FiniteDuration): Double =
-      TimeUtil.toMs(d) * 1000 / 1000000L.toDouble
-    def fmtD(d: Duration): String = d match {
-      case f: FiniteDuration => (TimeUtil.toMs(f) * 1000).toInt.toString + "μs"
-      case _                 => d.toString
-    }
-    val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
-    s"${fmtD(score)} ± ${fmtD(scoreError)} /op ($samples runs, Σ $tot)"
-  }
+  def map(f: Double => Double): Stats =
+    Stats(rawData.map(_.map(f)))
 
   lazy val isolatedBatches: Vector[Stats] = {
     val e = Vector.empty[IterationStats]
@@ -24,26 +15,24 @@ final case class Stats(rawData: Vector[IterationStats]) {
     }
   }
 
-  private val times: js.Array[Double] =
-    new js.Array[Double]
-
-  for (i <- rawData)
+  private val times: js.Array[Double] = new js.Array[Double]
+  private var _sum = 0.0
+  for (i <- rawData) {
+    _sum += i.mean
     times.push(i.mean)
+  }
 
-  def samples =
+  val sum: Double =
+    _sum
+
+  def samples: Int =
     times.length
 
-  val totalTime: FiniteDuration =
+  val average: Double =
     if (times.isEmpty)
-      Duration.Zero
+      0
     else
-      TimeUtil.fromMs(times.sum)
-
-  val average: Duration =
-    if (times.isEmpty)
-      Duration.Inf
-    else
-      totalTime / samples
+      sum / samples
 
   private lazy val statMathMs =
     StatMath(times)
@@ -55,18 +44,18 @@ final case class Stats(rawData: Vector[IterationStats]) {
     a * statMathMs.sem
   }
 
-  def getMeanErrorAt(confidence: Double): Duration =
+  def getMeanErrorAt(confidence: Double): Double =
     if (samples <= 2)
-      Duration.Inf
+      Double.NaN
     else
-      TimeUtil.fromMs(meanErrorMsAt(confidence))
+      meanErrorMsAt(confidence)
 
-  def getConfidenceIntervalAt(confidence: Double): (Duration, Duration) =
+  def getConfidenceIntervalAt(confidence: Double): (Double, Double) =
     if (samples <= 2)
-      (Duration.Undefined, Duration.Undefined)
+      (Double.NaN, Double.NaN)
     else {
       val meanErr = meanErrorMsAt(confidence)
-      (TimeUtil.fromMs(statMathMs.mean - meanErr), TimeUtil.fromMs(statMathMs.mean + meanErr))
+      (statMathMs.mean - meanErr, statMathMs.mean + meanErr)
     }
 
   val score           = average

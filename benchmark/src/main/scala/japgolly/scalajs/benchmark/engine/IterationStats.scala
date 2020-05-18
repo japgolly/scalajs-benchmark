@@ -1,7 +1,13 @@
 package japgolly.scalajs.benchmark.engine
 
-final case class IterationStats(samples: Int, sumMs: Double) {
-  val mean = sumMs / samples.toDouble
+/**
+  * @param sum Purposely vague. In practice it's usually duration in ms.
+  */
+final case class IterationStats(samples: Int, sum: Double) {
+  val mean = sum / samples.toDouble
+
+  def map(f: Double => Double): IterationStats =
+    copy(sum = f(sum))
 }
 
 object IterationStats {

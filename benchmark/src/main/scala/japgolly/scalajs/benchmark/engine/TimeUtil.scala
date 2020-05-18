@@ -2,12 +2,12 @@ package japgolly.scalajs.benchmark.engine
 
 import java.util.concurrent.TimeUnit
 import monocle.Iso
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.scalajs.js
 
 object TimeUtil {
 
-  def toMs(d: FiniteDuration): Double = {
+  def toMs(d: Duration): Double = {
     d.unit match {
       case TimeUnit.NANOSECONDS  => d.length.toDouble / 1000000.0
       case TimeUnit.MICROSECONDS => d.length.toDouble / 1000.0
@@ -19,7 +19,7 @@ object TimeUtil {
   def fromMs(ms: Double): FiniteDuration =
     FiniteDuration((ms * 1000000.0).toLong, TimeUnit.NANOSECONDS)
 
-  val ms: Iso[FiniteDuration, Double] =
+  val ms: Iso[Duration, Double] =
     Iso(toMs)(fromMs)
 
   def dateStrFromJsDate(d: js.Date): String =

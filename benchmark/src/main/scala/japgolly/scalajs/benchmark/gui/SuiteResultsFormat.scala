@@ -128,9 +128,9 @@ object SuiteResultsFormat {
             case BMStatus.Done(Right(stats)) =>
               runsCell(stats.samples) +:
                 resultFmts.flatMap(f => Vector(
-                  resultTD(f.score render stats.score),
+                  resultTD(f.score render stats),
                   plusMinusCell,
-                  resultTD(f.scoreError render stats.scoreError)))
+                  resultTD(f.scoreError render stats)))
           })
           <.tr(hs: _*)
         }
@@ -198,8 +198,8 @@ object SuiteResultsFormat {
         case BMStatus.Done(Right(s)) =>
           cells :+= formatNum(ValueFormat.Integer, s.samples)
           for (f <- resultFmts) {
-            val score = formatNum(f.score, s.score)
-            val error = formatNum(f.scoreError, s.scoreError)
+            val score = formatNum(f.score, s)
+            val error = formatNum(f.scoreError, s)
             val c =
               if (separatePlusMinus)
                 Vector(score, "±", error)
@@ -320,11 +320,11 @@ object SuiteResultsFormat {
 
               val primaryMetric =
                 PrimaryMetric(
-                  score           = fmtRes.score.toDouble(stats.score),
-                  scoreError      = fmtRes.scoreError.toDouble(stats.scoreError),
-                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(fmtRes.score.toDouble),
+                  score           = fmtRes.score.toDouble(stats),
+                  scoreError      = fmtRes.scoreError.toDouble(stats),
+                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(d => fmtRes.scoreErrorDur.toDouble(TimeUtil.fromMs(d))),
                   scoreUnit       = fmtRes.header.replace('μ', 'u'),
-                  rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b.score))),
+                  rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b))),
                 )
 
               BenchmarkJson(
