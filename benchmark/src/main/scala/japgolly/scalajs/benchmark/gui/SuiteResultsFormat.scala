@@ -322,7 +322,7 @@ object SuiteResultsFormat {
                 PrimaryMetric(
                   score           = fmtRes.score.toDouble(stats),
                   scoreError      = fmtRes.scoreError.toDouble(stats),
-                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(fmtRes.scoreErrorDur.toDouble),
+                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(d => fmtRes.scoreErrorDur.toDouble(TimeUtil.fromMs(d))),
                   scoreUnit       = fmtRes.header.replace('μ', 'u'),
                   rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b))),
                 )

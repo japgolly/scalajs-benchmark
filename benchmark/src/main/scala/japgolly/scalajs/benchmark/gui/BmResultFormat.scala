@@ -63,8 +63,8 @@ object BmResultFormat {
     val scoreErrorDur = ValueFormat.duration(getUnits, errorDP)
     BmResultFormat(
       header        = header,
-      score         = ValueFormat.duration(getUnits, scoreDP).contramap(_.score),
-      scoreError    = scoreErrorDur.contramap(_.scoreError),
+      score         = ValueFormat.duration(getUnits, scoreDP).contramap(TimeUtil.fromMs).contramap(_.score),
+      scoreError    = scoreErrorDur.contramap(TimeUtil.fromMs).contramap(_.scoreError),
       scoreErrorDur = scoreErrorDur,
       lowerIsBetter = lowerIsBetter)
     }
@@ -73,8 +73,8 @@ object BmResultFormat {
     val getUnits                      = this.getUnits(TimeUnit.SECONDS)
     val scoreErrorDur                 = ValueFormat.duration(getUnits, errorDP)
     val inverse   : Stats => Stats    = _.map(1000000 / _)
-    val score     : Stats => Duration = inverse(_).score
-    val scoreError: Stats => Duration = inverse(_).scoreError
+    val score     : Stats => Duration = s => TimeUtil.fromMs(inverse(s).score)
+    val scoreError: Stats => Duration = s => TimeUtil.fromMs(inverse(s).scoreError)
     BmResultFormat(
       header        = "ops/" + abbrev(t),
       score         = ValueFormat.duration(getUnits, scoreDP).contramap(score),
