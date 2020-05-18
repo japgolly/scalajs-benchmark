@@ -1,9 +1,26 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.engine.TimeUtil
+import japgolly.scalajs.benchmark.vendor.FileSaver
+import japgolly.scalajs.react.Callback
+import monocle.{Lens, Optional}
+import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
+import scala.concurrent.duration.FiniteDuration
+import scala.reflect.ClassTag
 import scala.scalajs.js
 import scala.scalajs.js.|
 
-object TextUtil {
+object GuiUtil {
+
+  def formatETA(eta: FiniteDuration): String =
+    formatETA(TimeUtil.toMs(eta))
+
+  def formatETA(ms: Double): String = {
+    val sec = ms / 1000 + 0.5 // adding 0.5 for rounding
+    val min = sec / 60
+    val hr  = min / 60
+    s"%d:%02d:%02d".format(hr.toInt, (min % 60).toInt, (sec % 60).toInt)
+  }
 
   private val numberFmt = """^-?(\d[,.]?)+(?:[,.]\d+)?$""".r.pattern
 
@@ -83,4 +100,24 @@ object TextUtil {
 
   def removeTrailingZeros(str: String): String =
     str.replaceFirst("0+$", "").replaceFirst("\\.$", "")
+
+  def vectorIndex[A](idx: Int): Lens[Vector[A], A] =
+    Lens[Vector[A], A](_(idx))(a => _.patch(idx, a :: Nil, 1))
+
+  def unsafeNarrowLens[A, B <: A: ClassTag]: Lens[A, B] =
+    Lens[A, B]({
+      case b: B => b
+      case a => throw new RuntimeException("Invalid subtype: " + a)
+    })(b => _ => b)
+
+  def optionalToLens[S, A](o: Optional[S, A])(default: => A): Lens[S, A] =
+    Lens[S, A](o.getOption(_).getOrElse(default))(o.set)
+
+  def saveFile(text: String, filename: String, mimeType: String): Callback =
+    Callback {
+      val body = js.Array[js.Any](text)
+      val mime = BlobPropertyBag(mimeType + ";charset=utf-8")
+      val blob = new Blob(body, mime)
+      FileSaver.saveAs(blob, filename)
+    }
 }

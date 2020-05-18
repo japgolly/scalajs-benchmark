@@ -1,13 +1,10 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.gui.Styles.{TextOutput => *}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import scalacss.ScalaCssReact._
-import japgolly.scalajs.benchmark.gui.Styles.{TextOutput => *}
-import japgolly.scalajs.benchmark.vendor.FileSaver
-import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import org.scalajs.dom.{document, html}
-import scala.scalajs.js
+import scalacss.ScalaCssReact._
 
 object TextOutput {
 
@@ -58,12 +55,8 @@ object TextOutput {
         else
           "Copy to clipboard"
 
-      val saveFile = Callback {
-        val body = js.Array[js.Any](p.text)
-        val mime = BlobPropertyBag(p.mimeType + ";charset=utf-8")
-        val blob = new Blob(body, mime)
-        FileSaver.saveAs(blob, p.filename)
-      }
+      val saveFile =
+        GuiUtil.saveFile(text = p.text, filename = p.filename, mimeType = p.mimeType)
 
       def copyButton = TagMod(
         <.textarea.withRef(hiddenTextAreaRef)(

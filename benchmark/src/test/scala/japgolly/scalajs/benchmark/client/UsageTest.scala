@@ -16,12 +16,12 @@ class UsageTest {
     def param1 = GuiParam(Render.Int, RenderTxt.Int, Editor.Text, Parser.IntsAsText)("Size", 5, 10)
     def param2 = GuiParam.int("Size", 5, 10)
 
-    def folder1 = MenuComp.folder("Folder")(suite)
-    def folder2 = MenuComp.folder("Folder")(suite, suite)
-    def folder3 = MenuComp.folder("Folder")(folder1, folder2)
-    def folder4 = MenuComp.folder("Folder")(folder1, suite)
-    def folder5 = MenuComp.folder("Folder")(suite, folder1)
-    def folder6 = MenuComp.folder("Folder")(suite, suite)
+    def folder1 = GuiBuilder.folder("Folder")(suite)
+    def folder2 = GuiBuilder.folder("Folder")(suite, suite)
+    def folder3 = GuiBuilder.folder("Folder")(folder1, folder2)
+    def folder4 = GuiBuilder.folder("Folder")(folder1, suite)
+    def folder5 = GuiBuilder.folder("Folder")(suite, folder1)
+    def folder6 = GuiBuilder.folder("Folder")(suite, suite)
   }
 
   def main(): Unit = {

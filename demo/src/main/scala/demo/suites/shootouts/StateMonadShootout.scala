@@ -67,7 +67,7 @@ object StateMonadShootout {
   val params = GuiParams.combine2(iso)(param1, param2)
 
   val suite = Suite[Params]("State monads")(
-    Benchmark.derive("Increment state by 1.", (_: Params).lib.bm)(_.size))
+    Benchmark.derive("Increment state by 1", (_: Params).lib.bm)(_.size))
 
   val guiSuite = GuiSuite(suite, params).describe(
     <.div(

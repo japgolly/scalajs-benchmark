@@ -11,7 +11,7 @@ object ReactChart {
   private def newObj[T <: js.Object]: T =
     js.Object().asInstanceOf[T]
 
-  case class ScalaBarData(
+  final case class ScalaBarData(
     labels  : Vector[String],
     datasets: Vector[ScalaDataset]) {
 
@@ -23,7 +23,7 @@ object ReactChart {
     }
   }
 
-  case class ScalaDataset(
+  final case class ScalaDataset(
     label          : String,
     data           : Vector[Chart.Value],
     fillColor      : js.UndefOr[String] = js.undefined,
@@ -45,7 +45,7 @@ object ReactChart {
 
   sealed trait Effect
 
-  case class InfoForFx(min: Double, max: Double, value: Double, datasetIndex: Int) {
+  final case class InfoForFx(min: Double, max: Double, value: Double, datasetIndex: Int) {
     val range = max - min
     val pct: Double =
       if (range <= 0)
@@ -56,7 +56,8 @@ object ReactChart {
 
   type InfoToColour = InfoForFx => String
 
-  case class ColourByValue(stroke: Option[InfoToColour] = None, fill: Option[InfoToColour] = None) extends Effect
+  final case class ColourByValue(stroke: Option[InfoToColour] = None, fill: Option[InfoToColour] = None) extends Effect
+
   object ColourByValue {
     def scaleFn(from: RGB, to: RGB): InfoToColour = {
       val dr = (to.r - from.r).toDouble
@@ -73,16 +74,18 @@ object ReactChart {
     }
   }
 
-  case class RGB(r: Int, g: Int, b: Int)
+  final case class RGB(r: Int, g: Int, b: Int)
 
-  case class Props(style: TagMod,
-                   data: ScalaBarData,
-                   options: Chart.BarOptions = newObj,
-                   fx: Option[Effect] = None)
+  final case class Props(style: TagMod,
+                         data: ScalaBarData,
+                         options: Chart.BarOptions = newObj,
+                         fx: Option[Effect] = None) {
+    @inline def render: VdomElement = Component(this)
+  }
 
   type State = Option[BarChart]
 
-  class Backend($: BackendScope[Props, State]) {
+  final class Backend($: BackendScope[Props, State]) {
     def render(p: Props) =
       <.canvas(p.style)
 
@@ -162,7 +165,7 @@ object ReactChart {
       } yield ()
   }
 
-  val Comp = ScalaComponent.builder[Props]
+  val Component = ScalaComponent.builder[Props]
     .initialState[State](None)
     .renderBackend[Backend]
     .componentDidMount(_.backend.mount)

@@ -1,7 +1,7 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark._
-import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo}
+import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo, Reusability}
 import scala.annotation.tailrec
 import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js
@@ -36,6 +36,13 @@ object Progress {
 
 final case class AbortFn(value: AsyncCallback[Unit]) {
   val callback = value.toCallback
+}
+
+object AbortFn {
+  implicit val reusability: Reusability[AbortFn] = {
+    implicit val x = Reusability.asyncCallbackByRef[Unit]
+    Reusability.derive
+  }
 }
 
 object Engine {

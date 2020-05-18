@@ -30,9 +30,9 @@ object FormatValue {
       Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        TextUtil.prettyPrintNumber(d, dp)),
+        GuiUtil.prettyPrintNumber(d, dp)),
       identity,
-      TextUtil.prettyPrintNumber(_, dp),
+      GuiUtil.prettyPrintNumber(_, dp),
       fmt.format(_),
     )
   }

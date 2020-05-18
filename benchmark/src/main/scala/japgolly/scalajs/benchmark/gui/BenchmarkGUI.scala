@@ -4,10 +4,8 @@ import japgolly.scalajs.benchmark.engine.EngineOptions
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import japgolly.scalajs.react.raw.ReactDOM.Container
 import japgolly.scalajs.react.extra.router.BaseUrl
-import org.scalajs.dom
 import scalacss.ScalaCssReact._
-import CssSettings._
-import MenuComp.{LayoutCfg, MenuItems}
+import japgolly.scalajs.benchmark.gui.CssSettings._
 
 object BenchmarkGUI {
 
@@ -22,21 +20,24 @@ object BenchmarkGUI {
   def defaultBaseUrl(): BaseUrl =
     BaseUrl.until_#
 
-  def renderMenu(container: Container,
-                 baseUrl: BaseUrl = defaultBaseUrl(),
-                 layout: LayoutCfg = LayoutCfg.default,
-                 options: EngineOptions = EngineOptions.default)
-                (m1: MenuItems, mn: MenuItems*): Unit = {
+  def renderMenu(container    : Container,
+                 baseUrl      : BaseUrl       = defaultBaseUrl(),
+                 layoutConfig : LayoutConfig  = LayoutConfig.default,
+                 engineOptions: EngineOptions = EngineOptions.default,
+                 guiOptions   : GuiOptions    = GuiOptions.default,
+                )(m1: Seq[GuiBuilder.MenuItem], mn: Seq[GuiBuilder.MenuItem]*): Unit = {
     initialise()
-    val router = MenuComp.buildRouter(baseUrl, layout, options)(m1, mn: _*)
+    val router = GuiBuilder.router(baseUrl, layoutConfig, engineOptions, guiOptions)(m1, mn: _*)
     router().renderIntoDOM(container)
   }
 
-  def renderSuite[P](container: Container,
-                     options: EngineOptions = EngineOptions.default)
+  def renderSuite[P](container    : Container,
+                     engineOptions: EngineOptions = EngineOptions.default,
+                     guiOptions   : GuiOptions    = GuiOptions.default,
+                    )
                     (s: GuiSuite[P]): Unit = {
     initialise()
-    val p = SuiteComp.Props(s, options)
-    SuiteComp.Comp(p).renderIntoDOM(container)
+    val vdom = SuiteRunner.render(s, engineOptions, guiOptions)
+    vdom.renderIntoDOM(container)
   }
 }
