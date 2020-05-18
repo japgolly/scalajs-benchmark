@@ -170,16 +170,16 @@ object SuiteRunner {
     } yield RunCtrls(abort, promise._1)
   }
 
-  def deriveResultFmts[P](progress: Progress[P], m: EachBMStatus[P]): Vector[BmResultFormat] = {
+  def deriveResultFmts[P](progress: Progress[P], eachBmStatus: EachBMStatus[P]): Vector[BmResultFormat] = {
     val keys = progress.plan.keys
     val minAvg =
       keys
         .iterator
-        .flatMap(m.get)
+        .flatMap(eachBmStatus.get)
         .collect { case BMStatus.Done(Right(s)) => s.average }
         .reduceOption(_.min(_))
         .getOrElse(0.0)
-    val mainFmt = BmResultFormat.choose(TimeUtil.fromMs(minAvg))
+    val mainFmt = BmResultFormat.chooseTimePerOp(TimeUtil.fromMs(minAvg))
     Vector(mainFmt, BmResultFormat.OpsPerSec)
   }
 

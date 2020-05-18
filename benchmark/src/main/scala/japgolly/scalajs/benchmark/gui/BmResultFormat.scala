@@ -28,6 +28,13 @@ final case class BmResultFormat(header       : String,
 
 object BmResultFormat {
 
+  val OpsPerSec   = opsPerTime(TimeUnit.SECONDS, 0, 0)
+  val OpsPerSec3  = opsPerTime(TimeUnit.SECONDS, 3, 3)
+  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 3)
+  val SecPerOp3   = timePerOp(TimeUnit.SECONDS, 3, 3)
+  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 3)
+  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 3)
+
   def abbrev(t: TimeUnit): String =
     t match {
       case TimeUnit.NANOSECONDS  => "ns"
@@ -69,7 +76,7 @@ object BmResultFormat {
       lowerIsBetter = lowerIsBetter)
     }
 
-  def opsPerT(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat = {
+  def opsPerTime(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat = {
     val getUnits                      = this.getUnits(TimeUnit.SECONDS)
     val scoreErrorDur                 = ValueFormat.duration(getUnits, errorDP)
     val inverse   : Stats => Stats    = _.map(1000000 / _)
@@ -86,14 +93,7 @@ object BmResultFormat {
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
-  val OpsPerSec   = opsPerT(TimeUnit.SECONDS, 0, 0)
-  val OpsPerSec3  = opsPerT(TimeUnit.SECONDS, 3, 3)
-  val SecPerOp2   = timePerOp(TimeUnit.SECONDS, 2, 3)
-  val SecPerOp3   = timePerOp(TimeUnit.SECONDS, 3, 3)
-  val MillisPerOp = timePerOp(TimeUnit.MILLISECONDS, 3, 3)
-  val MicrosPerOp = timePerOp(TimeUnit.MICROSECONDS, 3, 3)
-
-  def choose(minDur: Duration): BmResultFormat =
+  def chooseTimePerOp(minDur: Duration): BmResultFormat =
     if (minDur.toMicros < 1000)
       MicrosPerOp
     else if (minDur.toMillis < 1000)
