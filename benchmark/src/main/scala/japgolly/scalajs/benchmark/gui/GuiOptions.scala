@@ -6,6 +6,7 @@ import scala.scalajs.LinkingInfo
 
 final case class GuiOptions(defaultSuiteResultsFormat: SuiteResultsFormat,
                             suiteResultsFormats      : Seq[SuiteResultsFormat],
+                            bmResultFormats          : BmResultFormat.DynamicMultiple,
                             resultFilenameWithoutExt : GuiOptions.FilenameFormat,
                             batchModeFormats         : Map[SuiteResultsFormat.Text, Enabled],
                             allowBatchMode           : Boolean,
@@ -24,6 +25,7 @@ object GuiOptions {
     apply(
       defaultSuiteResultsFormat = SuiteResultsFormat.Table,
       suiteResultsFormats       = SuiteResultsFormat.builtIn,
+      bmResultFormats           = BmResultFormat.DynamicMultiple.default,
       resultFilenameWithoutExt  = defaultFilenameFormat,
       batchModeFormats          = SuiteResultsFormat.builtInBatch,
       allowBatchMode            = true,

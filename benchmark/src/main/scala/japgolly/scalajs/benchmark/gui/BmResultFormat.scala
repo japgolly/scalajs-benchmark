@@ -93,6 +93,9 @@ object BmResultFormat {
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat =
     duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
 
+  def chooseTimePerOp(ctx: Ctx): BmResultFormat =
+    chooseTimePerOp(ctx.minDur)
+
   def chooseTimePerOp(minDur: Duration): BmResultFormat =
     if (minDur.toMicros < 1000)
       MicrosPerOp
@@ -102,4 +105,16 @@ object BmResultFormat {
       SecPerOp3
     else
       SecPerOp2
+
+  final case class Ctx(minDur: Duration, maxDur: Duration)
+
+  type DynamicMultiple = Ctx => Vector[BmResultFormat]
+
+  object DynamicMultiple {
+    val default: DynamicMultiple =
+      ctx => {
+        val mainFmt = chooseTimePerOp(ctx)
+        Vector(mainFmt, BmResultFormat.OpsPerSec)
+      }
+  }
 }

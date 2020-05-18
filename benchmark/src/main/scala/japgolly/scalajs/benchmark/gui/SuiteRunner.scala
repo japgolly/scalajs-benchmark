@@ -170,17 +170,18 @@ object SuiteRunner {
     } yield RunCtrls(abort, promise._1)
   }
 
-  def deriveResultFmts[P](progress: Progress[P], eachBmStatus: EachBMStatus[P]): Vector[BmResultFormat] = {
+  def deriveResultFmts[P](progress: Progress[P], eachBmStatus: EachBMStatus[P], guiOptions: GuiOptions): Vector[BmResultFormat] = {
     val keys = progress.plan.keys
-    val minAvg =
-      keys
-        .iterator
-        .flatMap(eachBmStatus.get)
-        .collect { case BMStatus.Done(Right(s)) => s.average }
-        .reduceOption(_.min(_))
-        .getOrElse(0.0)
-    val mainFmt = BmResultFormat.chooseTimePerOp(TimeUtil.fromMs(minAvg))
-    Vector(mainFmt, BmResultFormat.OpsPerSec)
+    var min, max = 0.0
+    keys.iterator.flatMap(eachBmStatus.get).foreach {
+      case BMStatus.Done(Right(s)) =>
+        val d = s.average
+        min = min min d
+        max = max max d
+      case _ =>
+    }
+    val ctx = BmResultFormat.Ctx(minDur = TimeUtil.fromMs(min), maxDur = TimeUtil.fromMs(max))
+    guiOptions.bmResultFormats(ctx)
   }
 
   // ===================================================================================================================
@@ -347,7 +348,7 @@ object SuiteRunner {
     }
 
     private def renderSuiteRunning(p: Props, s: State, r: SuiteRunning): VdomElement = {
-      val resultFmts = deriveResultFmts(r.progress, r.bm)
+      val resultFmts = deriveResultFmts(r.progress, r.bm, p.guiOptions)
 
       val eta =
         p.engineOptions.estimatedMsPerBM * r.progress.remaining
@@ -368,7 +369,7 @@ object SuiteRunner {
     }
 
     private def renderSuiteDone(p: Props, s: State, r: SuiteDone): VdomElement = {
-      val resultFmts = deriveResultFmts(r.progress, r.bm)
+      val resultFmts = deriveResultFmts(r.progress, r.bm, p.guiOptions)
 
       def resetButton =
         <.button(

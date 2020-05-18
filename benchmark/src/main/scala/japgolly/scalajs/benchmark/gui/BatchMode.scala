@@ -143,7 +143,7 @@ object BatchMode {
 
       def saveAll[P](done: SuiteRunner.SuiteDone[P], startedAt: js.Date): Callback = {
         val progress = done.progress.copy(startedAt = startedAt)
-        val resultFmts = SuiteRunner.deriveResultFmts(progress, done.bm)
+        val resultFmts = SuiteRunner.deriveResultFmts(progress, done.bm, guiOptions)
         Callback.traverse(enabledFormats) { f =>
           val args = SuiteResultsFormat.Args(
             suite      = done.suite,
