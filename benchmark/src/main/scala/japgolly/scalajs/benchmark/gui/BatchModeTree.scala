@@ -1,17 +1,17 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.react._
+import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
 import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
-import monocle.{Lens, Traversal}
+import japgolly.scalajs.react.vdom.html_<^._
+import monocle.Traversal
 import monocle.macros.Lenses
 import scalacss.ScalaCssReact._
 import scalaz.Applicative
 import scalaz.std.vector._
 import scalaz.syntax.traverse._
-import Styles.{BatchMode => *}
 
 object BatchModeTree {
 
@@ -135,7 +135,7 @@ object BatchModeTree {
           else
             TriStateCheckbox.Indeterminate
 
-        val setNextState: Callback =
+        def setNextState: Callback =
           Callback.byName {
             val nextState: Enabled =
               triState.nextDeterminate match {
@@ -150,7 +150,8 @@ object BatchModeTree {
 
         val label =
           <.label(
-            TriStateCheckbox.Props(triState, setNextState).render.when(p.showCheckboxes))
+            TagMod.when(p.showCheckboxes)(
+              TriStateCheckbox.Props(triState, setNextState).render))
 
         (liStyle, label)
       }
@@ -168,14 +169,14 @@ object BatchModeTree {
         val (liStyle, label) = triStateCheckbox(ss)
         ss.value match {
           case folder: Item.Folder[A, B] =>
-            val ss2 = ss.narrowOption[Item.Folder[A, B]].get
+            val ss2 = ss.narrowOption[Item.Folder[A, B]].get // safe because we just patmat'd on it
             TagMod(
               liStyle,
               <.div(label(p.renderItem(folder))),
               children(ss2.zoomStateL(Item.Folder.children)))
 
           case i: Item.Suite[A, B] =>
-            val ss2 = ss.narrowOption[Item.Suite[A, B]].get
+            val ss2 = ss.narrowOption[Item.Suite[A, B]].get // safe because we just patmat'd on it
             val suite = i.suite.suite
             val isValid = i.suite.defaultParams.isRight
             TagMod(
@@ -199,11 +200,13 @@ object BatchModeTree {
         TagMod(
           *.menuLI(enabled),
           <.label(
-            <.input.checkbox(
-              ^.checked := enabled.is(Enabled),
-              ^.disabled := editing.is(Disabled),
-              ^.onChange --> ss.modState(lens.modify(!_)),
-            ).when(p.showCheckboxes),
+            TagMod.when(p.showCheckboxes)(
+              <.input.checkbox(
+                ^.checked := enabled.is(Enabled),
+                ^.disabled := editing.is(Disabled),
+                ^.onChange --> Callback.byName(ss.modState(lens.modify(!_))),
+              )
+            ),
             p.renderBM(RenderBM(ss.value, idx))))
       }
 
@@ -214,8 +217,7 @@ object BatchModeTree {
 
       <.section(
         <.h3("Benchmarks"),
-        <.ul(
-          *.menuRootUL,
+        <.ul(*.menuRootUL,
           <.li(all(p.state))))
     }
   }

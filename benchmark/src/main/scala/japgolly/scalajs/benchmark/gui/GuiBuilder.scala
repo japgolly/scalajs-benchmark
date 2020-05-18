@@ -80,6 +80,6 @@ object GuiBuilder {
       }
     }
 
-    mis map (go("#/", _))
+    mis.map(go("#/", _))
   }
 }

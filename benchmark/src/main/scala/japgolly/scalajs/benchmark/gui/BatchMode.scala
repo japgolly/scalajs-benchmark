@@ -186,13 +186,13 @@ object BatchMode {
     }
   }
 
-  private implicit val reusabilityFormats: Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
-  private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]] = Reusability.byRef
-  implicit val reusabilityBatchPlan: Reusability[BatchPlan] = Reusability.byRef
-  implicit val reusabilityBatchPlans: Reusability[BatchPlans] = Reusability.byRef
-  implicit val reusabilityStateRS: Reusability[State.RunningStatus] = Reusability.derive
-  implicit val reusabilityStateI: Reusability[State.Initial] = Reusability.derive
-  implicit val reusabilityStateR: Reusability[State.Running] = {
+  private implicit val reusabilityFormats         : Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
+  private implicit val reusabilityStateRunnerState: Reusability[SuiteRunner.State[_]]             = Reusability.byRef
+  private implicit val reusabilityBatchPlan       : Reusability[BatchPlan]                        = Reusability.byRef
+  private implicit val reusabilityBatchPlans      : Reusability[BatchPlans]                       = Reusability.byRef
+  private implicit val reusabilityStateRS         : Reusability[State.RunningStatus]              = Reusability.derive
+  private implicit val reusabilityStateI          : Reusability[State.Initial]                    = Reusability.derive
+  private implicit val reusabilityStateR          : Reusability[State.Running] = {
     implicit val x: Reusability[Double] = Reusability.by_==
     Reusability.derive
   }
@@ -230,13 +230,13 @@ object BatchMode {
                 bmItem.copy(value = -1)
             }.toVector
           if (enabledBMs.nonEmpty) {
-            val guiSuite2   = guiSuite.withBMs(enabledBMs)
-            val guiPlan     = GuiPlan(guiSuite2)(params)
-            val stateAccess = $$.zoomStateL(runStateLens[P])
-            val run         = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
-            val batchPlan   = BatchPlan(guiPlan)(run)
-            plans += batchPlan
+            val guiSuite2       = guiSuite.withBMs(enabledBMs)
+            val guiPlan         = GuiPlan(guiSuite2)(params)
+            val stateAccess     = $$.zoomStateL(runStateLens[P])
+            val run             = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
+            val batchPlan       = BatchPlan(guiPlan)(run)
             val initialRunState = SuiteRunner.State.init(guiSuite2, guiOptions, respectDisabledByDefault = false)
+            plans += batchPlan
             result = i.copy(value = Some(initialRunState), bms = newBmItems)
           }
         }

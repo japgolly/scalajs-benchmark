@@ -22,7 +22,7 @@ object BatchModeControls {
   }
 
   implicit val reusabilityProps: Reusability[Props] = {
-    implicit val d = Reusability.double(500)
+    implicit val d = Reusability.double(499) // 499ms tolerance because we're rendering ETA with second-precision
     implicit val f: Reusability[Map[FormatResults.Text, Enabled]] = Reusability.byRef
     Reusability.byRef || Reusability.derive
   }
