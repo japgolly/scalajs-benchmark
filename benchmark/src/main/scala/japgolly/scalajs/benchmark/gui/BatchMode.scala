@@ -271,7 +271,7 @@ object BatchMode {
 
     private val setInitialFormats: Map[FormatResults.Text, Enabled] ~=> Callback =
       Reusable.byRef { f =>
-        $.modStateOption({
+        $.modStateOption(_ match {
           case s: State.Initial => Some(s.copy(formats = f))
           case _                => None
         })

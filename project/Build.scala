@@ -47,7 +47,16 @@ object ScalaJsBenchmark {
     "-language:existentials",
     "-opt:l:inline",
     "-opt-inline-from:japgolly.scalajs.benchmark.**",
-    "-Wconf:msg=may.not.be.exhaustive:e") // Make non-exhaustive matches errors instead of warnings
+    "-Yno-generic-signatures",                       // Suppress generation of generic signatures for Java.
+    "-Ypatmat-exhaust-depth", "off") ++
+    (if (scalaJSVersion.startsWith("0.")) Seq("-P:scalajs:sjsDefinedByDefault") else Nil)
+
+  def scalac213Flags = Seq(
+    "-Wconf:msg=may.not.be.exhaustive:e",            // Make non-exhaustive matches errors instead of warnings
+    "-Xmixin-force-forwarders:false",                // Only generate mixin forwarders required for program correctness.
+    "-Yjar-compression-level", "9",                  // compression level to use when writing jar files
+    "-Ymacro-annotations"                            // Enable support for macro annotations, formerly in macro paradise.
+  )
 
   val commonSettings: PE =
     _.settings(
@@ -57,6 +66,10 @@ object ScalaJsBenchmark {
       scalaVersion                  := Ver.Scala213,
       crossScalaVersions            := Seq(Ver.Scala212, Ver.Scala213),
       scalacOptions                ++= scalacFlags,
+      scalacOptions                ++= byScalaVersion {
+                                         case (2, 12) => Nil
+                                         case (2, 13) => scalac213Flags
+                                       }.value,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
       incOptions                    := incOptions.value.withLogRecompileOnMacro(false),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
@@ -73,17 +86,16 @@ object ScalaJsBenchmark {
         // "org.scala-lang" % "scala-library" % scalaVersion.value,
         "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"))
 
-  def addMacroParadisePlugin = Def.settings(
-    Seq(
-      libraryDependencies ++= byScalaVersion {
-        case (2, 12) => Seq(compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.patch))
-        case (2, 13) => Nil
-      }.value,
-      scalacOptions ++= byScalaVersion {
-        case (2, 12) => Nil
-        case (2, 13) => Seq("-Ymacro-annotations")
-      }.value
-    ))
+  def addMacroParadisePlugin = Def.setting {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v <= 12 =>
+        Seq(compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.patch))
+      case _ =>
+        // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
+        // https://github.com/scala/scala/pull/6606
+        Nil
+    }
+  }
 
   def utestSettings: PE =
     _.settings(
@@ -107,8 +119,7 @@ object ScalaJsBenchmark {
       .enablePlugins(JSDependenciesPlugin)
       .configure(commonSettings, definesMacros, publicationSettings(ghProject), utestSettings)
       .settings(
-        addMacroParadisePlugin,
-
+        libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
           "org.scala-lang.modules"            %%% "scala-collection-compat" % Ver.ScalaCollCompat,
           "com.github.japgolly.scalajs-react" %%% "core"                    % Ver.ScalaJsReact,
@@ -180,7 +191,7 @@ object ScalaJsBenchmark {
       .configure(commonSettings, preventPublication)
       .dependsOn(benchmark)
       .settings(
-        addMacroParadisePlugin,
+        libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
           "org.scalaz"    %%% "scalaz-core"   % Ver.Scalaz,
           "org.scalaz"    %%% "scalaz-effect" % Ver.Scalaz,
