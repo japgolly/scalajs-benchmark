@@ -1,10 +1,10 @@
 package japgolly.scalajs.benchmark.vendor.chartjs
 
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart.{Labels, Value, Values}
 import org.scalajs.dom.html.Canvas
-import scalajs.js
-import scalajs.js.annotation._
-import scalajs.js.{native, Object, |, UndefOr}
-import Chart.{Labels, Value, Values}
+import scala.scalajs.js
+import scala.scalajs.js.annotation._
+import scala.scalajs.js.{Object, UndefOr, native, |}
 
 @JSGlobal("Chart")
 @native

@@ -1,9 +1,10 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.react._, vdom.html_<^._
+import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.html_<^._
 import scala.collection.immutable.BitSet
 import scalacss.ScalaCssReact._
-import Styles.{Suite => *}
 
 final class GuiParam[A, B](val header    : Header,
                            val initValues: Vector[A],

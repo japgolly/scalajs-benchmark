@@ -3,8 +3,8 @@ package japgolly.scalajs.benchmark.gui
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Lens}
-import scalaz.{\/-, \/}
 import scalaz.std.option.optionSyntax._
+import scalaz.{\/, \/-}
 
 trait GuiParams[P] {
   import GuiParams._

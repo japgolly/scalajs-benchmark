@@ -1,9 +1,9 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.scalajs.benchmark.gui.Styles.{Menu => *}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
-import Styles.{Menu => *}
 
 object TableOfContents {
   import Router.Page

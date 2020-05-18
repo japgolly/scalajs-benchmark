@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import CssSettings._
+import japgolly.scalajs.benchmark.gui.`package`.CssSettings._
 import japgolly.univeq.UnivEq
 import scalacss.ScalaCssReact._
 

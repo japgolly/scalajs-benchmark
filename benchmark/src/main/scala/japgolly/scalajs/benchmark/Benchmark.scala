@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark
 
-import Benchmark.SetupFn
+import japgolly.scalajs.benchmark.Benchmark.SetupFn
 
 /**
   * A benchmark. A single procedure to measure.

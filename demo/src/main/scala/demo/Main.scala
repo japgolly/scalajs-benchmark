@@ -1,7 +1,7 @@
 package demo
 
-import org.scalajs.dom.document
 import japgolly.scalajs.benchmark.gui._
+import org.scalajs.dom.document
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 object Main {

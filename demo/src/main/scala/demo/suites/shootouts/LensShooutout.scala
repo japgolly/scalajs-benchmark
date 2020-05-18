@@ -6,10 +6,9 @@ import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.GenIso
-import scalaz.Maybe
 import scala.util.Random
-import scalaz.IMap
 import scalaz.std.anyVal._
+import scalaz.{IMap, Maybe}
 
 object LensShooutout {
 

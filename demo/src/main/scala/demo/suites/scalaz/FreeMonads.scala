@@ -1,12 +1,12 @@
 package demo.suites.scalaz
 
 import demo.Util._
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
-
-import scalaz.{Free, ~>, ReaderT, Kleisli}
+import japgolly.scalajs.react.vdom.html_<^._
 import scalaz.effect.IO
+import scalaz.{Free, Kleisli, ReaderT, ~>}
+
 import scalaz.std.function.function0Instance
 
 object FreeMonads {

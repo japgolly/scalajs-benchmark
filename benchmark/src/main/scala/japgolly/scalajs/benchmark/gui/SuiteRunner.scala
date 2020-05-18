@@ -3,6 +3,8 @@ package japgolly.scalajs.benchmark.gui
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.GuiParams.GenState
+import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
@@ -11,10 +13,8 @@ import monocle._
 import monocle.macros.Lenses
 import org.scalajs.dom.document
 import scala.concurrent.duration._
-import scalacss.ScalaCssReact._
-import Styles.{Suite => *}
-import japgolly.scalajs.benchmark.vendor.chartjs.Chart
 import scala.util.{Success, Try}
+import scalacss.ScalaCssReact._
 
 final class SuiteRunner[P] {
   import SuiteRunner._

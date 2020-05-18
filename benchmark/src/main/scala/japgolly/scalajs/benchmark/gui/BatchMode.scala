@@ -2,16 +2,16 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.Benchmark
 import japgolly.scalajs.benchmark.engine.{AbortFn, EngineOptions}
-import japgolly.scalajs.react._
+import japgolly.scalajs.benchmark.gui.BatchMode.State.RunningStatus
+import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
 import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
-import monocle.{Lens, Optional, Prism}
 import monocle.macros.{GenPrism, Lenses}
-import scalacss.ScalaCssReact._
-import Styles.{BatchMode => *}
-import japgolly.scalajs.benchmark.gui.BatchMode.State.RunningStatus
+import monocle.{Lens, Optional, Prism}
 import scala.scalajs.js
+import scalacss.ScalaCssReact._
 
 object BatchMode {
   import BatchModeTree.Item

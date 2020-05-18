@@ -1,11 +1,11 @@
 package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.engine.EngineOptions
-import japgolly.scalajs.benchmark.vendor.chartjs.Chart
-import japgolly.scalajs.react.raw.ReactDOM.Container
-import japgolly.scalajs.react.extra.router.BaseUrl
-import scalacss.ScalaCssReact._
 import japgolly.scalajs.benchmark.gui.CssSettings._
+import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import japgolly.scalajs.react.extra.router.BaseUrl
+import japgolly.scalajs.react.raw.ReactDOM.Container
+import scalacss.ScalaCssReact._
 
 object BenchmarkGUI {
 

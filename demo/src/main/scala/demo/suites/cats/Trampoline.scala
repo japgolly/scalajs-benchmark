@@ -1,9 +1,10 @@
 package demo.suites.cats
 
-import japgolly.scalajs.benchmark._, gui._
 import cats._
-import cats.implicits._
 import cats.free.Trampoline
+import cats.implicits._
+import japgolly.scalajs.benchmark._
+import japgolly.scalajs.benchmark.gui._
 
 object TrampolineBM {
 

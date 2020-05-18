@@ -5,7 +5,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.internal.JsUtil
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Canvas
-import scalajs.js
+import scala.scalajs.js
 
 object ReactChart {
   private def newObj[T <: js.Object]: T =
