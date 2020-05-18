@@ -17,4 +17,10 @@ object TestUtil extends japgolly.microlibs.testutil.TestUtil {
   def statPlusMinus(dur: FiniteDuration, pm: FiniteDuration) =
     stats(dur, dur + pm, dur - pm)
 
+  def statMatrix(iterations: Int, opsPerIteration: Int)(f: (Int, Int) => Duration): Stats =
+    Stats(Vector.tabulate(iterations) { i =>
+      val sum = (1 to opsPerIteration).iterator.map(f(i, _)).map(TimeUtil.toMs).sum
+      IterationStats(opsPerIteration, sum)
+    })
+
 }

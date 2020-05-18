@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.{Stats, TimeUtil}
+import japgolly.scalajs.benchmark.engine.{IterationStats, Stats, TimeUtil}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -11,11 +11,12 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
   * @param score Formatter for the score itself.
   * @param scoreError Formatter for the error in (score ± error).
   */
-final case class BmResultFormat(header       : String,
-                                score        : ValueFormat[Stats],
-                                scoreError   : ValueFormat[Stats],
-                                scoreErrorDur: ValueFormat[Duration],
-                                lowerIsBetter: Boolean) {
+final case class BmResultFormat(header          : String,
+                                score           : ValueFormat[Stats],
+                                scoreError      : ValueFormat[Stats],
+                                scoreConfidence1: ValueFormat[Stats],
+                                scoreConfidence2: ValueFormat[Stats],
+                                lowerIsBetter   : Boolean) {
 
   def higherIsBetter = !lowerIsBetter
 
@@ -67,27 +68,38 @@ object BmResultFormat {
                getUnits     : FiniteDuration => Double,
                scoreDP      : Int,
                errorDP      : Int): BmResultFormat = {
-    val scoreErrorDur = ValueFormat.duration(getUnits, errorDP)
+    val scoreError = ValueFormat.duration(getUnits, errorDP).contramap(TimeUtil.fromMs)
     BmResultFormat(
-      header        = header,
-      score         = ValueFormat.duration(getUnits, scoreDP).contramap(TimeUtil.fromMs).contramap(_.score),
-      scoreError    = scoreErrorDur.contramap(TimeUtil.fromMs).contramap(_.scoreError),
-      scoreErrorDur = scoreErrorDur,
-      lowerIsBetter = lowerIsBetter)
+      header           = header,
+      score            = ValueFormat.duration(getUnits, scoreDP).contramap(TimeUtil.fromMs).contramap(_.score),
+      scoreError       = scoreError.contramap(_.scoreError),
+      scoreConfidence1 = scoreError.contramap(_.scoreConfidence._1),
+      scoreConfidence2 = scoreError.contramap(_.scoreConfidence._2),
+      lowerIsBetter    = lowerIsBetter)
     }
 
   def opsPerTime(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat = {
-    val getUnits                      = this.getUnits(TimeUnit.SECONDS)
-    val scoreErrorDur                 = ValueFormat.duration(getUnits, errorDP)
-    val inverse   : Stats => Stats    = _.map(1000000 / _)
-    val score     : Stats => Duration = s => TimeUtil.fromMs(inverse(s).score)
-    val scoreError: Stats => Duration = s => TimeUtil.fromMs(inverse(s).scoreError)
+    val oneUnitAsMs = TimeUtil.toMs(FiniteDuration(1, t))
+    val scoreError  = ValueFormat.number(errorDP)
+
+    var prevInverse: (Stats, Stats) = null
+    def inverse(s: Stats) = {
+      if ((prevInverse ne null) && (prevInverse._1 eq s))
+        prevInverse._2
+      else {
+        val i = s.modifyMeans(oneUnitAsMs / _)
+        prevInverse = (s, i)
+        i
+      }
+    }
+
     BmResultFormat(
-      header        = "ops/" + abbrev(t),
-      score         = ValueFormat.duration(getUnits, scoreDP).contramap(score),
-      scoreError    = scoreErrorDur.contramap(scoreError),
-      scoreErrorDur = scoreErrorDur,
-      lowerIsBetter = false)
+      header           = "ops/" + abbrev(t),
+      score            = ValueFormat.number(scoreDP).contramap(inverse(_).score),
+      scoreError       = scoreError.contramap(inverse(_).scoreError),
+      scoreConfidence1 = scoreError.contramap(inverse(_).scoreConfidence._1),
+      scoreConfidence2 = scoreError.contramap(inverse(_).scoreConfidence._2),
+      lowerIsBetter    = false)
   }
 
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat =

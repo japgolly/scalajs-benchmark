@@ -318,11 +318,14 @@ object SuiteResultsFormat {
                 else
                   None
 
+              val scoreConfidence1 = fmtRes.scoreConfidence1.toDouble(stats)
+              val scoreConfidence2 = fmtRes.scoreConfidence2.toDouble(stats)
+
               val primaryMetric =
                 PrimaryMetric(
                   score           = fmtRes.score.toDouble(stats),
                   scoreError      = fmtRes.scoreError.toDouble(stats),
-                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(d => fmtRes.scoreErrorDur.toDouble(TimeUtil.fromMs(d))),
+                  scoreConfidence = Vector(scoreConfidence1, scoreConfidence2),
                   scoreUnit       = fmtRes.header.replace('μ', 'u'),
                   rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b))),
                 )

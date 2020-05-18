@@ -4,8 +4,11 @@ import scala.scalajs.js
 
 final case class Stats(rawData: Vector[IterationStats]) {
 
-  def map(f: Double => Double): Stats =
-    Stats(rawData.map(_.map(f)))
+  def map(f: IterationStats => IterationStats): Stats =
+    Stats(rawData.map(f))
+
+  def modifyMeans(f: Double => Double): Stats =
+    map(_.modifyMean(f))
 
   lazy val isolatedBatches: Vector[Stats] = {
     val e = Vector.empty[IterationStats]
