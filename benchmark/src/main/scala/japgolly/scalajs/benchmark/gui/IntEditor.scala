@@ -49,13 +49,13 @@ object IntEditor {
     val s = p.state.value
 
     def onChange(e: ReactEventFromInput): Callback =
-      e.extract(_.target.value)(t => p.state.setStateOption {
-        val s = State(illegalChars.replaceAllIn(t, ""))
-        s.parsed.map(_ => s) // ignore invalid updates
-      })
+      e.extract(_.target.value)(t => p.state.setState(State(illegalChars.replaceAllIn(t, ""))))
 
     def add(n: Int): Callback =
-      p.state.setStateOption(s.parsed.map(i => State((i + n).toString)))
+      p.state.setStateOption {
+        s.parsed.map(i => State((i + n).toString)).flatMap(s2 =>
+          s2.parsed.flatMap(p.validate).map(_ => s2)) // ignore invalid updates
+      }
 
     def onKeyDown(e: ReactKeyboardEvent): Callback =
         CallbackOption.keyCodeSwitch(e) {
