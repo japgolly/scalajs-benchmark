@@ -90,9 +90,10 @@ object ScalaJsBenchmark {
       crossScalaVersions            := Seq(Ver.Scala212, Ver.Scala213),
       scalacOptions                ++= scalacFlags,
       scalacOptions                ++= byScalaVersion {
-                                         case (2, 13, n, _) if n >= 2 => scalac213Flags
-                                         case _                       => Nil
-      }.value,
+                                         case (2, 13, 1, _) => scalac213Flags.filterNot(_.startsWith("-W"))
+                                         case (2, 13, _, _) => scalac213Flags
+                                         case _             => Nil
+                                       }.value,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
       incOptions                    := incOptions.value.withLogRecompileOnMacro(false),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
@@ -158,6 +159,11 @@ object ScalaJsBenchmark {
           "io.circe"                          %%% "circe-generic"           % Ver.Circe,
           "io.circe"                          %%% "circe-parser"            % Ver.Circe % Test,
           "org.scalaz"                        %%% "scalaz-core"             % Ver.Scalaz),
+
+        Compile / unmanagedSourceDirectories ++= byScalaVersion {
+          case (2, 13, 1, _) => "main/scala-2.13.1" :: Nil
+          case _             => Nil
+        }.value.map(sourceDirectory.value / _),
 
         dependencyOverrides += "org.webjars.npm" % "js-tokens" % "3.0.2", // https://github.com/webjars/webjars/issues/1789
 
