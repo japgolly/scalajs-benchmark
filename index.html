@@ -24,30 +24,46 @@
     a span {
       margin-left:0.15ex;
     }
-    a span::before { content: 'Scala.JS '; }
+
+    .sjs::before { content: 'Scala.JS '; }
+
+    .multi > div {display:inline}
+    .multi > div::before { content: ' / Scala.JS {'; }
+    .multi > div::after { content: '}'; }
+    .multi span {margin: 0 0.5ex}
+    .multi span:not(:last-child)::after { content: ','; }
     </style>
 </head>
 <body>
   <h1>scalajs-benchmark</h1>
 
-  <div>Scala 2.11.11: <a href="res/scala-2.12.html"><span>0.6.19</span></a></div>
+  <div>Scala 2.11.11 / <a class=sjs href="res/scala-2.12.html">0.6.19</a></div>
 
-  <div>
-    Scala 2.12.11:
-    <a href="res/scala-2.12.11-sjs-0.6.33.html"><span>0.6.33</span></a> |
-    <a href="res/scala-2.12.11-sjs-1.0.1.html"><span>1.0.1</span></a>
+  <div class=multi>
+    Scala 2.12.11
+    <div>
+      <span><a href="res/scala-2.12.11-sjs-0.6.33.html">0.6.33</a></span>
+      <span><a href="res/scala-2.12.11-sjs-1.0.1.html">1.0.1</a></span>
+      <span><a href="res/scala-2.12.11-sjs-1.1.0.html">1.1.0</a></span>
+    </div>
   </div>
 
-  <div>
-    Scala 2.13.1:
-    <a href="res/scala-2.13.1-sjs-0.6.33.html"><span>0.6.33</span></a> |
-    <a href="res/scala-2.13.1-sjs-1.0.1.html"><span>1.0.1</span></a>
+  <div class=multi>
+    Scala 2.13.1
+    <div>
+      <span><a href="res/scala-2.13.1-sjs-0.6.33.html">0.6.33</a></span>
+      <span><a href="res/scala-2.13.1-sjs-1.0.1.html">1.0.1</a></span>
+      <span><a href="res/scala-2.13.1-sjs-1.1.0.html">1.1.0</a></span>
+    </div>
   </div>
 
-  <div>
-    Scala 2.13.2:
-    <a href="res/scala-2.13.2-sjs-0.6.33.html"><span>0.6.33</span></a> |
-    <a href="res/scala-2.13.2-sjs-1.0.1.html"><span>1.0.1</span></a>
+  <div class=multi>
+    Scala 2.13.2
+    <div>
+      <span><a href="res/scala-2.13.2-sjs-0.6.33.html">0.6.33</a></span>
+      <span><a href="res/scala-2.13.2-sjs-1.0.1.html">1.0.1</a></span>
+      <span><a href="res/scala-2.13.2-sjs-1.1.0.html">1.1.0</a></span>
+    </div>
   </div>
 
   <div><a href="https://github.com/japgolly/scalajs-benchmark">Github</a></div>
