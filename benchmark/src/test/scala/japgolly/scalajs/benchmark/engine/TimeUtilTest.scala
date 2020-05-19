@@ -11,8 +11,8 @@ object TimeUtilTest extends TestSuite {
   override def tests = Tests {
     "getUnitsFromMs" - {
       def test(t: TimeUnit)(implicit l: Line): Unit = {
-        val one = FiniteDuration(1, t)
-        assertEq(TimeUtil.getUnitsFromMs(t)(TimeUtil.toMs(one)), 1)
+        val oneAsMs = TimeUtil.toMs(FiniteDuration(1, t))
+        assertEq(TimeUtil.getUnitsFromMs(t)(oneAsMs), 1)
       }
 
       "NANOSECONDS"  - test(TimeUnit.NANOSECONDS)
