@@ -29,15 +29,20 @@ object TimeUtil {
   val ms: Iso[Duration, Double] =
     Iso(toMs)(fromMs)
 
+  private final val msFromSec: Double = 1000
+  private final val msFromMin: Double = msFromSec * 60
+  private final val msFromHr : Double = msFromMin * 60
+  private final val msFromDay: Double = msFromHr * 24
+
   def getUnitsFromMs(t: TimeUnit): Double => Double =
     t match {
       case TimeUnit.NANOSECONDS  => _ * 1000000
       case TimeUnit.MICROSECONDS => _ * 1000
       case TimeUnit.MILLISECONDS => identity
-      case TimeUnit.SECONDS      => _ / 1000
-      case TimeUnit.MINUTES      => _ / 60000
-      case TimeUnit.HOURS        => _ / 3660000
-      case TimeUnit.DAYS         => _ / 3660000 / 24
+      case TimeUnit.SECONDS      => _ / msFromSec
+      case TimeUnit.MINUTES      => _ / msFromMin
+      case TimeUnit.HOURS        => _ / msFromHr
+      case TimeUnit.DAYS         => _ / msFromDay
     }
 
   def dateStrFromJsDate(d: js.Date): String =
