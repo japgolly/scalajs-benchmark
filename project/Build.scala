@@ -213,7 +213,7 @@ object ScalaJsBenchmark {
     Project("demo", file("demo"))
       .enablePlugins(ScalaJSPlugin)
       .enablePlugins(JSDependenciesPlugin)
-      .configure(commonSettings, preventPublication)
+      .configure(commonSettings, preventPublication, utestSettings)
       .dependsOn(benchmark)
       .settings(
         libraryDependencies ++= addMacroParadisePlugin.value,
@@ -225,6 +225,5 @@ object ScalaJsBenchmark {
           "com.chuusai"   %%% "shapeless"     % Ver.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
         scalaJSLinkerConfig ~= { _.withSourceMap(true) },
-        skip in packageJSDependencies := false,
-        test := { (compile in Test).value; () })
+        skip in packageJSDependencies := false)
 }
