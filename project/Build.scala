@@ -19,6 +19,7 @@ object ScalaJsBenchmark {
     val ChartJs          = "1.0.2"
     val Circe            = "0.13.0"
     val MacroParadise    = "2.1.1"
+    val Microlibs        = "2.3"
     val Monocle          = "1.6.3"
     val React            = "16.13.1"
     val Scala212         = "2.12.11"
@@ -29,8 +30,7 @@ object ScalaJsBenchmark {
     val Scalaz           = "7.2.30"
 
     // Test only
-    val Microlibs = "2.3"
-    val MTest     = "0.7.4"
+    val MTest = "0.7.4"
 
     // Demo only
     val Cats      = "2.1.1"
@@ -145,6 +145,8 @@ object ScalaJsBenchmark {
         libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
           "org.scala-lang.modules"            %%% "scala-collection-compat" % Ver.ScalaCollCompat,
+          "com.github.japgolly.microlibs"     %%% "stdlib-ext"              % Ver.Microlibs,
+          "com.github.japgolly.microlibs"     %%% "utils"                   % Ver.Microlibs,
           "com.github.japgolly.scalajs-react" %%% "core"                    % Ver.ScalaJsReact,
           "com.github.japgolly.scalajs-react" %%% "extra"                   % Ver.ScalaJsReact,
           "com.github.japgolly.scalajs-react" %%% "ext-monocle-scalaz"      % Ver.ScalaJsReact,

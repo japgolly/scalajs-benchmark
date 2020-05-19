@@ -1,31 +1,17 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.microlibs.utils.SafeBool
 import japgolly.scalajs.react.Reusability
-import japgolly.univeq.UnivEq
 
-sealed trait Enabled {
-  def unary_! : Enabled
-  def &&(e: Enabled): Enabled
-
-  final def is(e: Enabled): Boolean =
-    this eq e
-
-  final def when(cond: Boolean): Enabled =
-    if (cond) this else !this
-
-  @inline final def unless(cond: Boolean): Enabled =
-    when(!cond)
+sealed trait Enabled extends SafeBool.WithBoolOps[Enabled] {
+  override final def companion = Enabled
 }
 
-case object Enabled extends Enabled {
-  override def unary_! = Disabled
-  override def &&(e: Enabled) = e
+case object Enabled extends Enabled with SafeBool.Object[Enabled] {
+  override def positive = Enabled
+  override def negative = Disabled
 
-  implicit def univEq: UnivEq[Enabled] = UnivEq.derive
   implicit val reusability: Reusability[Enabled] = Reusability.by_==
 }
 
-case object Disabled extends Enabled {
-  override def unary_! = Enabled
-  override def &&(e: Enabled) = this
-}
+case object Disabled extends Enabled

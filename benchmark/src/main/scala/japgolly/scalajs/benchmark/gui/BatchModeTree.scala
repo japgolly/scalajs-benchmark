@@ -194,8 +194,8 @@ object BatchModeTree {
 
       def benchmark(ss: StateSnapshot[Item.Suite[A, B]], idx: Int, isValid: Boolean): TagMod = {
         val bm = ss.value.bms(idx)
-        val enabled = bm.enabled && Enabled.when(isValid)
-        val editing = p.enabled && Enabled.when(isValid)
+        val enabled = bm.enabled & Enabled.when(isValid)
+        val editing = p.enabled & Enabled.when(isValid)
         def lens = Item.Suite.bms[A, B] ^|-> GuiUtil.vectorIndex(idx) ^|-> Item.BM.enabled
         TagMod(
           *.menuLI(enabled),

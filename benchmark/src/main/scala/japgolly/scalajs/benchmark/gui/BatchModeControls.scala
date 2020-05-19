@@ -1,5 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
+import japgolly.microlibs.stdlib_ext.MutableArray
 import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
@@ -71,7 +72,7 @@ object BatchModeControls {
 
     val formats =
       kv("Save results as") {
-        <.div(p.formats.toArray.sortBy(_._1.label).toTagMod { case (fmt, enabled) =>
+        <.div(MutableArray(p.formats).sortBy(_._1.label).iterator.toTagMod { case (fmt, enabled) =>
           <.div(
             <.label(
               *.controlFormat,
