@@ -264,7 +264,7 @@ object BatchMode {
             val stateAccess     = $$.zoomStateL(runStateLens[P])
             val run             = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
             val batchPlan       = BatchPlan(guiPlan)(run)
-            val initialRunState = SuiteRunner.State.init(guiSuite2, guiOptions, respectDisabledByDefault = false)
+            val initialRunState = SuiteRunner.State.headless(guiSuite2, guiOptions, respectDisabledByDefault = false)
             plans += batchPlan
             result = i.copy(value = Some(initialRunState), bms = newBmItems)
           }

@@ -5,6 +5,7 @@ import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.GuiParams.GenState
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
@@ -46,11 +47,12 @@ object SuiteRunner {
                             guiOptions   : GuiOptions)
 
   @Lenses
-  final case class State[A](status       : SuiteStatus[A],
-                            editors      : GenState,
-                            disabledBMs  : Set[Int],
-                            oldTitle     : Option[String],
-                            resultsFormat: SuiteResultsFormat)
+  final case class State[A](status            : SuiteStatus[A],
+                            editors           : GenState,
+                            engineOptionEditor: EngineOptionEditor.State,
+                            disabledBMs       : Set[Int],
+                            oldTitle          : Option[String],
+                            resultsFormat     : SuiteResultsFormat)
 
   object State {
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
@@ -60,15 +62,35 @@ object SuiteRunner {
       bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
 
     def init[P](p: Props[P]): State[P] =
-      init(p.suite, p.guiOptions, true)
+      init(
+        suite                    = p.suite,
+        engineOptionEditor       = EngineOptionEditor.State.init(p.engineOptions),
+        guiOptions               = p.guiOptions,
+        respectDisabledByDefault = true)
 
-    def init[P](suite: GuiSuite[P], guiOptions: GuiOptions, respectDisabledByDefault: Boolean): State[P] =
+    private lazy val dudEngineOptionEditorState =
+      EngineOptionEditor.State.init(EngineOptions.default)
+
+    def headless[P](suite                   : GuiSuite[P],
+                    guiOptions              : GuiOptions,
+                    respectDisabledByDefault: Boolean): State[P] =
+      init(
+        suite                    = suite,
+        engineOptionEditor       = dudEngineOptionEditorState,
+        guiOptions               = guiOptions,
+        respectDisabledByDefault = respectDisabledByDefault)
+
+    private def init[P](suite                   : GuiSuite[P],
+                        engineOptionEditor      : EngineOptionEditor.State,
+                        guiOptions              : GuiOptions,
+                        respectDisabledByDefault: Boolean): State[P] =
       State[P](
-        status        = SuitePending,
-        editors       = suite.params.initialState,
-        disabledBMs   = if (respectDisabledByDefault) initDisabledBMs(suite.suite.bms) else Set.empty,
-        oldTitle      = None,
-        resultsFormat = guiOptions.defaultSuiteResultsFormat)
+        status             = SuitePending,
+        editors            = suite.params.initialState,
+        engineOptionEditor = engineOptionEditor,
+        disabledBMs        = if (respectDisabledByDefault) initDisabledBMs(suite.suite.bms) else Set.empty,
+        oldTitle           = None,
+        resultsFormat      = guiOptions.defaultSuiteResultsFormat)
   }
 
   type EachBMStatus[P] = Map[PlanKey[P], BMStatus]
@@ -221,6 +243,9 @@ object SuiteRunner {
     // =================================================================================================================
     // Util
 
+    private val ssEngineOptionEditor =
+      StateSnapshot.withReuse.zoomL(State.engineOptionEditor[P]).prepareVia($)
+
     private val updateEditorState: (Option[GenState], Callback) => Callback =
       (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
 
@@ -236,14 +261,23 @@ object SuiteRunner {
     // =================================================================================================================
     // Rendering
 
+    private val engineOptionEditorStyles =
+      Reusable.byRef(
+        EngineOptionEditor.Style(
+          row   = <.tr,
+          key   = <.th(*.settingsTableHeader),
+          value = <.td(*.settingsTableData),
+        )
+      )
+
     private def renderSuitePending(p: Props, s: State): VdomElement = {
+      val engineOptionEditorStyleValue = engineOptionEditorStyles.value
+      import engineOptionEditorStyleValue.renderKV
+
       val ev = StateSnapshot(s.editors)(updateEditorState)
       val params = p.suite.params
-      val th = <.th(*.settingsTableHeader)
-      val td = <.td(*.settingsTableData)
 
       def bmRow = {
-
         val bms = p.suite.suite.bms
 
         val allCheckbox =
@@ -283,21 +317,24 @@ object SuiteRunner {
                 bm.name))
           }
 
-        <.tr(
-          th("Benchmarks"),
-          td(allCheckbox, checkboxes))
+        renderKV("Benchmarks")(<.div(allCheckbox, checkboxes))
       }
 
       def paramRow(i: Int) =
-        <.tr(
-          th(params.headers(i)),
-          td(params.editors(i)(ev)))
+        renderKV(params.headers(i))(params.editors(i)(ev))
 
       def paramRows: TagMod =
         if (params.headers.isEmpty)
           EmptyVdom
         else
           TagMod(params.headers.indices.map(paramRow): _*)
+
+      val engineOptionRows =
+        EngineOptionEditor.Props(
+          state   = ssEngineOptionEditor(s),
+          enabled = Enabled,
+          style   = engineOptionEditorStyles,
+        ).render
 
       val startData = {
         def selectedBMs = p.suite.suite.bms.iterator
@@ -309,11 +346,13 @@ object SuiteRunner {
         for {
           params <- params.parseState(ev.value).toOption.filter(_.nonEmpty)
           bms    <- Some(selectedBMs).filter(_.nonEmpty)
+          eoMod  <- s.engineOptionEditor.parsed
         } yield {
-          val guiSuite2 = p.suite.withBMs(bms)
-          val guiPlan   = GuiPlan(guiSuite2)(params)
-          val runCB     = run(guiPlan)($, p.engineOptions).toCallback
-          val eta       = guiPlan.etaMs(p.engineOptions)
+          val engineOptions = eoMod(p.engineOptions)
+          val guiSuite2     = p.suite.withBMs(bms)
+          val guiPlan       = GuiPlan(guiSuite2)(params)
+          val runCB         = run(guiPlan)($, engineOptions).toCallback
+          val eta           = guiPlan.etaMs(engineOptions)
           (runCB, eta)
         }
       }
@@ -339,11 +378,11 @@ object SuiteRunner {
       <.div(
         renderFormatButtons(p, s),
         renderETA,
-        <.table(
-          *.settingsTable,
+        <.table(*.settingsTable,
           <.tbody(
             bmRow,
-            paramRows)),
+            paramRows,
+            engineOptionRows)),
         startButton)
     }
 
