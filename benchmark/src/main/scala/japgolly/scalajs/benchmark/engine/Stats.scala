@@ -58,7 +58,9 @@ final case class Stats(rawData: Vector[IterationStats]) {
       (Double.NaN, Double.NaN)
     else {
       val meanErr = meanErrorMsAt(confidence)
-      (statMathMs.mean - meanErr, statMathMs.mean + meanErr)
+      val low = (statMathMs.mean - meanErr).max(0)
+      val high = statMathMs.mean + meanErr
+      (low, high)
     }
 
   val score           = average
