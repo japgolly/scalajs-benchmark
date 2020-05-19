@@ -194,12 +194,14 @@ object SuiteRunner {
 
   def deriveResultFmts[P](progress: Progress[P], eachBmStatus: EachBMStatus[P], guiOptions: GuiOptions): Vector[BmResultFormat] = {
     val keys = progress.plan.keys
-    var min, max = 0.0
+    var min, max = Double.NaN
     keys.iterator.flatMap(eachBmStatus.get).foreach {
       case BMStatus.Done(Right(s)) =>
         val d = s.average
-        min = min min d
-        max = max max d
+        if (d.isFinite) {
+          min = if (min.isNaN) d else min min d
+          max = if (max.isNaN) d else max max d
+        }
       case _ =>
     }
     val ctx = BmResultFormat.Ctx(minDur = TimeUtil.fromMs(min), maxDur = TimeUtil.fromMs(max))
