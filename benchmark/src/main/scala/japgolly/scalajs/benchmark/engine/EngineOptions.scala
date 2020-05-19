@@ -40,7 +40,7 @@ object EngineOptions {
       warmupIterationTime = None,
       warmupIterations    = 1,
       iterations          = 10,
-      iterationTime       = 1.seconds,
+      iterationTime       = 2.seconds,
     )
 
   // Ensure benchmarks don't start before chart animation finishes
