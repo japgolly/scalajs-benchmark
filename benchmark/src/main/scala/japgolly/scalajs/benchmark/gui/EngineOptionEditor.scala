@@ -1,9 +1,9 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.gui.Styles.{Editors => *}
 import japgolly.scalajs.benchmark.engine.EngineOptions
-import japgolly.scalajs.react._
+import japgolly.scalajs.benchmark.gui.Styles.{Editors => *}
 import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
