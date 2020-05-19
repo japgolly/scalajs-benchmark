@@ -126,4 +126,5 @@ object GuiUtil {
       .replaceFirst("milliseconds?", "ms")
       .replaceFirst("seconds?", "sec")
       .replaceFirst("minutes?", "min")
+      .replace("0 days", "0 sec")
 }

@@ -4,6 +4,7 @@ import japgolly.scalajs.benchmark.gui.Styles.{Editors => *}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.vdom.html_<^._
+import org.scalajs.dom.ext.KeyCode
 import scala.util.Try
 import scalacss.ScalaCssReact._
 
@@ -48,12 +49,26 @@ object IntEditor {
     val s = p.state.value
 
     def onChange(e: ReactEventFromInput): Callback =
-      e.extract(_.target.value)(t => p.state.setState(State(illegalChars.replaceAllIn(t, ""))))
+      e.extract(_.target.value)(t => p.state.setStateOption {
+        val s = State(illegalChars.replaceAllIn(t, ""))
+        s.parsed.map(_ => s) // ignore invalid updates
+      })
+
+    def add(n: Int): Callback =
+      p.state.setStateOption(s.parsed.map(i => State((i + n).toString)))
+
+    def onKeyDown(e: ReactKeyboardEvent): Callback =
+        CallbackOption.keyCodeSwitch(e) {
+          case KeyCode.Up   => add(1)
+          case KeyCode.Down => add(-1)
+        }
+          .asEventDefault(e)
 
     <.input.text(
       *.inputText(p.validity),
       ^.disabled := p.enabled.is(Disabled),
       ^.onChange ==> onChange,
+      ^.onKeyDown ==> onKeyDown,
       ^.value := s.text,
       p.style)
   }
