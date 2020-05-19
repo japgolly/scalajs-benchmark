@@ -62,7 +62,7 @@ object ValueFormat {
   def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFormat[Duration] =
     optionalNumber(
       dp            = dp,
-      default       = <.span("NaN"),
+      default       = <.div(Styles.Suite.numericResult, "NaN"),
       defaultDouble = Double.NaN,
       defaultText   = "NaN")
       .contramap {
