@@ -108,15 +108,17 @@ object BmResultFormat {
   def chooseTimePerOp(ctx: Ctx): BmResultFormat =
     chooseTimePerOp(ctx.minDur)
 
-  def chooseTimePerOp(minDur: Duration): BmResultFormat =
-    if (minDur.toMicros < 1000)
+  def chooseTimePerOp(minDur: Duration): BmResultFormat = {
+    val ms = TimeUtil.toMs(minDur)
+    if (ms.isNaN || ms < 1)
       MicrosPerOp
-    else if (minDur.toMillis < 1000)
+    else if (ms < 1000)
       MillisPerOp
-    else if (minDur.toSeconds < 10)
+    else if (ms < 10000)
       SecPerOp3
     else
       SecPerOp2
+  }
 
   final case class Ctx(minDur: Duration, maxDur: Duration)
 

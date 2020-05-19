@@ -3,9 +3,13 @@ package japgolly.scalajs.benchmark.gui
 import scala.concurrent.duration._
 import japgolly.scalajs.benchmark.TestUtil._
 import java.util.concurrent.TimeUnit
+import scalaz.Equal
 import utest._
 
 object BmResultFormatTest extends TestSuite {
+  import BmResultFormat._
+
+  private implicit val equalBmResultFormat: Equal[BmResultFormat] = Equal.equalRef[BmResultFormat]
 
   private val sample1 = statPlusMinus(123456123.nanos, 10.millis)
   private val sample2 = statPlusMinus(4.537.millis, 8.65.micros)
@@ -18,7 +22,7 @@ object BmResultFormatTest extends TestSuite {
   override def tests = Tests {
 
     "MillisPerOp" - {
-      val fmt = BmResultFormat.MillisPerOp
+      val fmt = MillisPerOp
       "score" - {
         val f = fmt.score
         assertEq(f.toTextBasic(sample1), "123.456")
@@ -44,7 +48,7 @@ object BmResultFormatTest extends TestSuite {
     }
 
     "MicrosPerOp" - {
-      val fmt = BmResultFormat.MicrosPerOp
+      val fmt = MicrosPerOp
       "score" - {
         val f = fmt.score
         assertEq(f.toTextBasic(sample6), "15.403")
@@ -57,7 +61,7 @@ object BmResultFormatTest extends TestSuite {
     }
 
     "OpsPerSec" - {
-      val fmt = BmResultFormat.OpsPerSec
+      val fmt = OpsPerSec
       "score" - {
         val f = fmt.score
         assertEq(f.toTextBasic(sample5), "235")
@@ -77,7 +81,7 @@ object BmResultFormatTest extends TestSuite {
     }
 
     "OpsPerSec3" - {
-      val fmt = BmResultFormat.OpsPerSec3
+      val fmt = OpsPerSec3
       "score" - {
         val f = fmt.score
         assertEq(f.toTextBasic(sample6), "64927.114")
@@ -90,7 +94,7 @@ object BmResultFormatTest extends TestSuite {
     }
 
     "OpsPerMs" - {
-      val fmt = BmResultFormat.opsPerTime(TimeUnit.MILLISECONDS, 3, 3)
+      val fmt = opsPerTime(TimeUnit.MILLISECONDS, 3, 3)
       "score" - {
         val f = fmt.score
         assertEq(f.toTextBasic(sample6), "64.927")
@@ -108,5 +112,14 @@ object BmResultFormatTest extends TestSuite {
       }
     }
 
+    "chooseTimePerOp" - {
+      "NaN"    - assertEq(chooseTimePerOp(Duration.Undefined), MicrosPerOp)
+      "ns"     - assertEq(chooseTimePerOp(123.nanos)         , MicrosPerOp)
+      "us"     - assertEq(chooseTimePerOp(123.micros)        , MicrosPerOp)
+      "ms"     - assertEq(chooseTimePerOp(123.millis)        , MillisPerOp)
+      "sec"    - assertEq(chooseTimePerOp(1.23.seconds)      , SecPerOp3)
+      "sec10"  - assertEq(chooseTimePerOp(12.3.seconds)      , SecPerOp2)
+      "sec100" - assertEq(chooseTimePerOp(123.seconds)       , SecPerOp2)
+    }
   }
 }
