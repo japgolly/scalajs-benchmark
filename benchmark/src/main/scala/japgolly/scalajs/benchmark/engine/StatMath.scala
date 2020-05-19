@@ -1,22 +1,42 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark.vendor.JStat
+import scala.scalajs.js
 
 object StatMath {
   def tDistributionInverseCumulativeProbability(df: Int, p: Double): Double =
     JStat.studentt.inv(p, df)
 }
 
-final case class StatMath(sample: Iterable[Double]) {
+final case class StatMath(samples: js.Array[Double]) {
   import Math._
 
-  val size = sample.size
+  def size = samples.length
 
   /** Mean / Average. */
-  val mean = sample.sum / size
+  val mean = {
+    var sum = 0.0
+    var i = samples.length
+    while (i > 0) {
+      i -= 1
+      val d = samples(i)
+      sum += d
+    }
+    sum / size
+  }
 
   /** Sample variance */
-  val variance = sample.iterator.map(s => pow(s - mean, 2)).sum / (size - 1)
+  val variance = {
+    var sum = 0.0
+    var i = samples.length
+    while (i > 0) {
+      i -= 1
+      val d = samples(i) - mean
+      val sq = d * d
+      sum += sq
+    }
+    sum / (size - 1)
+  }
 
   /** Standard deviation */
   val stddev = sqrt(variance)

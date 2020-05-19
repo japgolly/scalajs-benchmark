@@ -6,10 +6,9 @@ import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.GenIso
-import scalaz.Maybe
 import scala.util.Random
-import scalaz.IMap
 import scalaz.std.anyVal._
+import scalaz.{IMap, Maybe}
 
 object LensShooutout {
 
@@ -340,7 +339,7 @@ object LensShooutout {
   val param2 = GuiParam.enum[Size]("Size", Size0, Size3, Size6)(_.size.toString, initialValues = Seq(Size6))
 
   val iso = GenIso.fields[Params]
-  val params = GuiParams.two(iso, param1, param2)
+  val params = GuiParams.combine2(iso)(param1, param2)
 
   val guiSuite = GuiSuite(suite, params).describe(
     <.div(<.div(^.marginBottom := "0.8em",

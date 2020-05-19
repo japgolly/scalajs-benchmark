@@ -1,10 +1,14 @@
 package japgolly.scalajs.benchmark.gui
 
-import CssSettings._
+import japgolly.scalajs.benchmark.gui.CssSettings._
+import japgolly.univeq.UnivEq
 import scalacss.ScalaCssReact._
 
 object Styles extends StyleSheet.Inline {
   import dsl._
+
+  val enabled = Domain.boolean.map(Enabled.when)
+  val validity = Domain.boolean.map(Valid.when)
 
 //  val cssReset = style(scalacss.ext.CssReset.normaliseCss)
 
@@ -40,6 +44,7 @@ object Styles extends StyleSheet.Inline {
 
     val settingsTableHeader = style(
       settingsCell,
+      lineHeight(1.25 em),
       textAlign.right,
       padding.horizontal(2 ex),
       anyHeader)
@@ -173,6 +178,24 @@ object Styles extends StyleSheet.Inline {
 
   // ===================================================================================================================
 
+  object Editors {
+
+    val inputText = styleF(validity)(v => styleS(
+      v match {
+        case Valid   => styleS()
+        case Invalid => styleS(
+          outline.none,
+          border(solid, 1 px, red),
+          backgroundColor(c"#fff6f6"))
+      }
+    ))
+
+    val engineOptionCnt = style(width(6.4 ex))
+    val engineOptionDur = style(width(10.4 ex))
+  }
+
+  // ===================================================================================================================
+
   object TextOutput {
 
     val pre = style(
@@ -228,8 +251,116 @@ object Styles extends StyleSheet.Inline {
 
   // ===================================================================================================================
 
+  object BatchMode {
+
+    sealed trait Status {
+      import Status._
+
+      final def merge(s: Status): Status =
+        (this, s) match {
+          case (Disabled, x) => x
+          case (x, Disabled) => x
+
+          case (Done, x@(Pending | Preparing | Running | Incomplete | Done)) => x
+          case (x@(Pending | Preparing | Running | Incomplete), Done) => x
+
+          case (Pending, x@(Pending | Preparing | Running)) => x
+          case (x@(Preparing | Running), Pending) => x
+
+          case (Pending, Incomplete) => Incomplete
+          case (Incomplete, Pending) => Incomplete
+
+          case (Incomplete, x@(Incomplete | Preparing | Running)) => x
+          case (x@(Preparing | Running), Incomplete) => x
+
+          // These cases shouldn't happen in practice
+          case (Running, Running | Preparing) => Running
+          case (Preparing, Running)           => Running
+          case (Preparing, Preparing)         => Preparing
+        }
+    }
+
+    object Status {
+      case object Disabled   extends Status
+      case object Pending    extends Status
+      case object Incomplete extends Status
+      case object Preparing  extends Status
+      case object Running    extends Status
+      case object Done       extends Status
+
+      val domain = Domain.ofValues[Status](
+        Disabled,
+        Pending,
+        Incomplete,
+        Preparing,
+        Running,
+        Done,
+      )
+
+      implicit def univEq: UnivEq[Status] = UnivEq.derive
+    }
+
+    private val menuSharedUL = styleS(
+      lineHeight(1.5 em),
+      listStyleType := "none")
+
+    val root = style(
+      display.flex)
+
+    val controlsSection = style(
+      paddingRight(4.8 rem))
+
+    val controlTable = style(
+      borderCollapse.collapse)
+
+    def controlKey   = Suite.settingsTableHeader
+    def controlValue = Suite.settingsTableData
+
+    val controlFormat = style(
+      lineHeight(1.5 em))
+
+    val controlButtonRow = style(
+      marginTop(2 em),
+      textAlign.center)
+
+    val controlButton = style(
+      fontSize(120 %%),
+      padding(0.4 em, 2 ex))
+
+    val controlDownloadPrepButton = style(
+      padding(0.4 em, 2 ex))
+
+    val menuRootUL = style(
+      menuSharedUL,
+      paddingInlineStart(`0`))
+
+    val menuUL = style(
+      menuSharedUL,
+      paddingInlineStart(3.6 ex))
+
+    val menuLI = styleF(enabled)(e => styleS(
+      mixinIf(e is Disabled)(color(c"#ccc"))))
+
+    val runningItem = styleF(Status.domain)(s => styleS(
+      display.inlineBlock,
+      s match {
+        case Status.Disabled   => styleS()
+        case Status.Pending    => styleS()
+        case Status.Incomplete => styleS(color(c"#7db2e8"))
+        case Status.Preparing  => styleS(color(c"#ef9d06"), &.before(content := "'➜ '"))
+        case Status.Running    => styleS(color(c"#ef9d06"), &.before(content := "'➜ '"))
+        case Status.Done       => styleS(color(c"#008800"), &.before(content := "'✓ '"))
+      }
+    ))
+  }
+
+  // ===================================================================================================================
+
   initInnerObjects(
+    Suite.resultTable,
+    Editors.inputText(Valid),
+    BatchMode.menuUL,
     Menu.topNav,
     TextOutput.pre,
-    Suite.resultTable)
+  )
 }

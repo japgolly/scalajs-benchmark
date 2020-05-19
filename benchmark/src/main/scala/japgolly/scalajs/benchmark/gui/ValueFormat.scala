@@ -8,13 +8,13 @@ import scalacss.ScalaCssReact._
   *
   * Eg. 32.456 sec
   */
-final case class FormatValue[-I](getDouble   : I => Option[Double],
+final case class ValueFormat[-I](getDouble   : I => Option[Double],
                                  render      : I => VdomElement,
                                  toDouble    : I => Double,
                                  toTextPretty: I => String,
                                  toTextBasic : I => String) {
-  def contramap[A](f: A => I): FormatValue[A] =
-    FormatValue(
+  def contramap[A](f: A => I): ValueFormat[A] =
+    ValueFormat(
       getDouble compose f,
       render compose f,
       toDouble compose f,
@@ -22,24 +22,24 @@ final case class FormatValue[-I](getDouble   : I => Option[Double],
       toTextBasic compose f)
 }
 
-object FormatValue {
+object ValueFormat {
 
-  def number(dp: Int): FormatValue[Double] = {
+  def number(dp: Int): ValueFormat[Double] = {
     val fmt = s"%.${dp}f"
-    FormatValue(
+    ValueFormat(
       Some.apply,
       d => <.div(
         Styles.Suite.numericResult,
-        TextUtil.prettyPrintNumber(d, dp)),
+        GuiUtil.prettyPrintNumber(d, dp)),
       identity,
-      TextUtil.prettyPrintNumber(_, dp),
+      GuiUtil.prettyPrintNumber(_, dp),
       fmt.format(_),
     )
   }
 
-  def optionalNumber(dp: Int, default: VdomElement, defaultDouble: Double, defaultText: String): FormatValue[Option[Double]] = {
+  def optionalNumber(dp: Int, default: VdomElement, defaultDouble: Double, defaultText: String): ValueFormat[Option[Double]] = {
     val n = number(dp)
-    FormatValue(
+    ValueFormat(
       identity,
       {
         case Some(d) => n render d
@@ -59,16 +59,26 @@ object FormatValue {
       })
   }
 
-  def duration(getUnits: FiniteDuration => Double, dp: Int): FormatValue[Duration] =
+  def optionalDouble(dp: Int): ValueFormat[Option[Double]] =
     optionalNumber(
       dp            = dp,
-      default       = <.span("NaN"),
+      default       = <.div(Styles.Suite.numericResult, "NaN"),
       defaultDouble = Double.NaN,
       defaultText   = "NaN")
-      .contramap {
-        case f: FiniteDuration => Some(getUnits(f))
-        case _                 => None
-      }
+
+  def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFormat[Duration] =
+    optionalDouble(dp).contramap {
+      case f: FiniteDuration => Some(getUnits(f))
+      case _                 => None
+    }
+
+  def durationMs(getUnitsFromMs: Double => Double, dp: Int): ValueFormat[Double] =
+    optionalDouble(dp).contramap(ms =>
+      if (java.lang.Double.isFinite(ms))
+        Some(getUnitsFromMs(ms))
+      else
+        None
+    )
 
   val Integer = number(0).contramap[Int](_.toDouble)
 }

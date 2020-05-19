@@ -77,7 +77,7 @@ object Setup {
     new Setup[A, B]((a, _) => AsyncCallback.delay((f(a), Teardown.empty)))
 
   def async[A, B](f: A => AsyncCallback[B]): Setup[A, B] =
-    new Setup[A, B]((a, s) => f(a).map((_, Teardown.empty)))
+    new Setup[A, B]((a, _) => f(a).map((_, Teardown.empty)))
 
   def derive[A, B, C](f: A => Setup[B, C])(b: A => B): Setup[A, C] =
     new Setup((a, s) => f(a).run(b(a), s))

@@ -113,7 +113,7 @@ object Examples {
 
     val param1 = GuiParam.int("Size", 5, 10)
     val param2 = GuiParam.boolean("Reverse")
-    val params = GuiParams.two(iso, param1, param2)
+    val params = GuiParams.combine2(iso)(param1, param2)
 
     GuiSuite(suite, params).describe(
       <.div(
@@ -125,9 +125,9 @@ object Examples {
   // ===================================================================================================================
 
   /**
-    * Here we group the suites into a folder that can be passed to the menu GUI ([[MenuComp]]) so that a user can choose
+    * Here we group the suites into a folder that can be passed to the menu GUI ([[GuiBuilder]]) so that a user can choose
     * from a collection of available benchmarks.
     */
-  lazy val all = MenuComp.folder("Benchmark Demos", MenuComp.UrlFrag("demos"))(
+  lazy val all = GuiBuilder.folder("Benchmark Demos", UrlFrag("demos"))(
     noParams, oneParam, twoParams)
 }

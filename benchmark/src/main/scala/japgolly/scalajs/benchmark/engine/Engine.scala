@@ -1,8 +1,8 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark._
-import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo}
-import scala.annotation.tailrec
+import japgolly.scalajs.react.{AsyncCallback, Callback, CallbackTo, Reusability}
+import scala.annotation.{nowarn, tailrec}
 import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
@@ -19,14 +19,30 @@ final case class BenchmarkRunning  [P](progress: Progress[P], key: PlanKey[P])  
 final case class BenchmarkFinished [P](progress: Progress[P], key: PlanKey[P], result: Result) extends Event[P]
 final case class SuiteFinished     [P](progress: Progress[P]/*, aborted | results, */)         extends Event[P]
 
-final case class Progress[P](startedAt: js.Date, plan: Plan[P], runs: Int) {
+final case class Progress[P](startedAt    : js.Date,
+                             plan         : Plan[P],
+                             runs         : Int,
+                             engineOptions: EngineOptions) {
+
   def timestampTxt = TimeUtil.dateStrFromJsDate(startedAt) + "_" + TimeUtil.timeStrFromJsDate(startedAt)
   def total        = plan.totalBenchmarks
   def remaining    = total - runs
 }
 
+object Progress {
+  def start[P](plan: Plan[P], engineOptions: EngineOptions): Progress[P] =
+    apply(new js.Date(), plan, 0, engineOptions)
+}
+
 final case class AbortFn(value: AsyncCallback[Unit]) {
   val callback = value.toCallback
+}
+
+object AbortFn {
+  implicit val reusability: Reusability[AbortFn] = {
+    @nowarn("cat=unused") implicit val x = Reusability.asyncCallbackByRef[Unit]
+    Reusability.derive
+  }
 }
 
 object Engine {
@@ -46,7 +62,7 @@ object Engine {
     val hnd                    = new Ref[UndefOr[SetTimeoutHandle]](js.undefined)
     var broadcastFinishOnAbort = true
     var aborted                = false
-    var progress               = Progress(new js.Date(), plan, 0)
+    var progress               = Progress.start(plan, options)
     val setupCtx               = SetupCtx(CallbackTo(aborted))
 
     val finish: AsyncCallback[Unit] =
@@ -92,10 +108,10 @@ object Engine {
                   val bm = CallbackTo.lift(bmFn)
                   val bmTimedUnsafe = clock.time(bm).toScalaFn
 
-                  def runIteration(sm: Stats.Mutable, maxTime: FiniteDuration): AsyncCallback[Unit] = {
+                  def runIteration(s: Stats.Builder, maxTimeMs: Double): AsyncCallback[Unit] = {
 
                     def isEnough(): Boolean =
-                      sm.totalBatchTime() >= maxTime
+                      s.totalIterationTime() >= maxTimeMs
 
                     val bmRound: AsyncCallback[Unit] =
                       AsyncCallback.delay {
@@ -109,7 +125,7 @@ object Engine {
                           // val t = clock.time(localFnAndTeardown._1())
                           // localFnAndTeardown._2.run()
                           val t = bmTimedUnsafe()
-                          sm.add(t)
+                          s.add(t)
                           if (!isEnough() && !needDelay())
                             go()
                         }
@@ -123,17 +139,17 @@ object Engine {
                       if (!isEnough() && !aborted)
                         self.delayMs(1)
                       else
-                        AsyncCallback.delay(sm.endBatch())
+                        AsyncCallback.delay(s.endIteration())
                     }
                     self
                   }
 
                   def runIterations(iterations: Int, maxTime: FiniteDuration): AsyncCallback[() => Stats] =
                     AsyncCallback.byName {
-                      val sm        = new Stats.Mutable
-                      val iteration = runIteration(sm, maxTime)
+                      val sm        = new Stats.Builder
+                      val iteration = runIteration(sm, TimeUtil.toMs(maxTime))
                       val runs      = (1 to iterations).foldLeft(AsyncCallback.unit)((q, _) => q >> iteration)
-                      runs.ret(() => Stats(sm.result(), options))
+                      runs.ret(() => sm.result())
                     }
 
                   val warmup =

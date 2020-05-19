@@ -15,7 +15,7 @@ import monocle.Lens
 final class Suite[-P](val name: String, val bms: Vector[Benchmark[P]]) {
 
   lazy val filenameFriendlyName: String =
-    name.toLowerCase.replaceAll("[ .]", "_")
+    name.replaceAll("[ .]", "_")
 }
 
 object Suite {
@@ -34,10 +34,13 @@ final case class Plan[P](suite: Suite[P], params: Vector[P]) {
   @inline def bms = suite.bms
 
   val keys: List[PlanKey[P]] =
-    for {
-      (p, pi) <- params.iterator.zipWithIndex.toList
+    // Don't reorder this by bm
+    // Jumping back and forth between BMs reduces unrealistic over-optimisation and theoretical over-fitting
+    (for {
+      (p, pi) <- params.iterator.zipWithIndex
       (b, bi) <- bms.iterator.zipWithIndex
-    } yield PlanKey(bi, pi)(b, p)
+    } yield PlanKey(bi, pi)(b, p))
+      .toList
 
   val totalBenchmarks: Int =
     keys.length

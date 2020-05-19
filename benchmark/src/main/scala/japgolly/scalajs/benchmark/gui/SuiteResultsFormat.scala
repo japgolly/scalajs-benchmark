@@ -2,6 +2,7 @@ package japgolly.scalajs.benchmark.gui
 
 import io.circe._
 import io.circe.syntax._
+import japgolly.microlibs.stdlib_ext.MutableArray
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
@@ -14,29 +15,66 @@ import scalacss.ScalaCssReact._
 
 /** Format for a number of results.
   */
-abstract class FormatResults(final val label: String) {
-  def render[P](args: FormatResults.Args[P]): VdomElement
+abstract class SuiteResultsFormat(final val label: String) {
+  def render[P](args: SuiteResultsFormat.Args[P]): VdomElement
 }
 
-object FormatResults {
+object SuiteResultsFormat {
 
-  val builtIn: Vector[FormatResults] =
+  val builtIn: Vector[SuiteResultsFormat] =
     Vector(Table, JmhText, JmhJson, CSV(8))
+
+  val builtInBatch: Map[SuiteResultsFormat.Text, Enabled] =
+    Map(
+      JmhJson -> Enabled,
+      JmhText -> Enabled,
+      CSV(8)  -> Disabled,
+    )
 
   final case class Args[P](suite     : GuiSuite[P],
                            progress  : Progress[P],
                            results   : Map[PlanKey[P], BMStatus],
-                           resultFmts: Vector[FormatResult]) {
+                           resultFmts: Vector[BmResultFormat],
+                           guiOptions: GuiOptions) {
 
     val resultFmtCount = resultFmts.length
 
-    def filename(ext: String): String =
-      s"sjsbm-${suite.suite.filenameFriendlyName}-${progress.timestampTxt}.$ext"
+    def filename(ext: String): String = {
+      val name = guiOptions.resultFilenameWithoutExt(suite.suite, progress)
+      s"$name.$ext"
+    }
   }
 
   // ===================================================================================================================
 
-  case object Table extends FormatResults("Table") {
+  /** A format that generates text. */
+  abstract class Text(label: String,
+                      final val mimeType: String,
+                      final val fileExt: String) extends SuiteResultsFormat(label) {
+
+    def renderToText[P](args: Args[P]): String
+
+    override def render[P](args: Args[P]): VdomElement =
+      TextOutput.Props(
+        text     = renderToText(args),
+        mimeType = mimeType,
+        filename = args.filename(fileExt),
+      ).render
+
+    def save[P](args: Args[P]): Callback =
+      GuiUtil.saveFile(
+        text     = renderToText(args),
+        filename = args.filename(fileExt),
+        mimeType = mimeType,
+      )
+  }
+
+  implicit val reusabilityText: Reusability[Text] =
+    Reusability.byRef
+
+  // ===================================================================================================================
+
+  case object Table extends SuiteResultsFormat("Table") {
     private val resultBlock1  = ^.colSpan := 3
     private val resultTD      = <.td(*.resultData)
     private val plusMinusCell = resultTD("±")
@@ -62,20 +100,20 @@ object FormatResults {
       }
 
       def runsCell(runs: Int) =
-        resultTD(FormatValue.Integer render runs)
+        resultTD(ValueFormat.Integer render runs)
 
       def rows =
         keys.map { k =>
-          val status = results.getOrElse(k, BMPending)
+          val status = results.getOrElse(k, BMStatus.Pending)
           var hs = Vector.empty[VdomTag]
           hs :+= resultTD(k.bm.name)
           hs ++= suite.params.renderParams(k.param).map(resultTD(_))
           hs ++= (status match {
-            case BMPending        => whenBMPending
-            case BMPreparing      => whenBMPreparing
-            case BMRunning        => whenBMRunning
+            case BMStatus.Pending        => whenBMPending
+            case BMStatus.Preparing      => whenBMPreparing
+            case BMStatus.Running        => whenBMRunning
 
-            case BMDone(Left(err)) =>
+            case BMStatus.Done(Left(err)) =>
               val showError = Callback {
                 err.printStackTrace()
               }
@@ -88,12 +126,12 @@ object FormatResults {
                   ^.cursor.pointer,
                   ^.onDoubleClick --> showError))
 
-            case BMDone(Right(stats)) =>
+            case BMStatus.Done(Right(stats)) =>
               runsCell(stats.samples) +:
                 resultFmts.flatMap(f => Vector(
-                  resultTD(f.score render stats.score),
+                  resultTD(f.score render stats),
                   plusMinusCell,
-                  resultTD(f.scoreError render stats.scoreError)))
+                  resultTD(f.scoreError render stats)))
           })
           <.tr(hs: _*)
         }
@@ -119,23 +157,21 @@ object FormatResults {
     val decFmt =
       overridePrecision.map { dp => "%." + dp + "f" }
 
-    def formatNum[A](formatValue: FormatValue[A], value: A): String =
+    def formatNum[A](valueFormat: ValueFormat[A], value: A): String =
       decFmt match {
         case Some(fmt) =>
-          TextUtil.removeTrailingZeros(fmt.format(formatValue.toDouble(value)))
+          GuiUtil.removeTrailingZeros(fmt.format(valueFormat.toDouble(value)))
         case None =>
           if (prettyNumbers)
-            formatValue.toTextPretty(value)
+            valueFormat.toTextPretty(value)
           else
-            formatValue.toTextBasic(value)
+            valueFormat.toTextBasic(value)
       }
-
-    val keys = progress.plan.keys
 
     val rowBuilder = Vector.newBuilder[Vector[String]]
 
     def header: Vector[String] =
-      ("Benchmark" +: suite.params.headers :+ "Runs") ++ resultFmts.iterator.flatMap(f =>
+      ("Benchmark" +: suite.params.headers :+ "Cnt") ++ resultFmts.iterator.flatMap(f =>
         if (separatePlusMinus)
           f.header :: "±" :: "error" :: Nil
         else
@@ -146,23 +182,24 @@ object FormatResults {
     if (emptyRowAfterHeader)
       rowBuilder += Vector.empty
 
-    for (k <- keys) {
+    val keys = MutableArray(progress.plan.keys).sortBy(k => (k.bmIndex, k.paramIndex))
+    for (k <- keys.iterator) {
       var cells = Vector.empty[String]
-      val status = results.getOrElse(k, BMPending)
+      val status = results.getOrElse(k, BMStatus.Pending)
 
       cells :+= k.bm.name
       cells ++= suite.params.renderParamsToText(k.param)
 
       status match {
-        case BMPending        => ()
-        case BMPreparing      => cells :+= "Preparing..."
-        case BMRunning        => cells :+= "Running..."
-        case BMDone(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
-        case BMDone(Right(s)) =>
-          cells :+= formatNum(FormatValue.Integer, s.samples)
+        case BMStatus.Pending        => ()
+        case BMStatus.Preparing      => cells :+= "Preparing..."
+        case BMStatus.Running        => cells :+= "Running..."
+        case BMStatus.Done(Left(e))  => cells :+= ("" + e).takeWhile(_ != '\n')
+        case BMStatus.Done(Right(s)) =>
+          cells :+= formatNum(ValueFormat.Integer, s.samples)
           for (f <- resultFmts) {
-            val score = formatNum(f.score, s.score)
-            val error = formatNum(f.scoreError, s.scoreError)
+            val score = formatNum(f.score, s)
+            val error = formatNum(f.scoreError, s)
             val c =
               if (separatePlusMinus)
                 Vector(score, "±", error)
@@ -180,8 +217,9 @@ object FormatResults {
 
   // ===================================================================================================================
 
-  case object JmhText extends FormatResults("JMH Text") {
-    override def render[P](args: Args[P]): VdomElement = {
+  case object JmhText extends Text("JMH Text", "text/plain", "txt") {
+
+    override def renderToText[P](args: Args[P]): String = {
       import args._
 
       val rows = textTable(
@@ -200,18 +238,13 @@ object FormatResults {
         else
           " "
 
-      val text = TextUtil.formatTable(rows, gap)
-
-      TextOutput.Props(
-        text = text,
-        mimeType = "text/plain",
-        filename = args.filename("txt"),
-      ).render
+      GuiUtil.formatTable(rows, gap)
     }
   }
+
   // ===================================================================================================================
 
-  case object JmhJson extends FormatResults("JMH JSON") {
+  case object JmhJson extends Text("JMH JSON", "application/json", "json") {
 
     private object Internals {
       type BenchmarksJson = Vector[BenchmarkJson]
@@ -268,28 +301,33 @@ object FormatResults {
         if (resultFmts.isEmpty)
           Vector.empty
         else {
-          val fmtRes = resultFmts.head
-          val hasParams = suite.params.editors.nonEmpty
+          val fmtRes        = resultFmts.head
+          val hasParams     = suite.params.editors.nonEmpty
+          val engineOptions = progress.engineOptions
           results.iterator.collect {
-            case (key, BMDone(Right(stats))) =>
+            case (key, BMStatus.Done(Right(stats))) =>
 
               val params: Option[Map[String, String]] =
                 if (hasParams)
                   Some {
-                    suite.params.renderParamsToText(key.param).iterator.zipWithIndex.map { case (param, idx) =>
-                      suite.params.headers(idx) -> param
+                    suite.params.renderParamsToText(key.param).iterator.zipWithIndex.map { case (paramValue, idx) =>
+                      val name = suite.params.headers(idx).replace(' ', '_') // jmh-visualizer doesn't like spaces in param names
+                      name -> paramValue
                     }.toMap
                   }
                 else
                   None
 
+              val scoreConfidence1 = fmtRes.scoreConfidence1.toDouble(stats)
+              val scoreConfidence2 = fmtRes.scoreConfidence2.toDouble(stats)
+
               val primaryMetric =
                 PrimaryMetric(
-                  score           = fmtRes.score.toDouble(stats.score),
-                  scoreError      = fmtRes.scoreError.toDouble(stats.scoreError),
-                  scoreConfidence = Vector(stats.scoreConfidence._1, stats.scoreConfidence._2).map(fmtRes.score.toDouble),
+                  score           = fmtRes.score.toDouble(stats),
+                  scoreError      = fmtRes.scoreError.toDouble(stats),
+                  scoreConfidence = Vector(scoreConfidence1, scoreConfidence2),
                   scoreUnit       = fmtRes.header.replace('μ', 'u'),
-                  rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b.score))),
+                  rawData         = Vector(stats.isolatedBatches.map(b => fmtRes.score.toDouble(b))),
                 )
 
               BenchmarkJson(
@@ -301,11 +339,11 @@ object FormatResults {
                 vmName                = "Scala.JS",
                 vmVersion             = ScalaJsInfo.version,
                 userAgent             = window.navigator.userAgent,
-                warmupIterations      = stats.engineOptions.warmupIterations,
-                warmupTime            = durToStr(stats.engineOptions.actualWarmupIterationTime),
+                warmupIterations      = engineOptions.warmupIterations,
+                warmupTime            = durToStr(engineOptions.actualWarmupIterationTime),
                 warmupBatchSize       = 1,
-                measurementIterations = stats.engineOptions.iterations,
-                measurementTime       = durToStr(stats.engineOptions.iterationTime),
+                measurementIterations = engineOptions.iterations,
+                measurementTime       = durToStr(engineOptions.iterationTime),
                 measurementBatchSize  = 1,
                 params                = params,
                 primaryMetric         = primaryMetric,
@@ -317,20 +355,19 @@ object FormatResults {
       benchmarksJson.asJson.deepDropNullValues
     }
 
-    override def render[P](args: Args[P]): VdomElement = {
-      val text = json(args).spaces2
-      TextOutput.Props(
-        text = text,
-        mimeType = "application/json",
-        filename = args.filename("json"),
-      ).render
-    }
+    def jsonText(json: Json): String =
+      json
+        .spaces2
+        .replaceAll("\n +\n", "\n") // Remove blank lines
+
+    override def renderToText[P](args: Args[P]): String =
+      jsonText(json(args))
   }
 
   // ===================================================================================================================
 
-  final case class CSV(decimalPoints: Int) extends FormatResults("CSV") {
-    override def render[P](args: Args[P]): VdomElement = {
+  final case class CSV(decimalPoints: Int) extends Text("CSV", "text/csv", "csv") {
+    override def renderToText[P](args: Args[P]): String = {
       val rows = textTable(
         args                = args,
         separatePlusMinus   = false,
@@ -338,12 +375,7 @@ object FormatResults {
         overridePrecision   = Some(decimalPoints),
         prettyNumbers       = false,
       )
-      val text = TextUtil.formatCSV(rows)
-      TextOutput.Props(
-        text = text,
-        mimeType = "text/csv",
-        filename = args.filename("csv"),
-      ).render
+      GuiUtil.formatCSV(rows)
     }
   }
 

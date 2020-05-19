@@ -1,14 +1,13 @@
 package demo.suites.cats
 
-import demo.Util._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.benchmark._
-import japgolly.scalajs.benchmark.gui._
-
-import cats.~>
 import cats.data.{Kleisli, ReaderT}
 import cats.free.Free
 import cats.instances.function._
+import cats.~>
+import demo.Util._
+import japgolly.scalajs.benchmark._
+import japgolly.scalajs.benchmark.gui._
+import japgolly.scalajs.react.vdom.html_<^._
 
 object FreeMonads {
 
@@ -59,13 +58,13 @@ object FreeMonads {
   val bmFn0FoldMap =
     bm(prefix + "Fn0 (foldMap)"){ p1 =>
       val p2: Function0[Int] = p1.foldMap(makeRealFn0)
-      val r: Int = p2()
+      p2(): Int
     }
 
   val bmFn0Compile =
     bm(prefix + "Fn0 (compile)"){ p1 =>
       val p2: Free[Function0, Int] = p1.compile(makeRealFn0)
-      val r: Int = p2.run
+      p2.run: Int
     }
 
   val bms = Vector[Benchmark[Int]](
@@ -74,7 +73,7 @@ object FreeMonads {
 
     bm(prefix + "Reader[Fn0]"){ p1 =>
       val p2: ReaderF[Int] = p1.foldMap(CmdToReaderF)
-      val r: Int = p2.run(new TheRealDeal)()
+      p2.run(new TheRealDeal)(): Int
     }
   )
 

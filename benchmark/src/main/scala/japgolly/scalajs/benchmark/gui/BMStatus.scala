@@ -4,10 +4,14 @@ import japgolly.scalajs.benchmark.engine.Result
 
 sealed trait BMStatus
 
-case object BMPending extends BMStatus
+object BMStatus {
 
-case object BMPreparing extends BMStatus
+  case object Pending extends BMStatus
 
-case object BMRunning extends BMStatus
+  case object Preparing extends BMStatus
 
-final case class BMDone(result: Result) extends BMStatus
+  case object Running extends BMStatus
+
+  final case class Done(result: Result) extends BMStatus
+
+}

@@ -1,48 +1,44 @@
 package japgolly.scalajs.benchmark.engine
 
-import scala.concurrent.duration._
 import scala.scalajs.js
 
-final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: EngineOptions) {
+final case class Stats(rawData: Vector[IterationStats]) {
 
-  override def toString() = {
-    def toOpsPerSec(d: FiniteDuration): Double =
-      TimeUtil.toMs(d) * 1000 / 1000000L.toDouble
-    def fmtD(d: Duration): String = d match {
-      case f: FiniteDuration => (TimeUtil.toMs(f) * 1000).toInt.toString + "μs"
-      case _                 => d.toString
-    }
-    val tot = "%0.3f sec".format(toOpsPerSec(totalTime))
-    s"${fmtD(score)} ± ${fmtD(scoreError)} /op ($samples runs, Σ $tot)"
-  }
+  def map(f: IterationStats => IterationStats): Stats =
+    Stats(rawData.map(f))
+
+  def modifyMeans(f: Double => Double): Stats =
+    map(_.modifyMean(f))
 
   lazy val isolatedBatches: Vector[Stats] = {
-    val e = Vector.empty[Vector[FiniteDuration]]
-    rawData.map { batch =>
-      Stats(e :+ batch, engineOptions)
+    val e = Vector.empty[IterationStats]
+    Vector.tabulate(rawData.length) { i =>
+      val batch = rawData(i)
+      Stats(e :+ batch)
     }
   }
 
-  val times =
-    rawData.flatten
+  private val times: js.Array[Double] = new js.Array[Double]
+  private var _sum = 0.0
+  for (i <- rawData) {
+    _sum += i.mean
+    times.push(i.mean)
+  }
 
-  def samples =
+  val sum: Double =
+    _sum
+
+  def samples: Int =
     times.length
 
-  val totalTime: FiniteDuration =
+  val average: Double =
     if (times.isEmpty)
-      Duration.Zero
+      0
     else
-      times.reduce(_ + _)
-
-  val average: Duration =
-    if (times.isEmpty)
-      Duration.Inf
-    else
-      totalTime / samples
+      sum / samples
 
   private lazy val statMathMs =
-    StatMath(times.map(TimeUtil.toMs))
+    StatMath(times)
 
   private def meanErrorMsAt(confidence: Double): Double = {
     val df = samples - 1
@@ -51,18 +47,20 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
     a * statMathMs.sem
   }
 
-  def getMeanErrorAt(confidence: Double): Duration =
+  def getMeanErrorAt(confidence: Double): Double =
     if (samples <= 2)
-      Duration.Inf
+      Double.NaN
     else
-      TimeUtil.fromMs(meanErrorMsAt(confidence))
+      meanErrorMsAt(confidence)
 
-  def getConfidenceIntervalAt(confidence: Double): (Duration, Duration) =
+  def getConfidenceIntervalAt(confidence: Double): (Double, Double) =
     if (samples <= 2)
-      (Duration.Undefined, Duration.Undefined)
+      (Double.NaN, Double.NaN)
     else {
       val meanErr = meanErrorMsAt(confidence)
-      (TimeUtil.fromMs(statMathMs.mean - meanErr), TimeUtil.fromMs(statMathMs.mean + meanErr))
+      val low = (statMathMs.mean - meanErr).max(0)
+      val high = statMathMs.mean + meanErr
+      (low, high)
     }
 
   val score           = average
@@ -72,28 +70,24 @@ final case class Stats(rawData: Vector[Vector[FiniteDuration]], engineOptions: E
 
 object Stats {
 
-  private[engine] class Mutable {
-    private val batches      = new js.Array[js.Array[FiniteDuration]]
-    private var curBatch     = new js.Array[FiniteDuration]
-    private var curBatchTime = Duration.Zero
+  final class Builder {
+    private val iterations   = Vector.newBuilder[IterationStats]
+    private var curIteration = new IterationStats.Builder
 
-    def add(d: FiniteDuration): Unit = {
-      curBatch.push(d)
-      curBatchTime += d
+    def add(d: Double): Unit =
+      curIteration.add(d)
+
+    def totalIterationTime() =
+      curIteration.totalTime()
+
+    def endIteration(): Unit = {
+      iterations += curIteration.result()
+      curIteration = new IterationStats.Builder
     }
 
-    def totalBatchTime() =
-      curBatchTime
-
-    def endBatch(): Unit = {
-      batches.push(curBatch)
-      curBatch = new js.Array[FiniteDuration]
-      curBatchTime = Duration.Zero
-    }
-
-    /** Make sure you call [[endBatch()]] before calling this. */
-    def result(): Vector[Vector[FiniteDuration]] =
-      Vector.tabulate(batches.length)(batches(_).toVector)
+    /** Make sure you call [[endIteration()]] before calling this. */
+    def result(): Stats =
+      Stats(iterations.result())
   }
 
 }
