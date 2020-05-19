@@ -2,6 +2,7 @@ package japgolly.scalajs.benchmark.gui
 
 import io.circe._
 import io.circe.syntax._
+import japgolly.microlibs.stdlib_ext.MutableArray
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
@@ -167,8 +168,6 @@ object SuiteResultsFormat {
             valueFormat.toTextBasic(value)
       }
 
-    val keys = progress.plan.keys
-
     val rowBuilder = Vector.newBuilder[Vector[String]]
 
     def header: Vector[String] =
@@ -183,7 +182,8 @@ object SuiteResultsFormat {
     if (emptyRowAfterHeader)
       rowBuilder += Vector.empty
 
-    for (k <- keys) {
+    val keys = MutableArray(progress.plan.keys).sortBy(k => (k.bmIndex, k.paramIndex))
+    for (k <- keys.iterator) {
       var cells = Vector.empty[String]
       val status = results.getOrElse(k, BMStatus.Pending)
 
