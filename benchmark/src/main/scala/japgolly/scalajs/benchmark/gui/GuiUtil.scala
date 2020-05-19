@@ -5,7 +5,7 @@ import japgolly.scalajs.benchmark.vendor.FileSaver
 import japgolly.scalajs.react.Callback
 import monocle.{Lens, Optional}
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.reflect.ClassTag
 import scala.scalajs.js
 import scala.scalajs.js.|
@@ -120,4 +120,10 @@ object GuiUtil {
       val blob = new Blob(body, mime)
       FileSaver.saveAs(blob, filename)
     }
+
+  def showFiniteDuration(d: Duration): String =
+    d.toString
+      .replaceFirst("milliseconds?", "ms")
+      .replaceFirst("seconds?", "sec")
+      .replaceFirst("minutes?", "min")
 }

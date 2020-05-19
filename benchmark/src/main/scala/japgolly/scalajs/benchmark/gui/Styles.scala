@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.gui.`package`.CssSettings._
+import japgolly.scalajs.benchmark.gui.CssSettings._
 import japgolly.univeq.UnivEq
 import scalacss.ScalaCssReact._
 
@@ -8,6 +8,7 @@ object Styles extends StyleSheet.Inline {
   import dsl._
 
   val enabled = Domain.boolean.map(Enabled.when)
+  val validity = Domain.boolean.map(Valid.when)
 
 //  val cssReset = style(scalacss.ext.CssReset.normaliseCss)
 
@@ -43,6 +44,7 @@ object Styles extends StyleSheet.Inline {
 
     val settingsTableHeader = style(
       settingsCell,
+      lineHeight(1.25 em),
       textAlign.right,
       padding.horizontal(2 ex),
       anyHeader)
@@ -172,6 +174,24 @@ object Styles extends StyleSheet.Inline {
 
       d.copy(datasets = d.datasets.map(styleDataset))
     }
+  }
+
+  // ===================================================================================================================
+
+  object Editors {
+
+    val inputText = styleF(validity)(v => styleS(
+      v match {
+        case Valid   => styleS()
+        case Invalid => styleS(
+          outline.none,
+          border(solid, 1 px, red),
+          backgroundColor(c"#fff6f6"))
+      }
+    ))
+
+    val engineOptionCnt = style(width(6.4 ex))
+    val engineOptionDur = style(width(10.4 ex))
   }
 
   // ===================================================================================================================
@@ -338,6 +358,7 @@ object Styles extends StyleSheet.Inline {
 
   initInnerObjects(
     Suite.resultTable,
+    Editors.inputText(Valid),
     BatchMode.menuUL,
     Menu.topNav,
     TextOutput.pre,

@@ -2,22 +2,24 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.annotation.nowarn
 import scalacss.ScalaCssReact._
 
 object BatchModeControls {
 
-  final case class Props(completedBMs : Int,
-                         bms          : Int,
-                         elapsedMs    : Double,
-                         etaMs        : Double,
-                         formats      : Map[SuiteResultsFormat.Text, Enabled],
-                         updateFormats: Option[Map[SuiteResultsFormat.Text, Enabled] ~=> Callback],
-                         start        : Option[Option[Reusable[Callback]]],
-                         abort        : Option[Reusable[Callback]],
-                         reset        : Option[Reusable[Callback]],
-                         downloadTest : Boolean,
+  final case class Props(completedBMs      : Int,
+                         bms               : Int,
+                         elapsedMs         : Double,
+                         etaMs             : Double,
+                         formats           : Map[SuiteResultsFormat.Text, Enabled],
+                         updateFormats     : Option[Map[SuiteResultsFormat.Text, Enabled] ~=> Callback],
+                         engineOptionEditor: StateSnapshot[EngineOptionEditor.State],
+                         start             : Option[Option[Reusable[Callback]]],
+                         abort             : Option[Reusable[Callback]],
+                         reset             : Option[Reusable[Callback]],
+                         downloadTest      : Boolean,
                         ) {
     @inline def render: VdomElement = Component(this)
   }
@@ -28,33 +30,47 @@ object BatchModeControls {
     Reusability.byRef || Reusability.derive
   }
 
+  private val engineOptionEditorStyles =
+    Reusable.byRef(
+      EngineOptionEditor.Style(
+        row   = <.tr,
+        key   = <.th(*.controlKey),
+        value = <.td(*.controlValue),
+      )
+    )
+
   private val button =
     <.button(*.controlButton)
 
   private def render(p: Props): VdomNode = {
-    def kv(key: String, value: VdomNode) =
-      <.tr(
-        <.td(*.controlKey, key + ":"),
-        <.td(*.controlValue, value))
+    def kv(key: String)(value: VdomNode) =
+      engineOptionEditorStyles.renderKV(key)(value)
+
+    val engineOptions =
+      EngineOptionEditor.Props(
+        state   = p.engineOptionEditor,
+        enabled = Enabled.when(p.start.isDefined),
+        style   = engineOptionEditorStyles,
+      ).render
 
     val completed =
       TagMod.when(p.start.isEmpty) {
         val pct = p.completedBMs * 100 / p.bms
-        kv("Completed", s"${p.completedBMs} (${pct}%)")
+        kv("Completed")(s"${p.completedBMs} (${pct}%)")
       }
 
     val elapsed =
       TagMod.when(p.start.isEmpty) {
-        kv("Elapsed", GuiUtil.formatETA(p.elapsedMs))
+        kv("Elapsed")(GuiUtil.formatETA(p.elapsedMs))
       }
 
     val eta =
       TagMod.when(p.reset.isEmpty) {
-        kv("ETA", GuiUtil.formatETA(p.etaMs))
+        kv("ETA")(GuiUtil.formatETA(p.etaMs))
       }
 
     val formats =
-      kv("Save results as", {
+      kv("Save results as") {
         <.div(p.formats.toArray.sortBy(_._1.label).toTagMod { case (fmt, enabled) =>
           <.div(
             <.label(
@@ -66,7 +82,7 @@ object BatchModeControls {
               ),
               fmt.label))
         })
-      })
+      }
 
     val startButton =
       p.start.whenDefined { oc =>
@@ -107,8 +123,9 @@ object BatchModeControls {
       <.h3("Controls"),
       <.table(*.controlTable,
         <.tbody(
+          engineOptions,
           formats,
-          kv("Benchmarks", p.bms),
+          kv("Benchmarks")(p.bms),
           completed,
           elapsed,
           eta,
