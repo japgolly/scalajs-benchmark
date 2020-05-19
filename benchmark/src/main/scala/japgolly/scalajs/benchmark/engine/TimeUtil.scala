@@ -16,8 +16,11 @@ object TimeUtil {
     }
   }
 
-  def fromMs(ms: Double): FiniteDuration =
-    FiniteDuration((ms * 1000000.0).toLong, TimeUnit.NANOSECONDS)
+  def fromMs(ms: Double): Duration =
+    if (ms.isNaN)
+      Duration.Undefined
+    else
+      FiniteDuration((ms * 1000000.0).toLong, TimeUnit.NANOSECONDS)
 
   val ms: Iso[Duration, Double] =
     Iso(toMs)(fromMs)

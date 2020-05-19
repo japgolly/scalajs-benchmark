@@ -1,7 +1,9 @@
 package japgolly.scalajs.benchmark.engine
 
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
+import japgolly.scalajs.react.Reusability
 import java.util.concurrent.TimeUnit
+import scala.annotation.nowarn
 import scala.concurrent.duration._
 
 /**
@@ -51,4 +53,11 @@ object EngineOptions {
 
   private val estimatedOverheadPerBm =
     FiniteDuration(2000, TimeUnit.MILLISECONDS)
+
+  implicit val reusability: Reusability[EngineOptions] = {
+    @nowarn("cat=unused") implicit val x1 = Reusability.byRef[Clock]
+    @nowarn("cat=unused") implicit val x2 = Reusability.byRef[() => FiniteDuration]
+    @nowarn("cat=unused") implicit val x3 = Reusability.byRef[FiniteDuration] // TODO https://github.com/japgolly/scalajs-react/issues/719
+    Reusability.byRef || Reusability.derive
+  }
 }
