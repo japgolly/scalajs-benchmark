@@ -198,7 +198,7 @@ object SuiteRunner {
     keys.iterator.flatMap(eachBmStatus.get).foreach {
       case BMStatus.Done(Right(s)) =>
         val d = s.average
-        if (d.isFinite) {
+        if (java.lang.Double.isFinite(d)) {
           min = if (min.isNaN) d else min min d
           max = if (max.isNaN) d else max max d
         }

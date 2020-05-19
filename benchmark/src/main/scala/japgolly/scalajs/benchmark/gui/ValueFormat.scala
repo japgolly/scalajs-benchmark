@@ -74,7 +74,7 @@ object ValueFormat {
 
   def durationMs(getUnitsFromMs: Double => Double, dp: Int): ValueFormat[Double] =
     optionalDouble(dp).contramap(ms =>
-      if (ms.isFinite)
+      if (java.lang.Double.isFinite(ms))
         Some(getUnitsFromMs(ms))
       else
         None
