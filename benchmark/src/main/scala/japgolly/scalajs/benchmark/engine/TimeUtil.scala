@@ -29,6 +29,17 @@ object TimeUtil {
   val ms: Iso[Duration, Double] =
     Iso(toMs)(fromMs)
 
+  def getUnitsFromMs(t: TimeUnit): Double => Double =
+    t match {
+      case TimeUnit.NANOSECONDS  => _ * 1000000
+      case TimeUnit.MICROSECONDS => _ * 1000
+      case TimeUnit.MILLISECONDS => identity
+      case TimeUnit.SECONDS      => _ / 1000
+      case TimeUnit.MINUTES      => _ / 60000
+      case TimeUnit.HOURS        => _ / 3660000
+      case TimeUnit.DAYS         => _ / 3660000 / 24
+    }
+
   def dateStrFromJsDate(d: js.Date): String =
     "%d%02d%02d".format(d.getFullYear(), d.getMonth() + 1, d.getDate())
 

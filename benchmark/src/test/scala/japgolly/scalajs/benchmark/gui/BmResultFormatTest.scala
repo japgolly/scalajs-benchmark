@@ -31,7 +31,7 @@ object BmResultFormatTest extends TestSuite {
         assertEq(f.toTextBasic(sample3), "200.000")
         assertEq(f.toTextBasic(sample4), "20.000")
         assertEq(f.toTextBasic(sample5), "4.261")
-        assertEq(f.toDouble(sample5), 4.261149)
+        assertEq(f.toDouble(sample5), 4.261149162467518)
       }
       "error" - {
         val f = fmt.scoreError
@@ -40,7 +40,7 @@ object BmResultFormatTest extends TestSuite {
         assertEq(f.toTextBasic(sample3), "182.437")
         assertEq(f.toTextBasic(sample4), "18.244")
         assertEq(f.toTextBasic(sample5), "1.352")
-        assertEq(f.toDouble(sample5), 1.351744)
+        assertEq(f.toDouble(sample5), 1.3517449784834823)
       }
       "scoreConfidence" - {
         assertEqWithTolerance(fmt.scoreConfidence1.toDouble(sample5), 4.261149 - 1.351744, 0.00001)
@@ -57,7 +57,7 @@ object BmResultFormatTest extends TestSuite {
       }
       "error" - {
         val f = fmt.scoreError
-        assertEq(f.toTextBasic(sample6), "0.245")
+        assertEq(f.toTextBasic(sample6), "0.246")
       }
     }
 

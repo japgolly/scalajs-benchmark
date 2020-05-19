@@ -59,16 +59,26 @@ object ValueFormat {
       })
   }
 
-  def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFormat[Duration] =
+  def optionalDouble(dp: Int): ValueFormat[Option[Double]] =
     optionalNumber(
       dp            = dp,
       default       = <.div(Styles.Suite.numericResult, "NaN"),
       defaultDouble = Double.NaN,
       defaultText   = "NaN")
-      .contramap {
-        case f: FiniteDuration => Some(getUnits(f))
-        case _                 => None
-      }
+
+  def duration(getUnits: FiniteDuration => Double, dp: Int): ValueFormat[Duration] =
+    optionalDouble(dp).contramap {
+      case f: FiniteDuration => Some(getUnits(f))
+      case _                 => None
+    }
+
+  def durationMs(getUnitsFromMs: Double => Double, dp: Int): ValueFormat[Double] =
+    optionalDouble(dp).contramap(ms =>
+      if (ms.isFinite)
+        Some(getUnitsFromMs(ms))
+      else
+        None
+    )
 
   val Integer = number(0).contramap[Int](_.toDouble)
 }

@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.engine.{IterationStats, Stats, TimeUtil}
+import japgolly.scalajs.benchmark.engine.{Stats, TimeUtil}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -47,31 +47,15 @@ object BmResultFormat {
       case TimeUnit.DAYS         => "hr"
     }
 
-  def getUnits(t: TimeUnit): FiniteDuration => Double = {
-    val f = getUnitsFromMs(t)
-    fd => f(TimeUtil.toMs(fd))
-  }
-
-  private def getUnitsFromMs(t: TimeUnit): Double => Double =
-    t match {
-      case TimeUnit.NANOSECONDS  => _ * 1000000
-      case TimeUnit.MICROSECONDS => _ * 1000
-      case TimeUnit.MILLISECONDS => identity
-      case TimeUnit.SECONDS      => _ / 1000
-      case TimeUnit.MINUTES      => _ / 60000
-      case TimeUnit.HOURS        => _ / 3660000
-      case TimeUnit.DAYS         => _ / 3660000 / 24
-    }
-
-  def duration(header       : String,
-               lowerIsBetter: Boolean,
-               getUnits     : FiniteDuration => Double,
-               scoreDP      : Int,
-               errorDP      : Int): BmResultFormat = {
-    val scoreError = ValueFormat.duration(getUnits, errorDP).contramap(TimeUtil.fromMs)
+  def duration(header        : String,
+               lowerIsBetter : Boolean,
+               getUnitsFromMs: Double => Double,
+               scoreDP       : Int,
+               errorDP       : Int): BmResultFormat = {
+    val scoreError = ValueFormat.durationMs(getUnitsFromMs, errorDP)
     BmResultFormat(
       header           = header,
-      score            = ValueFormat.duration(getUnits, scoreDP).contramap(TimeUtil.fromMs).contramap(_.score),
+      score            = ValueFormat.durationMs(getUnitsFromMs, scoreDP).contramap(_.score),
       scoreError       = scoreError.contramap(_.scoreError),
       scoreConfidence1 = scoreError.contramap(_.scoreConfidence._1),
       scoreConfidence2 = scoreError.contramap(_.scoreConfidence._2),
@@ -103,7 +87,7 @@ object BmResultFormat {
   }
 
   def timePerOp(t: TimeUnit, scoreDP: Int, errorDP: Int): BmResultFormat =
-    duration(abbrev(t) + "/op", true, getUnits(t), scoreDP, errorDP)
+    duration(abbrev(t) + "/op", true, TimeUtil.getUnitsFromMs(t), scoreDP, errorDP)
 
   def chooseTimePerOp(ctx: Ctx): BmResultFormat =
     chooseTimePerOp(ctx.minDur)

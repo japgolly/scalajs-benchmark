@@ -23,4 +23,13 @@ object TestUtil extends japgolly.microlibs.testutil.TestUtil {
       IterationStats(opsPerIteration, sum)
     })
 
+  def itStats(times: Double*): IterationStats = {
+    val b = new IterationStats.Builder
+    times.foreach(b.add)
+    b.result()
+  }
+
+  def stats(i1: IterationStats, in: IterationStats*): Stats =
+    Stats(i1 +: in.toVector)
+
 }

@@ -2,7 +2,7 @@ package japgolly.scalajs.benchmark
 
 import io.circe._
 import io.circe.parser._
-import japgolly.microlibs.testutil.TestUtil._
+import japgolly.scalajs.benchmark.TestUtil._
 import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.{BMStatus, BmResultFormat, GuiOptions, GuiParam, GuiParams, GuiSuite}
 import japgolly.scalajs.benchmark.gui.SuiteResultsFormat.{Args, JmhJson}
@@ -12,8 +12,9 @@ import utest._
 
 object JmhJsonTest extends TestSuite {
   override def tests = Tests {
-    "simple" - testSimple()
-    "params" - testWithParams()
+    "simple"    - testSimple()
+    "precision" - testPrecision()
+    "params"    - testWithParams()
   }
 
   private val eo = EngineOptions.default.copy(
@@ -57,15 +58,6 @@ object JmhJsonTest extends TestSuite {
     assertMultiline(actual, expect)
   }
 
-  private def itStats(times: Double*): IterationStats = {
-    val b = new IterationStats.Builder
-    times.foreach(b.add)
-    b.result()
-  }
-
-  private def stats(times: IterationStats*): Stats =
-    Stats(times.toVector)
-
   private def testSimple() = {
     val bm1    = Benchmark("My BM")(())
     val suite  = Suite[Unit]("My Suite")(bm1)
@@ -90,11 +82,11 @@ object JmhJsonTest extends TestSuite {
         |    "measurementTime" : "2 s",
         |    "measurementBatchSize" : 1,
         |    "primaryMetric" : {
-        |      "score" : 12.2,
-        |      "scoreError" : 0.589896,
+        |      "score" : 12.200000000000001,
+        |      "scoreError" : 0.5898962192825269,
         |      "scoreConfidence" : [
-        |        11.610103,
-        |        12.789896
+        |        11.610103780717472,
+        |        12.789896219282527
         |      ],
         |      "scoreUnit" : "ms/op",
         |      "rawData" : [
@@ -103,6 +95,67 @@ object JmhJsonTest extends TestSuite {
         |          12.25,
         |          12.3,
         |          12.1
+        |        ]
+        |      ]
+        |    },
+        |    "secondaryMetrics" : {
+        |    }
+        |  }
+        |]
+        |""".stripMargin.trim
+
+    testJmhJsonText[Unit](
+      suite      = GuiSuite(suite),
+      progress   = Progress(startTime, plan, 123, eo),
+      results    = Map(bm1p0 -> BMStatus.Done(Right(bm1p0r))),
+      resultFmts = Vector(BmResultFormat.MillisPerOp),
+      expect     = expect,
+    )
+  }
+
+  private def testPrecision() = {
+    val bm1    = Benchmark("My BM")(())
+    val suite  = Suite[Unit]("My Suite")(bm1)
+    val plan   = Plan[Unit](suite, Vector.empty)
+    val bm1p0  = PlanKey[Unit](0, 0)(bm1, ())
+    val bm1p0r = statMatrix(10, 17)((i, b) => (i+b*1.2435).micros)
+
+    val expect =
+      s"""[
+        |  {
+        |    "benchmark" : "My_Suite.My_BM",
+        |    "mode" : "avgt",
+        |    "threads" : 1,
+        |    "forks" : 1,
+        |    "jdkVersion" : "1.8",
+        |    "vmName" : "Scala.JS",
+        |    "vmVersion" : "${ScalaJsInfo.version}",
+        |    "warmupIterations" : 1,
+        |    "warmupTime" : "2 s",
+        |    "warmupBatchSize" : 1,
+        |    "measurementIterations" : 4,
+        |    "measurementTime" : "2 s",
+        |    "measurementBatchSize" : 1,
+        |    "primaryMetric" : {
+        |      "score" : 0.015691764705882353,
+        |      "scoreError" : 0.0045773753094622395,
+        |      "scoreConfidence" : [
+        |        0.01111438939642011,
+        |        0.020269140015344588
+        |      ],
+        |      "scoreUnit" : "ms/op",
+        |      "rawData" : [
+        |        [
+        |          0.011191764705882352,
+        |          0.012191764705882353,
+        |          0.013191764705882354,
+        |          0.014191764705882353,
+        |          0.015191764705882356,
+        |          0.016191764705882353,
+        |          0.017191764705882354,
+        |          0.018191764705882348,
+        |          0.019191764705882353,
+        |          0.020191764705882354
         |        ]
         |      ]
         |    },
@@ -158,10 +211,10 @@ object JmhJsonTest extends TestSuite {
         |    },
         |    "primaryMetric": {
         |      "score": 9.5,
-        |      "scoreError": 3.73,
+        |      "scoreError": 3.7308312721098353,
         |      "scoreConfidence": [
-        |        5.769,
-        |        13.23
+        |        5.769168727890165,
+        |        13.230831272109835
         |      ],
         |      "scoreUnit": "us/op",
         |      "rawData": [
