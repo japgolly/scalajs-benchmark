@@ -8,8 +8,15 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 object Lib {
   type PE = Project => Project
 
-  def byScalaVersion[A](f: PartialFunction[(Long, Long), Seq[A]]): Def.Initialize[Seq[A]] =
-    Def.setting(CrossVersion.partialVersion(scalaVersion.value).flatMap(f.lift).getOrElse(Nil))
+  private val verRegex = """^(\d+)\.(\d+)\.(\d+)-?(.+)?$""".r
+
+  def byScalaVersion[A](f: PartialFunction[(Long, Long, Long, Option[String]), Seq[A]]): Def.Initialize[Seq[A]] =
+    Def.setting(
+      scalaVersion.value match {
+        case verRegex(a, b, c, d) => f.lift((a.toInt, b.toInt, c.toInt, Option(d).filter(_.nonEmpty))).getOrElse(Nil)
+        case _                    => Nil
+      }
+    )
 
   def addCommandAliases(m: (String, String)*): PE = {
     val s = m.map(p => addCommandAlias(p._1, p._2)).reduce(_ ++ _)

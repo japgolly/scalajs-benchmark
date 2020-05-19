@@ -90,9 +90,9 @@ object ScalaJsBenchmark {
       crossScalaVersions            := Seq(Ver.Scala212, Ver.Scala213),
       scalacOptions                ++= scalacFlags,
       scalacOptions                ++= byScalaVersion {
-                                         case (2, 12) => Nil
-                                         case (2, 13) => scalac213Flags
-                                       }.value,
+                                         case (2, 13, n, _) if n >= 2 => scalac213Flags
+                                         case _                       => Nil
+      }.value,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
       incOptions                    := incOptions.value.withLogRecompileOnMacro(false),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
