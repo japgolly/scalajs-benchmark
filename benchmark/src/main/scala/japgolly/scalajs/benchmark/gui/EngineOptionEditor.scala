@@ -67,6 +67,9 @@ object EngineOptionEditor {
       val style = p.style.value
       val ss = p.state
 
+      def row(cnt: IntEditor.Props, dur: DurationEditor.Props) =
+        <.div(cnt.render, " x ", dur.render)
+
       val warmups =
         style.renderKV("Warmup Iterations") {
 
@@ -85,11 +88,7 @@ object EngineOptionEditor {
             enabled     = p.enabled,
           )
 
-          <.div(
-            cnt.render,
-            " x ",
-            dur.render
-          )
+          row(cnt, dur)
         }
 
       val iterations =
@@ -110,13 +109,10 @@ object EngineOptionEditor {
             enabled     = p.enabled,
           )
 
-          <.div(cnt.render, " x ", dur.render)
+          row(cnt, dur)
         }
 
-      React.Fragment(
-        warmups,
-        iterations
-      )
+      React.Fragment(warmups, iterations)
     }
   }
 
