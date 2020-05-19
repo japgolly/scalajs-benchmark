@@ -120,6 +120,16 @@ object BmResultFormat {
       SecPerOp2
   }
 
+  def chooseOpsPerTime(ctx: Ctx): BmResultFormat = {
+    val ops1 = 1000 / TimeUtil.toMs(ctx.minDur)
+    val ops2 = 1000 / TimeUtil.toMs(ctx.maxDur)
+    val ops = ops1.min(ops2)
+    if (ops.isNaN || ops < 1000)
+      OpsPerSec3
+    else
+      OpsPerSec
+  }
+
   final case class Ctx(minDur: Duration, maxDur: Duration)
 
   type DynamicMultiple = Ctx => Vector[BmResultFormat]
@@ -127,8 +137,9 @@ object BmResultFormat {
   object DynamicMultiple {
     val default: DynamicMultiple =
       ctx => {
-        val mainFmt = chooseTimePerOp(ctx)
-        Vector(mainFmt, BmResultFormat.OpsPerSec)
+        val fmt1 = chooseTimePerOp(ctx)
+        val fmt2 = chooseOpsPerTime(ctx)
+        Vector(fmt1, fmt2)
       }
   }
 }

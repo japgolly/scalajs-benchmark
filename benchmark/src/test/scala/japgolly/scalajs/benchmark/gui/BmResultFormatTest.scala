@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import japgolly.scalajs.benchmark.TestUtil._
 import java.util.concurrent.TimeUnit
 import scalaz.Equal
+import sourcecode.Line
 import utest._
 
 object BmResultFormatTest extends TestSuite {
@@ -120,6 +121,29 @@ object BmResultFormatTest extends TestSuite {
       "sec"    - assertEq(chooseTimePerOp(1.23.seconds)      , SecPerOp3)
       "sec10"  - assertEq(chooseTimePerOp(12.3.seconds)      , SecPerOp2)
       "sec100" - assertEq(chooseTimePerOp(123.seconds)       , SecPerOp2)
+    }
+
+    "chooseOpsPerTime" - {
+      def test(min: Duration, max: Duration)(expectMin: String, expectMax: String)(implicit l: Line): Unit = {
+        val fmt = BmResultFormat.chooseOpsPerTime(Ctx(minDur = min, maxDur = max))
+        val actualMin = fmt.score.toTextBasic(stats(min))
+        val actualMax = fmt.score.toTextBasic(stats(max))
+        assertEq((actualMin, actualMax), (expectMin, expectMax))
+      }
+
+      test(2.0,    0.02)("500.000", "50000.000")
+      test(2.0,    0.2 )("500.000",  "5000.000")
+      test(2.0,    2.0 )("500.000",   "500.000")
+      test(2.0,   20.0 )("500.000",    "50.000")
+      test(2.0,  200.0 )("500.000",     "5.000")
+      test(2.0, 2000.0 )("500.000",     "0.500")
+
+      test(0.2,    0.02)("5000"    , "50000"    )
+      test(0.2,    0.2 )("5000"    ,  "5000"    )
+      test(0.2,    2.0 )("5000.000",   "500.000")
+      test(0.2,   20.0 )("5000.000",    "50.000")
+      test(0.2,  200.0 )("5000.000",     "5.000")
+      test(0.2, 2000.0 )("5000.000",     "0.500")
     }
   }
 }
