@@ -68,5 +68,10 @@
 
   <div><a href="https://github.com/japgolly/scalajs-benchmark">Github</a></div>
 
+  <script>
+    var s = window.location.search
+    if (s)
+      document.body.querySelectorAll("a").forEach((n) => n.href += s)
+  </script>
 </body>
 </html>
