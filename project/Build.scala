@@ -225,6 +225,7 @@ object ScalaJsBenchmark {
           "com.chuusai"   %%% "shapeless"     % Ver.Shapeless),
         sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
         scalaJSLinkerConfig ~= { _.withSourceMap(true) },
-        skip in packageJSDependencies := false,
-        test := { (compile in Test).value; () })
+        // test := { (compile in Test).value; () },
+        skip in packageJSDependencies := false
+        )
 }
