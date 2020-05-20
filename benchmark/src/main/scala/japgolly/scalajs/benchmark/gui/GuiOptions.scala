@@ -1,7 +1,5 @@
 package japgolly.scalajs.benchmark.gui
 
-import japgolly.scalajs.benchmark.Suite
-import japgolly.scalajs.benchmark.engine.Progress
 import scala.scalajs.LinkingInfo
 
 final case class GuiOptions(defaultSuiteResultsFormat: SuiteResultsFormat,
@@ -19,7 +17,7 @@ final case class GuiOptions(defaultSuiteResultsFormat: SuiteResultsFormat,
 
 object GuiOptions {
 
-  type FilenameFormat = (Suite[_], Progress[_]) => String
+  type FilenameFormat = FilenameCtx[_] => String
 
   val default: GuiOptions =
     apply(
@@ -32,13 +30,12 @@ object GuiOptions {
     )
 
   // Access this via `GuiOptions.default.resultFilenameWithoutExt`
-  private def defaultFilenameFormat: FilenameFormat =
-    (s, p) => {
-      val mode =
-        if (LinkingInfo.developmentMode)
-          "fastopt-"
-        else
-          ""
-      s"sjsbm-${s.filenameFriendlyName}-${mode}${p.timestampTxt}"
-    }
+  private def defaultFilenameFormat(ctx: FilenameCtx[_]): String = {
+    val mode =
+      if (LinkingInfo.developmentMode)
+        "fastopt-"
+      else
+        ""
+    s"sjsbm-${ctx.name}-${mode}${ctx.timestampTxt}"
+  }
 }

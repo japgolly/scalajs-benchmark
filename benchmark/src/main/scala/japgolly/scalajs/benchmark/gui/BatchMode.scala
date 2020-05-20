@@ -156,11 +156,14 @@ object BatchMode {
           case _                => false
         }.asAsyncCallback
 
-      def saveAll[P](done: SuiteRunner.SuiteDone[P], startedAt: js.Date): Callback = {
+      def saveAll[P](done      : SuiteRunner.SuiteDone[P],
+                     startedAt : js.Date,
+                     folderPath: Seq[String]): Callback = {
         val progress = done.progress.copy(startedAt = startedAt)
         val resultFmts = SuiteRunner.deriveResultFmts(progress, done.bm, guiOptions)
         Callback.traverse(enabledFormats) { f =>
           val args = SuiteResultsFormat.Args(
+            folderPath = folderPath,
             suite      = done.suite,
             progress   = progress,
             results    = done.bm,
@@ -176,7 +179,7 @@ object BatchMode {
           ctls      <- p.start
           _         <- $.modStateAsync(State.abortFn.set(Some(ctls.abortFn)))
           done      <- ctls.onCompletion
-          _         <- saveAll(done, startedAt).asAsyncCallback
+          _         <- saveAll(done, startedAt, p.guiPlan.folderPath).asAsyncCallback
         } yield ()
 
       def runPlanUnlessAborted(p: BatchPlan, startedAt: js.Date): AsyncCallback[Unit] =
@@ -245,7 +248,7 @@ object BatchMode {
       def runStateLens[P]: Lens[Suite2, SuiteRunner.State[P]] =
         Lens((_: Suite2).value.get.asInstanceOf[SuiteRunner.State[P]])(a => _.copy(value = Some(a)))
 
-      def planSuite[P](i: Suite1, guiSuite: GuiSuite[P], $$: StateAccessPure[Suite2]): Suite2 = {
+      def planSuite[P](folderPath: Vector[String], i: Suite1, guiSuite: GuiSuite[P], $$: StateAccessPure[Suite2]): Suite2 = {
         import i.{bms => bmItems}
         var result: Suite2 = null
         for (params <- guiSuite.defaultParams) {
@@ -260,7 +263,7 @@ object BatchMode {
             }.toVector
           if (enabledBMs.nonEmpty) {
             val guiSuite2       = guiSuite.withBMs(enabledBMs)
-            val guiPlan         = GuiPlan(guiSuite2)(params)
+            val guiPlan         = GuiPlan(folderPath, guiSuite2)(params)
             val stateAccess     = $$.zoomStateL(runStateLens[P])
             val run             = SuiteRunner.run(guiPlan)(stateAccess, engineOptions)
             val batchPlan       = BatchPlan(guiPlan)(run)
@@ -281,16 +284,16 @@ object BatchMode {
       val castSuiteL: Lens[Item2, Suite2] =
         GuiUtil.unsafeNarrowLens
 
-      def loop(in: Vector[Item1], $$: StateAccessPure[Vector[Item2]]): Vector[Item2] =
+      def loop(folderPath: Vector[String], in: Vector[Item1], $$: StateAccessPure[Vector[Item2]]): Vector[Item2] =
         in.indices.iterator.map { idx =>
           val $$$ = $$.zoomStateL(GuiUtil.vectorIndex(idx))
           in(idx) match {
-            case i: Item.Folder[Unit, Unit] => i.copy(children = loop(i.children, $$$.zoomStateL(folderItems)))
-            case i: Item.Suite [Unit, Unit] => planSuite(i, i.suite, $$$.zoomStateL(castSuiteL))
+            case i: Item.Folder[Unit, Unit] => i.copy(children = loop(folderPath :+ i.name, i.children, $$$.zoomStateL(folderItems)))
+            case i: Item.Suite [Unit, Unit] => planSuite(folderPath, i, i.suite, $$$.zoomStateL(castSuiteL))
           }
         }.toVector
 
-      val item2s = loop(initialState.items, $.zoomStateL(State.runningItems))
+      val item2s = loop(Vector.empty, initialState.items, $.zoomStateL(State.runningItems))
       BatchPlans(plans.result(), item2s, initialState, engineOptions)
     }
 

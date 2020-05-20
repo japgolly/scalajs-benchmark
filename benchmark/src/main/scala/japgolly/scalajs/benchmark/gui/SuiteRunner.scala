@@ -31,10 +31,11 @@ final class SuiteRunner[P] {
 
 object SuiteRunner {
 
-  def render[P](suite        : GuiSuite[P],
+  def render[P](folderPath   : Vector[String],
+                suite        : GuiSuite[P],
                 engineOptions: EngineOptions = EngineOptions.default,
                 guiOptions   : GuiOptions    = GuiOptions.default): VdomElement =
-    apply[P].Component(Props(suite, engineOptions, guiOptions))
+    apply[P].Component(Props(folderPath, suite, engineOptions, guiOptions))
 
   def apply[P]: SuiteRunner[P] =
     instance.asInstanceOf[SuiteRunner[P]]
@@ -42,7 +43,8 @@ object SuiteRunner {
   private val instance =
     new SuiteRunner[Any]
 
-  final case class Props[P](suite        : GuiSuite[P],
+  final case class Props[P](folderPath   : Vector[String],
+                            suite        : GuiSuite[P],
                             engineOptions: EngineOptions,
                             guiOptions   : GuiOptions)
 
@@ -352,7 +354,7 @@ object SuiteRunner {
         } yield {
           val engineOptions = eoMod(p.engineOptions)
           val guiSuite2     = p.suite.withBMs(bms)
-          val guiPlan       = GuiPlan(guiSuite2)(params)
+          val guiPlan       = GuiPlan(p.folderPath, guiSuite2)(params)
           val runCB         = run(guiPlan)($, engineOptions).toCallback
           val eta           = guiPlan.etaMs(engineOptions)
           (runCB, eta)
@@ -405,7 +407,7 @@ object SuiteRunner {
           <.span("Benchmark running... ETA: ", GuiUtil.formatETA(eta)),
           abortButton),
         renderFormatButtons(p, s),
-        renderResults(s.resultsFormat, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
+        renderResults(s.resultsFormat, p.folderPath, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
         renderGraph(p.suite, r.progress, r.bm, resultFmts))
     }
 
@@ -423,7 +425,7 @@ object SuiteRunner {
           <.span(s"Benchmark completed in ${GuiUtil.formatETA(r.totalTime)}."),
           resetButton),
         renderFormatButtons(p, s),
-        renderResults(s.resultsFormat, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
+        renderResults(s.resultsFormat, p.folderPath, p.suite, r.progress, r.bm, resultFmts, p.guiOptions),
         renderGraph(p.suite, r.progress, r.bm, resultFmts))
     }
 
@@ -441,12 +443,13 @@ object SuiteRunner {
         }
       )
     private def renderResults(fmt       : SuiteResultsFormat,
+                              folderPath: Vector[String],
                               suite     : GuiSuite[P],
                               progress  : Progress[P],
                               results   : EachBMStatus[P],
                               resultFmts: Vector[BmResultFormat],
                               guiOptions: GuiOptions): VdomElement =
-      fmt.render(SuiteResultsFormat.Args(suite, progress, results, resultFmts, guiOptions))
+      fmt.render(SuiteResultsFormat.Args(folderPath, suite, progress, results, resultFmts, guiOptions))
 
     private def renderGraph(suite: GuiSuite[P], progress: Progress[P], m: EachBMStatus[P], resultFmts: Vector[BmResultFormat]): VdomElement = {
       import ReactChart._

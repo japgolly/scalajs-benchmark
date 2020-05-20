@@ -43,7 +43,7 @@ object JmhJsonTest extends TestSuite {
                              results   : Map[PlanKey[P], BMStatus],
                              resultFmts: Vector[BmResultFormat],
                              expect    : String): Unit = {
-    val args = Args[P](suite, progress, results, resultFmts, GuiOptions.default)
+    val args = Args[P](Vector.empty, suite, progress, results, resultFmts, GuiOptions.default)
     val actual = JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent"))))
     assertEqJson(actual, expect)
   }
@@ -53,7 +53,7 @@ object JmhJsonTest extends TestSuite {
                                  results   : Map[PlanKey[P], BMStatus],
                                  resultFmts: Vector[BmResultFormat],
                                  expect    : String): Unit = {
-    val args = Args[P](suite, progress, results, resultFmts, GuiOptions.default)
+    val args = Args[P](Vector.empty, suite, progress, results, resultFmts, GuiOptions.default)
     val actual = JmhJson.jsonText(JmhJson.json(args).mapArray(_.map(_.mapObject(_.filterKeys(_ != "userAgent")))))
     assertMultiline(actual, expect)
   }

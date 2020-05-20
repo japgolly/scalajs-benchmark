@@ -31,7 +31,8 @@ object SuiteResultsFormat {
       CSV(8)  -> Disabled,
     )
 
-  final case class Args[P](suite     : GuiSuite[P],
+  final case class Args[P](folderPath: Seq[String],
+                           suite     : GuiSuite[P],
                            progress  : Progress[P],
                            results   : Map[PlanKey[P], BMStatus],
                            resultFmts: Vector[BmResultFormat],
@@ -39,8 +40,11 @@ object SuiteResultsFormat {
 
     val resultFmtCount = resultFmts.length
 
+    lazy val filenameCtx: FilenameCtx[P] =
+      FilenameCtx(folderPath, suite.suite, progress)
+
     def filename(ext: String): String = {
-      val name = guiOptions.resultFilenameWithoutExt(suite.suite, progress)
+      val name = guiOptions.resultFilenameWithoutExt(filenameCtx)
       s"$name.$ext"
     }
   }

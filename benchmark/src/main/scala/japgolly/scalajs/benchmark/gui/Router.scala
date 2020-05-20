@@ -37,11 +37,11 @@ object Router {
       val routes =
         idx.foldLeft(rootRoute) {
 
-          case (q, (path, i: Item.Suite)) =>
-            val vdom = SuiteRunner.render(i.suite, engineOptions, guiOptions)
+          case (q, (path, RouterItem(i: Item.Suite, folderPath))) =>
+            val vdom = SuiteRunner.render(folderPath, i.suite, engineOptions, guiOptions)
             q | staticRoute(path, Page.Suite(i)) ~> render(vdom)
 
-          case (q, (path, i: Item.BatchMode)) =>
+          case (q, (path, RouterItem(i: Item.BatchMode, _))) =>
             val is = items.collect { case x: Item.NonBatchMode => x }
             val props = BatchMode.Props(is, engineOptions, guiOptions)
             q | staticRoute(path, Page.BatchMode(i)) ~> render(props.render)
@@ -53,19 +53,21 @@ object Router {
     }
   }
 
-  private def index(mis: Seq[Item]): Map[String, Item.WithPage] = {
-    var m = Map.empty[String, Item.WithPage]
-    def add(i: Item.WithPage, path: String): Unit = {
+  private final case class RouterItem(item: Item.WithPage, folderPath: Vector[String])
+
+  private def index(mis: Seq[Item]): Map[String, RouterItem] = {
+    var m = Map.empty[String, RouterItem]
+    def add(i: RouterItem, path: String): Unit = {
       if (m contains path)
         dom.console.error(s"Multiple suites detected at URL: $path")
       m = m.updated(path, i)
     }
-    def go(mis: Seq[Item]): Unit =
+    def go(mis: Seq[Item], folderPath: Vector[String]): Unit =
       mis.foreach {
-        case i: Item.Folder   => go(i.children)
-        case i: Item.WithPage => add(i, i.urlPath)
+        case i: Item.Folder   => go(i.children, folderPath :+ i.name)
+        case i: Item.WithPage => add(RouterItem(i, folderPath), i.urlPath)
       }
-    go(mis)
+    go(mis, Vector.empty)
     m
   }
 
