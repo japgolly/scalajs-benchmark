@@ -37,7 +37,7 @@ object BenchmarkGUI {
                     )
                     (s: GuiSuite[P]): Unit = {
     initialise()
-    val vdom = SuiteRunner.render(s, engineOptions, guiOptions)
+    val vdom = SuiteRunner.render(Vector.empty, s, engineOptions, guiOptions)
     vdom.renderIntoDOM(container)
   }
 }

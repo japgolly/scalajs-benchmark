@@ -1,21 +1,24 @@
 package demo
 
+import japgolly.scalajs.benchmark.engine.ScalaJsInfo
 import japgolly.scalajs.benchmark.gui._
-import org.scalajs.dom.document
+import org.scalajs.dom.{document, window}
+import org.scalajs.dom.experimental.URLSearchParams
 import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.util.Try
 
 object Main {
 
   @JSExportTopLevel("main")
   def main(): Unit = {
 
-    // import concurrent.duration._
-    // import japgolly.scalajs.benchmark.engine.Options
-    // val opts = Options.Default.copy(minRuns = 1000, minTime = 0.millis)
-
     val tgt = document.getElementById("body")
 
-    BenchmarkGUI.renderMenu(tgt, layoutConfig = configureLayout)(
+    val guiOptions = GuiOptions.default.copy(
+      resultFilenameWithoutExt = filenameFormat,
+    )
+
+    BenchmarkGUI.renderMenu(tgt, layoutConfig = configureLayout, guiOptions = guiOptions)(
       suites.example.Examples.all,
       suites.cats.all,
       suites.scala.all,
@@ -24,14 +27,30 @@ object Main {
     )
   }
 
+  // Append ?machine=xxx to include xxx in filenames
+  private val machineName: Option[String] =
+    Try {
+      val p = new URLSearchParams(window.location.search)
+      Option(p.get("machine")).map(_.trim).filter(_.nonEmpty).map(FilenameCtx.normalise)
+    }.toOption.flatten
+
+  /* Customise output filenames
+   * Optional, of course.
+   */
+  private def filenameFormat(ctx: FilenameCtx[_]): String = {
+    val machine = machineName.fold("")(_ + "-")
+    val scala = Libraries.Scala.version
+    val sjs   = ScalaJsInfo.version // includes -fastopt
+    s"sjsbm-${machine}${ctx.name}-scala_$scala-sjs_$sjs-${ctx.timestampTxt}"
+  }
+
   /* Customise the layout slightly.
-   *
    * Optional, of course.
    */
   import japgolly.scalajs.react.vdom.html_<^._
   import demo.Util._
 
-  def configureLayout: LayoutConfig = {
+  private def configureLayout: LayoutConfig = {
     def toc(view: VdomElement): VdomElement =
       <.main(
         <.h1(

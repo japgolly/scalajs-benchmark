@@ -6,8 +6,9 @@ import scala.concurrent.duration.FiniteDuration
 
 trait GuiPlan {
   type Param
-  val guiSuite: GuiSuite[Param]
-  val params  : Vector[Param]
+  val folderPath: Vector[String]
+  val guiSuite  : GuiSuite[Param]
+  val params    : Vector[Param]
 
   final lazy val plan: Plan[Param] =
     Plan(guiSuite.suite, params)
@@ -25,13 +26,15 @@ trait GuiPlan {
 object GuiPlan {
   type WithParam[P] = GuiPlan { type Param = P }
 
-  def apply[P](guiSuite: GuiSuite[P])(params: Vector[P]): WithParam[P] = {
-    val _guiSuite = guiSuite
-    val _params   = params
+  def apply[P](folderPath: Vector[String], guiSuite: GuiSuite[P])(params: Vector[P]): WithParam[P] = {
+    val _folderPath = folderPath
+    val _guiSuite   = guiSuite
+    val _params     = params
     new GuiPlan {
-      override type Param   = P
-      override val guiSuite = _guiSuite
-      override val params   = _params
+      override type Param     = P
+      override val folderPath = _folderPath
+      override val guiSuite   = _guiSuite
+      override val params     = _params
     }
   }
 }
