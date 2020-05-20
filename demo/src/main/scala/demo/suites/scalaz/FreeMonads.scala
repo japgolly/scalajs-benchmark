@@ -27,7 +27,7 @@ object FreeMonads {
   type FreeCmd[A] = Free[Cmd, A]
   implicit def autoLiftCmd[A](c: Cmd[A]): FreeCmd[A] = Free.liftF(c)
 
-  type ReaderIO[A] = ReaderT[IO, TheRealDeal, A]
+  type ReaderIO[A] = ReaderT[TheRealDeal, IO, A]
   implicit object CmdToReaderIO extends (Cmd ~> ReaderIO) {
     def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => IO{ f(rd) })
     override def apply[A](ta: Cmd[A]): ReaderIO[A] = ta match {
@@ -36,7 +36,7 @@ object FreeMonads {
     }
   }
 
-  type ReaderF[A] = ReaderT[Function0, TheRealDeal, A]
+  type ReaderF[A] = ReaderT[TheRealDeal, Function0, A]
   implicit object CmdToReaderF extends (Cmd ~> ReaderF) {
     def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => () => f(rd))
     override def apply[A](ta: Cmd[A]): ReaderF[A] = ta match {
