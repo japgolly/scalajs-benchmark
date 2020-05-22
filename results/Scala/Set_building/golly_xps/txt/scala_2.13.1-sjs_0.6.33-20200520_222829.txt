@@ -1,0 +1,18 @@
+Benchmark              Unique elements     Duplicates     Cnt      ms/op ± error       ops/s ± error
+                                                                                                    
+HashSet.fold                     1,000              0      10      2.461 ± 0.005     406.360 ± 0.836
+HashSet.fold                     1,000            100      10      2.466 ± 0.002     405.589 ± 0.406
+HashSet.newBuilder               1,000              0      10      1.195 ± 0.005     836.753 ± 3.194
+HashSet.newBuilder               1,000            100      10      1.204 ± 0.002     830.370 ± 1.085
+ListSet.fold                     1,000              0      10     10.668 ± 0.010      93.742 ± 0.087
+ListSet.fold                     1,000            100      10     12.702 ± 0.089      78.726 ± 0.552
+ListSet.newBuilder               1,000              0      10      9.561 ± 0.037     104.598 ± 0.400
+ListSet.newBuilder               1,000            100      10     11.516 ± 0.034      86.838 ± 0.256
+Set.fold                         1,000              0      10      2.530 ± 0.002     395.190 ± 0.381
+Set.fold                         1,000            100      10      2.546 ± 0.003     392.749 ± 0.454
+Set.newBuilder                   1,000              0      10      1.209 ± 0.003     827.382 ± 1.981
+Set.newBuilder                   1,000            100      10      1.219 ± 0.001     820.364 ± 0.646
+TreeSet.fold                     1,000              0      10      1.101 ± 0.001     908.618 ± 0.552
+TreeSet.fold                     1,000            100      10      1.148 ± 0.002     870.909 ± 1.739
+TreeSet.newBuilder               1,000              0      10      1.090 ± 0.003     917.760 ± 2.115
+TreeSet.newBuilder               1,000            100      10      1.135 ± 0.002     880.815 ± 1.583

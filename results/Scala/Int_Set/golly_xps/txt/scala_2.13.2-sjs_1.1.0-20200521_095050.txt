@@ -1,0 +1,15 @@
+Benchmark                             Size     Cnt         μs/op ± error          ops/s ±  error
+                                                                                                
+immutable.BitSet                     1,000      10       887.878 ± 1.534      1,126.282 ±  1.943
+immutable.BitSet (eq)                1,000      10       855.542 ± 0.640      1,168.851 ±  0.874
+immutable.HashSet                    1,000      10     2,557.480 ± 1.660        391.010 ±  0.254
+immutable.HashSet (eq)               1,000      10     2,422.390 ± 1.486        412.816 ±  0.253
+immutable.IntMap                     1,000      10       439.053 ± 0.357      2,277.631 ±  1.851
+immutable.Set                        1,000      10     2,622.502 ± 9.162        381.317 ±  1.331
+immutable.Set (eq)                   1,000      10     2,480.461 ± 4.550        403.151 ±  0.738
+immutable.TreeSet                    1,000      10     1,007.757 ± 0.840        992.303 ±  0.827
+mutable.BitSet (add)                 1,000      10        60.164 ± 0.078     16,621.160 ± 21.510
+mutable.BitSet (contains and +=)     1,000      10        60.398 ± 0.085     16,556.959 ± 23.200
+mutable.HashSet                      1,000      10       193.198 ± 0.262      5,176.033 ±  7.019
+mutable.Set                          1,000      10       192.743 ± 0.296      5,188.250 ±  7.981
+mutable.TreeSet                      1,000      10       184.152 ± 0.209      5,430.306 ±  6.162

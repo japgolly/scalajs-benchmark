@@ -1,0 +1,12 @@
+Benchmark             Input Size     Flatmap Size     Cnt       μs/op ± error      ops/s ± error
+                                                                                                
+ArraySeq                     100               50      10     784.878 ± 2.518      1,274 ±     4
+ArraySeq.iterator            100               50      10      85.731 ± 0.432     11,664 ±    59
+LazyList                     100               50      10     478.423 ± 1.388      2,090 ±     6
+LazyList.iterator            100               50      10     389.737 ± 0.571      2,566 ±     4
+List                         100               50      10      82.228 ± 0.043     12,161 ±     6
+List.iterator                100               50      10     389.340 ± 0.674      2,568 ±     4
+Queue                        100               50      10     253.289 ± 0.378      3,948 ±     6
+Queue.iterator               100               50      10     395.809 ± 2.390      2,527 ±    15
+Vector                       100               50      10     747.769 ± 3.333      1,337 ±     6
+Vector.iterator              100               50      10     913.810 ± 2.245      1,094 ±     3

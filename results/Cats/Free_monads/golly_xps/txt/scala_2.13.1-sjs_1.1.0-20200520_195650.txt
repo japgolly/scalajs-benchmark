@@ -1,0 +1,8 @@
+Benchmark                  Size     Cnt       μs/op ± error      ops/s ± error
+                                                                              
+Free --> Fn0 (compile)       50      10      65.842 ± 0.331     15,188 ±    76
+Free --> Fn0 (compile)      500      10     659.338 ± 1.334      1,517 ±     3
+Free --> Fn0 (foldMap)       50      10      43.768 ± 0.052     22,848 ±    27
+Free --> Fn0 (foldMap)      500      10     435.681 ± 0.460      2,295 ±     2
+Free --> Reader[Fn0]         50      10      59.338 ± 0.028     16,853 ±     8
+Free --> Reader[Fn0]        500      10     595.104 ± 0.261      1,680 ±     1

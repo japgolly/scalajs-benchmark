@@ -1,0 +1,11 @@
+Benchmark                  Size     Cnt         μs/op ± error           ops/s ±   error
+                                                                                       
+Map builder                  10      10         8.612 ± 0.041     116,113.968 ± 556.290
+Map builder                 100      10       158.938 ± 0.132       6,291.769 ±   5.241
+Map builder               1,000      10     2,404.042 ± 1.332         415.966 ±   0.230
+Map var + .updated           10      10         8.626 ± 0.024     115,935.636 ± 325.062
+Map var + .updated          100      10       160.415 ± 0.180       6,233.829 ±   6.976
+Map var + .updated        1,000      10     2,419.097 ± 1.904         413.377 ±   0.325
+Mutable Map + .update        10      10        10.027 ± 0.007      99,730.391 ±  67.763
+Mutable Map + .update       100      10       196.322 ± 0.297       5,093.667 ±   7.690
+Mutable Map + .update     1,000      10     2,768.785 ± 2.909         361.169 ±   0.380

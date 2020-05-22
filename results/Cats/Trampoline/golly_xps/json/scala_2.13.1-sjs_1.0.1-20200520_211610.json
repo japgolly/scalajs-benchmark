@@ -1,0 +1,178 @@
+[
+  {
+    "benchmark" : "Trampoline.eval",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "1.0.1",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "15"
+    },
+    "primaryMetric" : {
+      "score" : 279.22574479031334,
+      "scoreError" : 0.4700589875139626,
+      "scoreConfidence" : [
+        278.7556858027994,
+        279.69580377782734
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          278.40339643650975,
+          279.4624842811068,
+          279.4119865884175,
+          279.3714205894519,
+          279.4904974846124,
+          279.18537130093273,
+          279.1893928820516,
+          279.181044109421,
+          279.2626361351426,
+          279.2992180954874
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Trampoline.trampoline",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "1.0.1",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "15"
+    },
+    "primaryMetric" : {
+      "score" : 753.6241356257998,
+      "scoreError" : 3.731628440321912,
+      "scoreConfidence" : [
+        749.8925071854777,
+        757.3557640661217
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          757.5954545454605,
+          758.3074298711188,
+          754.1549773755692,
+          753.9966076140242,
+          752.9375235227672,
+          751.5492111194554,
+          752.2613764573096,
+          752.066541353379,
+          751.4282494365114,
+          751.9439849624032
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Trampoline.eval",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "1.0.1",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "30"
+    },
+    "primaryMetric" : {
+      "score" : 374243.43333333335,
+      "scoreError" : 938.941734608904,
+      "scoreConfidence" : [
+        373304.4915987244,
+        375182.37506794225
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          374986.8333333333,
+          373818.8333333333,
+          373916.8333333334,
+          374250.6666666666,
+          374361.1666666666,
+          374698.3333333333,
+          374454.1666666666,
+          375172.6666666667,
+          373524.3333333333,
+          373250.49999999994
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Trampoline.trampoline",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "1.0.1",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "30"
+    },
+    "primaryMetric" : {
+      "score" : 1053002.5499999998,
+      "scoreError" : 15728.252030725698,
+      "scoreConfidence" : [
+        1037274.2979692741,
+        1068730.8020307256
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          1073806,
+          1067930,
+          1057390.5,
+          1054939,
+          1046051.5,
+          1045712.5000000001,
+          1046617.0000000002,
+          1045845,
+          1045607,
+          1046127
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  }
+]

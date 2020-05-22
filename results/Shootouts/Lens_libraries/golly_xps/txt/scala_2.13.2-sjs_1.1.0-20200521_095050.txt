@@ -1,0 +1,7 @@
+Benchmark                  Op         Size     Cnt     μs/op ± error         ops/s ± error
+                                                                                          
+Monocle v1.6.3             Modify        6      10     1.500 ± 0.012       666,847 ± 5,399
+Monocle v1.6.3 macro       Modify        6      10     1.031 ± 0.006       969,609 ± 5,212
+No lenses; plain Scala     Modify        6      10     0.454 ± 0.001     2,202,072 ± 6,155
+Scalaz v7.2.30             Modify        6      10     2.024 ± 0.004       494,190 ±   890
+Shapeless v2.3.3           Modify        6      10     4.845 ± 0.009       206,395 ±   370

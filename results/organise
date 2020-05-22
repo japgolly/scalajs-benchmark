@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
+[ $# -ne 0 ] && echo "Usage: $0" && exit 1
+
+filenamePattern='^sjsbm-([a-z_]+)-(.+)-([^-]+)-(scala_.*)\.([a-z]+)$'
+suitePattern='^(.+)_v[0-9][0-9_]+$'
+
+for f in sjsbm-*.{json,txt,csv}; do
+  if [[ -e "$f" && "$f" =~ $filenamePattern ]]; then # existence check cos if no files exist, we get a glob as a literal
+
+    machine="${BASH_REMATCH[1]}"
+    suite="${BASH_REMATCH[2]}"
+    bm="${BASH_REMATCH[3]}"
+    instance="${BASH_REMATCH[4]}"
+    ext=${BASH_REMATCH[5]}
+    [[ "$suite" =~ $suitePattern ]] && suite="${BASH_REMATCH[1]}"
+    suiteDir="$(echo "$suite" | tr - /)"
+
+    tgtPath="$suiteDir/$bm/$machine/$ext"
+    tgtName="$instance.$ext"
+    tgt="$tgtPath/$tgtName"
+    echo "$f --> $tgt"
+    mkdir -p "$tgtPath"
+    mv "$f" "$tgt"
+
+  fi
+done
