@@ -1,0 +1,11 @@
+Benchmark                Library                            Size                                                                                    Cnt          μs/op ±   error          ops/s ±  error
+                                                                                                                                                                                                        
+Increment state by 1     Cats v2.1.1                         100                                                                                     10         59.554 ±   0.188     16,791.623 ± 52.865
+Increment state by 1     Cats v2.1.1                       1,000                                                                                     10        674.072 ±   1.354      1,483.524 ±  2.977
+Increment state by 1     Cats v2.1.1                      10,000                                                                                     10      9,460.069 ±  10.092        105.708 ±  0.113
+Increment state by 1     Scalaz v7.2.30                      100                                                                                     10         58.897 ±   0.062     16,978.791 ± 17.941
+Increment state by 1     Scalaz v7.2.30                    1,000                                                                                     10        597.518 ±   1.042      1,673.592 ±  2.918
+Increment state by 1     Scalaz v7.2.30                   10,000     scala.scalajs.js.JavaScriptException: RangeError: Maximum call stack size exceeded                                                 
+Increment state by 1     Scalaz v7.2.30 (trampolined)        100                                                                                     10        108.946 ±   0.108      9,178.881 ±  9.080
+Increment state by 1     Scalaz v7.2.30 (trampolined)      1,000                                                                                     10      1,305.455 ±  10.706        766.037 ±  6.289
+Increment state by 1     Scalaz v7.2.30 (trampolined)     10,000                                                                                     10     31,072.504 ± 343.268         32.184 ±  0.353

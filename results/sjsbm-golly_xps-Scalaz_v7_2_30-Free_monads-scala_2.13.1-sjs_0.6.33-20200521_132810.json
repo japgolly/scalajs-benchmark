@@ -1,0 +1,442 @@
+[
+  {
+    "benchmark" : "Free_monads.Free_→_Reader[IO]",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "50"
+    },
+    "primaryMetric" : {
+      "score" : 68.73001673567094,
+      "scoreError" : 0.11292086936564494,
+      "scoreConfidence" : [
+        68.61709586630528,
+        68.84293760503658
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          68.72622933920323,
+          68.61319427768198,
+          68.62510293714351,
+          68.76336507718474,
+          68.66372562483475,
+          68.75992711520986,
+          68.79876853221577,
+          68.73701756195061,
+          68.76976240415733,
+          68.84307448712754
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_IO",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "500"
+    },
+    "primaryMetric" : {
+      "score" : 583.2700981687016,
+      "scoreError" : 0.34766610233252726,
+      "scoreConfidence" : [
+        582.9224320663689,
+        583.6177642710338
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          583.2084548104863,
+          583.5250875145754,
+          583.1516034985322,
+          583.05421160011,
+          583.1431486880357,
+          583.6340822877183,
+          583.5758459743331,
+          582.9839696881445,
+          583.3012540099191,
+          583.1233236151596
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Reader[Fn0]",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "50"
+    },
+    "primaryMetric" : {
+      "score" : 25.986160048415258,
+      "scoreError" : 0.05936099265830747,
+      "scoreConfidence" : [
+        25.926799055756945,
+        26.04552104107356
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          25.972274887696614,
+          26.023655242433566,
+          25.998986051737464,
+          25.959425782695217,
+          26.027289408299627,
+          25.9446606475963,
+          26.026299351977016,
+          26.029673590531505,
+          25.930856098251898,
+          25.948479422933364
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Reader[Fn0]",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "500"
+    },
+    "primaryMetric" : {
+      "score" : 278.7680222717473,
+      "scoreError" : 0.1928382235195712,
+      "scoreConfidence" : [
+        278.5751840482278,
+        278.9608604952669
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          278.7378762541598,
+          278.8726993864835,
+          278.7028006130474,
+          278.52555354405234,
+          278.8314512755945,
+          278.8860847740998,
+          278.65254945665,
+          278.6803678416955,
+          278.8894311210065,
+          278.9014084506841
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Fn0_(foldMap)",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "50"
+    },
+    "primaryMetric" : {
+      "score" : 15.049793894209467,
+      "scoreError" : 0.024965120375889972,
+      "scoreConfidence" : [
+        15.024828773833578,
+        15.074759014585357
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          15.085329612321274,
+          15.05245015768786,
+          15.041748142367236,
+          15.05325074138473,
+          15.03860382580735,
+          15.034406031780712,
+          15.029051068574981,
+          15.067328120072355,
+          15.047361451778782,
+          15.048409790319365
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Fn0_(mapSuspension)",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "500"
+    },
+    "primaryMetric" : {
+      "score" : 200.75573118298036,
+      "scoreError" : 0.19447353215850952,
+      "scoreConfidence" : [
+        200.56125765082183,
+        200.95020471513885
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          200.63055471961974,
+          200.81144578312143,
+          200.65088282502774,
+          200.77956233686825,
+          200.60074215222832,
+          200.7334403853752,
+          200.737254114803,
+          201.0322645491932,
+          200.87666967961252,
+          200.70449528395443
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Fn0_(mapSuspension)",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "50"
+    },
+    "primaryMetric" : {
+      "score" : 17.075745365377784,
+      "scoreError" : 0.023000322774966966,
+      "scoreConfidence" : [
+        17.052745042602815,
+        17.098745688152754
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          17.049340619093844,
+          17.081546897187465,
+          17.07989957047664,
+          17.071255420157392,
+          17.080474494666426,
+          17.081066539162553,
+          17.07582497335322,
+          17.058424666330865,
+          17.106668149272274,
+          17.072952324077157
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Reader[IO]",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "500"
+    },
+    "primaryMetric" : {
+      "score" : 688.2092209140416,
+      "scoreError" : 2.998606552131335,
+      "scoreConfidence" : [
+        685.2106143619103,
+        691.2078274661731
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          689.8762068965538,
+          689.3301171605843,
+          689.681379310342,
+          689.0533930416796,
+          689.4694932781794,
+          690.4370037970397,
+          687.6074252320326,
+          685.3597122302078,
+          685.2911956149287,
+          685.9862825788686
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_IO",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "50"
+    },
+    "primaryMetric" : {
+      "score" : 55.88141614829539,
+      "scoreError" : 0.18587685465605042,
+      "scoreConfidence" : [
+        55.69553929363933,
+        56.06729300295143
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          55.769923596032285,
+          55.80415736609658,
+          55.812418027093535,
+          56.07553200439653,
+          56.049155059855345,
+          56.03404028803433,
+          55.8902892273559,
+          55.802460868862816,
+          55.7924849364236,
+          55.78370010880294
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  },
+  {
+    "benchmark" : "Free_monads.Free_→_Fn0_(foldMap)",
+    "mode" : "avgt",
+    "threads" : 1,
+    "forks" : 1,
+    "jdkVersion" : "1.8",
+    "vmName" : "Scala.JS",
+    "vmVersion" : "0.6.33",
+    "userAgent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+    "warmupIterations" : 1,
+    "warmupTime" : "2 s",
+    "warmupBatchSize" : 1,
+    "measurementIterations" : 10,
+    "measurementTime" : "2 s",
+    "measurementBatchSize" : 1,
+    "params" : {
+      "Size" : "500"
+    },
+    "primaryMetric" : {
+      "score" : 177.6955782203092,
+      "scoreError" : 0.18655446115941526,
+      "scoreConfidence" : [
+        177.50902375914976,
+        177.8821326814686
+      ],
+      "scoreUnit" : "us/op",
+      "rawData" : [
+        [
+          177.44020581974954,
+          177.87335467806668,
+          177.69349680172306,
+          177.6374455990952,
+          177.82679825732902,
+          177.79598186506814,
+          177.73944725852888,
+          177.62069271760183,
+          177.66041925743514,
+          177.66793994849442
+        ]
+      ]
+    },
+    "secondaryMetrics" : {
+    }
+  }
+]

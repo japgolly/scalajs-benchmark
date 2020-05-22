@@ -1,0 +1,6 @@
+Benchmark                        Library            Size     Cnt       μs/op ± error     ops/s ± error
+                                                                                                      
+Free --> Fn0 (foldMap)           Cats v2.1.1         500      10     373.717 ± 0.890     2,676 ±     6
+Free --> Fn0 (foldMap)           Scalaz v7.2.30      500      10     181.591 ± 0.273     5,507 ±     8
+Free --> Fn0 (mapSuspension)     Cats v2.1.1         500      10     603.858 ± 0.122     1,656 ±     0
+Free --> Fn0 (mapSuspension)     Scalaz v7.2.30      500      10     199.449 ± 0.113     5,014 ±     3

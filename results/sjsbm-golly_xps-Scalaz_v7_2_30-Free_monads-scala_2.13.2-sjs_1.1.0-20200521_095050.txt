@@ -1,0 +1,12 @@
+Benchmark                      Size     Cnt       μs/op ± error      ops/s ± error
+                                                                                  
+Free → Fn0 (foldMap)             50      10      15.483 ± 0.027     64,588 ±   111
+Free → Fn0 (foldMap)            500      10     184.277 ± 0.323      5,427 ±    10
+Free → Fn0 (mapSuspension)       50      10      20.374 ± 0.030     49,082 ±    73
+Free → Fn0 (mapSuspension)      500      10     219.133 ± 0.306      4,563 ±     6
+Free → IO                        50      10      63.181 ± 0.070     15,828 ±    18
+Free → IO                       500      10     663.643 ± 0.366      1,507 ±     1
+Free → Reader[Fn0]               50      10      28.236 ± 0.029     35,416 ±    37
+Free → Reader[Fn0]              500      10     310.495 ± 0.638      3,221 ±     7
+Free → Reader[IO]                50      10      66.917 ± 0.110     14,944 ±    25
+Free → Reader[IO]               500      10     677.562 ± 1.201      1,476 ±     3
