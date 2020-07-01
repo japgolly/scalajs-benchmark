@@ -10,12 +10,12 @@ libraryDependencies ++= {
 
 addSbtPlugin("com.github.gseitz"  % "sbt-release"  % "1.0.13")
 addSbtPlugin("com.jsuereth"       % "sbt-pgp"      % "1.1.2")
-addSbtPlugin("ch.epfl.scala"      % "sbt-scalafix" % "0.9.15-2")
+addSbtPlugin("ch.epfl.scala"      % "sbt-scalafix" % "0.9.17")
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"  % scalaJSVersion)
 
 {
   if (scalaJSVersion.startsWith("0."))
     Nil
   else
-    Seq(addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.0"))
+    Seq(addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.1"))
 }
