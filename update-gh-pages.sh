@@ -7,6 +7,7 @@ function go {
   scalaJsVer=$2
   dir=scala-$scalaVer-sjs-$scalaJsVer
   res=res/$dir
+
   echo "--> $res"
   rm -rf $res $res.html demo/target
   SCALAJS_VERSION=$scalaJsVer sbt ++$scalaVer clean demo/fastOptJS demo/fullOptJS
@@ -34,14 +35,17 @@ EOB
 go 2.12.11 0.6.33
 go 2.13.1  0.6.33
 go 2.13.2  0.6.33
+go 2.13.3  0.6.33
 
 go 2.12.11 1.0.1
 go 2.13.1  1.0.1
 go 2.13.2  1.0.1
+go 2.13.3  1.0.1
 
 go 2.12.11 1.1.0
 go 2.13.1  1.1.0
 go 2.13.2  1.1.0
+go 2.13.3  1.1.0
 
 git status
 echo
