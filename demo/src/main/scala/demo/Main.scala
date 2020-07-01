@@ -2,8 +2,8 @@ package demo
 
 import japgolly.scalajs.benchmark.engine.ScalaJsInfo
 import japgolly.scalajs.benchmark.gui._
-import org.scalajs.dom.{document, window}
 import org.scalajs.dom.experimental.URLSearchParams
+import org.scalajs.dom.{document, window}
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.util.Try
 

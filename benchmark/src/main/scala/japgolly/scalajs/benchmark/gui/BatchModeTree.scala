@@ -42,19 +42,7 @@ object BatchModeTree {
     implicit def reusabilityB[                B: Reusability]: Reusability[BM    [   B]] = Reusability.derive
     implicit def reusabilityS[A: Reusability, B: Reusability]: Reusability[Suite [A, B]] = Reusability.derive
     implicit def reusabilityF[A: Reusability, B: Reusability]: Reusability[Folder[A, B]] = Reusability.derive
-    implicit def reusability [A: Reusability, B: Reusability]: Reusability[Item  [A, B]] = {
-      // TODO https://github.com/japgolly/scalajs-react/issues/717
-      Reusability.byRef[Item[A, B]] || Reusability[Item[A, B]]((x, y) => x match {
-        case i: Folder[A, B] => y match {
-          case j: Folder[A, B] => i ~=~ j
-          case _               => false
-        }
-        case i: Suite[A, B] => y match {
-          case j: Suite[A, B] => i ~=~ j
-          case _              => false
-        }
-      })
-    }
+    implicit def reusability [A: Reusability, B: Reusability]: Reusability[Item  [A, B]] = Reusability.derive
 
     def bmsT[A, B]: Traversal[Item[A, B], BM[B]] =
       new Traversal[Item[A, B], BM[B]] {

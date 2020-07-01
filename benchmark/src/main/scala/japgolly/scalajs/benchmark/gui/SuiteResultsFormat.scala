@@ -187,7 +187,7 @@ object SuiteResultsFormat {
       rowBuilder += Vector.empty
 
     val keys = MutableArray(progress.plan.keys).sortBy(k => (k.bmIndex, k.paramIndex))
-    for (k <- keys.iterator) {
+    for (k <- keys.iterator()) {
       var cells = Vector.empty[String]
       val status = results.getOrElse(k, BMStatus.Pending)
 

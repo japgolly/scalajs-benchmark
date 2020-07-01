@@ -4,8 +4,8 @@ import io.circe._
 import io.circe.parser._
 import japgolly.scalajs.benchmark.TestUtil._
 import japgolly.scalajs.benchmark.engine._
-import japgolly.scalajs.benchmark.gui.{BMStatus, BmResultFormat, GuiOptions, GuiParam, GuiParams, GuiSuite}
 import japgolly.scalajs.benchmark.gui.SuiteResultsFormat.{Args, JmhJson}
+import japgolly.scalajs.benchmark.gui.{BMStatus, BmResultFormat, GuiOptions, GuiParam, GuiParams, GuiSuite}
 import scala.concurrent.duration._
 import scala.scalajs.js
 import utest._

@@ -72,7 +72,7 @@ object BatchModeControls {
 
     val formats =
       kv("Save results as") {
-        <.div(MutableArray(p.formats).sortBy(_._1.label).iterator.toTagMod { case (fmt, enabled) =>
+        <.div(MutableArray(p.formats).sortBy(_._1.label).iterator().toTagMod { case (fmt, enabled) =>
           <.div(
             <.label(
               *.controlFormat,

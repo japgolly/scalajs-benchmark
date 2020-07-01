@@ -23,10 +23,10 @@ object ScalaJsBenchmark {
     val Monocle          = "1.6.3"
     val React            = "16.13.1"
     val Scala212         = "2.12.11"
-    val Scala213         = "2.13.2"
+    val Scala213         = "2.13.3"
     val ScalaCollCompat  = "2.1.6"
     val ScalaCss         = "0.6.1"
-    val ScalaJsReact     = "1.7.0"
+    val ScalaJsReact     = "1.7.3"
     val Scalaz           = "7.2.30"
 
     // Test only
@@ -69,7 +69,6 @@ object ScalaJsBenchmark {
     "-Xlint:infer-any",                              // A type argument was inferred as Any.
     "-Xlint:missing-interpolator",                   // A string literal appears to be missing an interpolator id.
     "-Xlint:nonlocal-return",                        // A return statement used an exception for flow control.
-    "-Xlint:nullary-override",                       // Non-nullary `def f()` overrides nullary `def f`.
     "-Xlint:nullary-unit",                           // `def f: Unit` looks like an accessor; add parens to look side-effecting.
     "-Xlint:option-implicit",                        // Option.apply used an implicit view.
     "-Xlint:poly-implicit-overload",                 // Parameterized overloaded implicit methods are not visible as view bounds.

@@ -1,8 +1,8 @@
 package japgolly.scalajs.benchmark.gui
 
-import scala.concurrent.duration._
 import japgolly.scalajs.benchmark.TestUtil._
 import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
 import scalaz.Equal
 import sourcecode.Line
 import utest._
