@@ -32,14 +32,14 @@ object FreeMonads {
     def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => () => f(rd))
     override def apply[A](ta: Cmd[A]): ReaderF[A] = ta match {
       case Add(n) => io{ _.add(n) }
-      case Get    => io{ _.get }
+      case Get    => io{ _.get() }
     }
   }
 
   def CmdToFn0(rd: TheRealDeal): Cmd ~> Function0 = new (Cmd ~> Function0) {
     override def apply[A](m: Cmd[A]): () => A = m match {
       case Add(n) => () => rd.add(n)
-      case Get    => () => rd.get
+      case Get    => () => rd.get()
     }
   }
 

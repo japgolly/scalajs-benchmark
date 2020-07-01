@@ -5,9 +5,8 @@ import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
 import scalaz.effect.IO
-import scalaz.{Free, Kleisli, ReaderT, ~>}
-
 import scalaz.std.function.function0Instance
+import scalaz.{Free, Kleisli, ReaderT, ~>}
 
 object FreeMonads {
 
@@ -32,7 +31,7 @@ object FreeMonads {
     def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => IO{ f(rd) })
     override def apply[A](ta: Cmd[A]): ReaderIO[A] = ta match {
       case Add(n) => io{ _.add(n) }
-      case Get    => io{ _.get }
+      case Get    => io{ _.get() }
     }
   }
 
@@ -41,21 +40,21 @@ object FreeMonads {
     def io[A](f: TheRealDeal => A) = Kleisli((rd: TheRealDeal) => () => f(rd))
     override def apply[A](ta: Cmd[A]): ReaderF[A] = ta match {
       case Add(n) => io{ _.add(n) }
-      case Get    => io{ _.get }
+      case Get    => io{ _.get() }
     }
   }
 
   def CmdToFn0(rd: TheRealDeal): Cmd ~> Function0 = new (Cmd ~> Function0) {
     override def apply[A](m: Cmd[A]): () => A = m match {
       case Add(n) => () => rd.add(n)
-      case Get    => () => rd.get
+      case Get    => () => rd.get()
     }
   }
 
   def CmdToIO(rd: TheRealDeal): Cmd ~> IO = new (Cmd ~> IO) {
     override def apply[A](m: Cmd[A]): IO[A] = m match {
       case Add(n) => IO{ rd.add(n) }
-      case Get    => IO{ rd.get }
+      case Get    => IO{ rd.get() }
     }
   }
 

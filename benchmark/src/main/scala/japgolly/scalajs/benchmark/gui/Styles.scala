@@ -2,7 +2,6 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.gui.CssSettings._
 import japgolly.univeq.UnivEq
-import scalacss.ScalaCssReact._
 
 object Styles extends StyleSheet.Inline {
   import dsl._
