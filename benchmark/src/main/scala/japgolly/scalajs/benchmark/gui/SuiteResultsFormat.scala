@@ -336,7 +336,7 @@ object SuiteResultsFormat {
 
               BenchmarkJson(
                 benchmark             = s"${suite.suite.name}.${key.bm.name}".replace(' ', '_'),
-                mode                  = "avgt",
+                mode                  = if (fmtRes.lowerIsBetter) "avgt" else "thrpt",
                 threads               = 1,
                 forks                 = 1,
                 jdkVersion            = System.getProperty("java.version", "?"),
@@ -353,7 +353,7 @@ object SuiteResultsFormat {
                 primaryMetric         = primaryMetric,
                 secondaryMetrics      = SecondaryMetrics(),
               )
-          }.toVector
+          }.toVector.sortBy(_.benchmark)
         }
 
       benchmarksJson.asJson.deepDropNullValues
