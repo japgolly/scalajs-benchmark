@@ -91,6 +91,7 @@ object JSZip {
 
     val streamFiles: js.UndefOr[Boolean] = js.undefined
 
-    val `type`: "blob"
+    /** Set to "blob" */
+    val `type`: String
   }
 }
