@@ -318,6 +318,8 @@ object Styles extends StyleSheet.Inline {
     val controlFormat = style(
       lineHeight(1.5 em))
 
+    def controlSaveMech = controlFormat
+
     val controlButtonRow = style(
       marginTop(2 em),
       textAlign.center)

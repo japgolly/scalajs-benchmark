@@ -12,9 +12,10 @@ import utest._
 
 object JmhJsonTest extends TestSuite {
   override def tests = Tests {
-    "simple"    - testSimple()
-    "precision" - testPrecision()
-    "params"    - testWithParams()
+    "simple"     - testSimple()
+    "precision"  - testPrecision()
+    "params"     - testWithParams()
+    "throughput" - testThroughput()
   }
 
   private val eo = EngineOptions.default.copy(
@@ -275,6 +276,61 @@ object JmhJsonTest extends TestSuite {
       progress   = Progress(startTime, plan, 123, eo),
       results    = Map(bm1p1 -> BMStatus.Done(Right(bm1p1r)), bm1p2 -> BMStatus.Done(Right(bm1p2r))),
       resultFmts = Vector(BmResultFormat.MicrosPerOp, BmResultFormat.OpsPerSec),
+      expect     = expect,
+    )
+  }
+
+  private def testThroughput() = {
+    val bm1    = Benchmark("My BM")(())
+    val suite  = Suite[Unit]("My Suite")(bm1)
+    val plan   = Plan[Unit](suite, Vector.empty)
+    val bm1p0  = PlanKey[Unit](0, 0)(bm1, ())
+    val bm1p0r = stats(itStats(12.15), itStats(12.3, 12.2), itStats(12.3), itStats(12.1))
+
+    val expect =
+      s"""[
+         |  {
+         |    "benchmark" : "My_Suite.My_BM",
+         |    "mode" : "thrpt",
+         |    "threads" : 1,
+         |    "forks" : 1,
+         |    "jdkVersion" : "1.8",
+         |    "vmName" : "Scala.JS",
+         |    "vmVersion" : "${ScalaJsInfo.version}",
+         |    "warmupIterations" : 1,
+         |    "warmupTime" : "2 s",
+         |    "warmupBatchSize" : 1,
+         |    "measurementIterations" : 4,
+         |    "measurementTime" : "2 s",
+         |    "measurementBatchSize" : 1,
+         |    "primaryMetric" : {
+         |      "score" : 81.97065522937484,
+         |      "scoreError" : 3.963547223317068,
+         |      "scoreConfidence" : [
+         |        78.00710800605776,
+         |        85.93420245269189
+         |      ],
+         |      "scoreUnit" : "ops/s",
+         |      "rawData" : [
+         |        [
+         |          82.30452674897118,
+         |          81.63265306122449,
+         |          81.30081300813008,
+         |          82.64462809917356
+         |        ]
+         |      ]
+         |    },
+         |    "secondaryMetrics" : {
+         |    }
+         |  }
+         |]
+         |""".stripMargin.trim
+
+    testJmhJsonText[Unit](
+      suite      = GuiSuite(suite),
+      progress   = Progress(startTime, plan, 123, eo),
+      results    = Map(bm1p0 -> BMStatus.Done(Right(bm1p0r))),
+      resultFmts = Vector(BmResultFormat.OpsPerSec),
       expect     = expect,
     )
   }

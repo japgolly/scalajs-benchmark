@@ -186,6 +186,10 @@ object ScalaJsBenchmark {
             /        "dist/FileSaver.js"
             minified "dist/FileSaver.min.js",
 
+          "org.webjars.npm" % "jszip" % "3.5.0"
+            /        "dist/jszip.js"
+            minified "dist/jszip.min.js",
+
           "org.webjars" % "chartjs" % Ver.ChartJs
             /        "Chart.js"
             minified "Chart.min.js"),

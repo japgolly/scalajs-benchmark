@@ -1,6 +1,7 @@
 package japgolly.scalajs.benchmark.gui
 
-import scala.scalajs.LinkingInfo
+import japgolly.scalajs.benchmark.engine.TimeUtil
+import scala.scalajs.{LinkingInfo, js}
 
 final case class GuiOptions(defaultSuiteResultsFormat: SuiteResultsFormat,
                             suiteResultsFormats      : Seq[SuiteResultsFormat],
@@ -29,13 +30,16 @@ object GuiOptions {
       allowBatchMode            = true,
     )
 
+  private val mode: String =
+    if (LinkingInfo.developmentMode)
+      "fastopt-"
+    else
+      ""
+
   // Access this via `GuiOptions.default.resultFilenameWithoutExt`
-  private def defaultFilenameFormat(ctx: FilenameCtx[_]): String = {
-    val mode =
-      if (LinkingInfo.developmentMode)
-        "fastopt-"
-      else
-        ""
+  private def defaultFilenameFormat(ctx: FilenameCtx[_]): String =
     s"sjsbm-${ctx.name}-${mode}${ctx.timestampTxt}"
-  }
+
+  def batchResultFilenameFormat(date: js.Date): String =
+    s"sjsbm-${mode}${TimeUtil.timestampStrFromJsDate(date)}"
 }
