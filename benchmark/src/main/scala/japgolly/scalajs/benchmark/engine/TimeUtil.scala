@@ -51,4 +51,6 @@ object TimeUtil {
   def timeStrFromJsDate(d: js.Date): String =
     "%02d%02d%02d".format(d.getHours(), d.getMinutes(), d.getSeconds())
 
+  def timestampStrFromJsDate(d: js.Date, dateTimeSep: String = "_"): String =
+    dateStrFromJsDate(d) + dateTimeSep + timeStrFromJsDate(d)
 }

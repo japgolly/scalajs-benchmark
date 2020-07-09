@@ -33,11 +33,13 @@ object BatchMode {
     @Lenses
     final case class Initial(items             : Vector[Item[Unit, Unit]],
                              formats           : Map[SuiteResultsFormat.Text, Enabled],
+                             saveMechanism     : BatchModeSaveMechanism,
                              engineOptionEditor: EngineOptionEditor.State) extends State
 
     @Lenses
     final case class Running(items             : Vector[Item[SuiteState, Int]],
                              formats           : Map[SuiteResultsFormat.Text, Enabled],
+                             saveMechanism     : BatchModeSaveMechanism.AndState,
                              engineOptions     : EngineOptions,
                              engineOptionEditor: EngineOptionEditor.State,
                              startedAt         : js.Date,
@@ -61,7 +63,11 @@ object BatchMode {
       }
 
       def reset(p: Props): State =
-        Initial(Item.fromTocItems(p.items), formats, engineOptionEditor)
+        Initial(
+          Item.fromTocItems(p.items),
+          formats,
+          saveMechanism.value,
+          engineOptionEditor)
     }
 
     sealed trait RunningStatus
@@ -74,7 +80,11 @@ object BatchMode {
     type SuiteState = Option[SuiteRunner.State[_]]
 
     def init(p: Props): State =
-      Initial(Item.fromTocItems(p.items), p.guiOptions.batchModeFormats, EngineOptionEditor.State.init(p.engineOptions))
+      Initial(
+        Item.fromTocItems(p.items),
+        p.guiOptions.batchModeFormats,
+        BatchModeSaveMechanism.default,
+        EngineOptionEditor.State.init(p.engineOptions))
 
     val initial: Prism[State, Initial] =
       GenPrism[State, Initial]
@@ -130,6 +140,7 @@ object BatchMode {
         State.Running(
           items              = runnableItems,
           formats            = initialState.formats,
+          saveMechanism      = initialState.saveMechanism.andInitialState,
           engineOptions      = engineOptions,
           engineOptionEditor = initialState.engineOptionEditor,
           startedAt          = new js.Date,
@@ -156,21 +167,32 @@ object BatchMode {
           case _                => false
         }.asAsyncCallback
 
-      def saveAll[P](done      : SuiteRunner.SuiteDone[P],
-                     startedAt : js.Date,
-                     folderPath: Seq[String]): Callback = {
-        val progress = done.progress.copy(startedAt = startedAt)
+      def modRunningState(f: State.Running => CallbackTo[State.Running]): Callback =
+        $.state.flatMap {
+          case s: State.Running => f(s).flatMap($.setState)
+          case _                => Callback.empty
+        }
+
+      def saveSuite[P](done      : SuiteRunner.SuiteDone[P],
+                       startedAt : js.Date,
+                       folderPath: Seq[String]): Callback = {
+        val progress   = done.progress.copy(startedAt = startedAt)
         val resultFmts = SuiteRunner.deriveResultFmts(progress, done.bm, guiOptions)
+        val args       = SuiteResultsFormat.Args(
+          folderPath = folderPath,
+          suite      = done.suite,
+          progress   = progress,
+          results    = done.bm,
+          resultFmts = resultFmts,
+          guiOptions = guiOptions,
+        )
         Callback.traverse(enabledFormats) { f =>
-          val args = SuiteResultsFormat.Args(
-            folderPath = folderPath,
-            suite      = done.suite,
-            progress   = progress,
-            results    = done.bm,
-            resultFmts = resultFmts,
-            guiOptions = guiOptions,
-          )
-          f.save(args)
+          modRunningState { s =>
+            import s.saveMechanism.{value => sm}
+            val cmd = BatchModeSaveMechanism.SaveCmd(f, args)
+            sm.saveSuite(s.saveMechanism.state, cmd)
+              .map(s2 => s.copy(saveMechanism = sm.andState(s2)))
+          }
         }
       }
 
@@ -179,7 +201,7 @@ object BatchMode {
           ctls      <- p.start
           _         <- $.modStateAsync(State.abortFn.set(Some(ctls.abortFn)))
           done      <- ctls.onCompletion
-          _         <- saveAll(done, startedAt, p.guiPlan.folderPath).asAsyncCallback
+          _         <- saveSuite(done, startedAt, p.guiPlan.folderPath).asAsyncCallback
         } yield ()
 
       def runPlanUnlessAborted(p: BatchPlan, startedAt: js.Date): AsyncCallback[Unit] =
@@ -195,13 +217,27 @@ object BatchMode {
         AsyncCallback.delay(new js.Date).flatMap(startedAt =>
           plans.foldLeft(AsyncCallback.unit)(_ >> runPlanUnlessAborted(_, startedAt)))
 
+      def saveBatchCmd =
+        CallbackTo {
+          // TODO Make this configurable
+          BatchModeSaveMechanism.SaveBatchCmd(
+            filenameWithoutExt = GuiOptions.batchResultFilenameFormat(new js.Date),
+          )
+        }
+
+      val saveBatch: AsyncCallback[Unit] =
+        $.state.asAsyncCallback.flatMap {
+          case s: State.Running => saveBatchCmd.asAsyncCallback.flatMap(s.saveMechanism.saveBatch)
+          case _                => AsyncCallback.unit
+        }
+
       val markAsCompleted: AsyncCallback[Unit] =
         $.modStateAsync(State.runningStatus.modify {
           case State.RunningStatus.Aborted => State.RunningStatus.Aborted
           case _                           => State.RunningStatus.Complete
         })
 
-      markAsStarted >> runAll >> markAsCompleted
+      markAsStarted >> runAll >> saveBatch >> markAsCompleted
     }
   }
 
@@ -312,6 +348,14 @@ object BatchMode {
         })
       }
 
+    private val setInitialSaveMechanism: BatchModeSaveMechanism ~=> Callback =
+      Reusable.byRef { m =>
+        $.modStateOption(_ match {
+          case s: State.Initial => Some(s.copy(saveMechanism = m))
+          case _                => None
+        })
+      }
+
     private val initialRenderItem: Item[Unit, Unit] ~=> VdomNode =
       Reusable.byRef(_.name)
 
@@ -398,17 +442,19 @@ object BatchMode {
       def startCB            = Reusable.implicitly(s).withLazyValue(batchPlans.start($, p.guiOptions))
 
       val controls = BatchModeControls.Props(
-        completedBMs       = 0,
-        bms                = batchPlans.totalBMs,
-        elapsedMs          = 0,
-        etaMs              = engineOptions.fold(Double.NaN)(batchPlans.totalBMs * _.estimatedMsPerBM),
-        formats            = s.formats,
-        updateFormats      = Some(setInitialFormats),
-        engineOptionEditor = engineOptionEditor,
-        start              = Some(if (validity is Invalid) None else Some(startCB)),
-        abort              = None,
-        reset              = None,
-        downloadTest       = true,
+        completedBMs        = 0,
+        bms                 = batchPlans.totalBMs,
+        elapsedMs           = 0,
+        etaMs               = engineOptions.fold(Double.NaN)(batchPlans.totalBMs * _.estimatedMsPerBM),
+        formats             = s.formats,
+        updateFormats       = Some(setInitialFormats),
+        saveMechanism       = s.saveMechanism,
+        updateSaveMechanism = Some(setInitialSaveMechanism),
+        engineOptionEditor  = engineOptionEditor,
+        start               = Some(if (validity is Invalid) None else Some(startCB)),
+        abort               = None,
+        reset               = None,
+        downloadTest        = true,
       )
 
       val tree = BatchModeTree.Args(
@@ -443,17 +489,19 @@ object BatchMode {
                   Callback.traverseOption(s.abortFn)(_.callback)))
 
             BatchModeControls.Props(
-              completedBMs       = s.completedBMs,
-              bms                = batchPlans.totalBMs,
-              elapsedMs          = elapsedMs,
-              etaMs              = etaMs,
-              formats            = s.formats,
-              updateFormats      = None,
-              engineOptionEditor = engineOptionEditor,
-              start              = None,
-              abort              = Some(abortCB),
-              reset              = None,
-              downloadTest       = false,
+              completedBMs        = s.completedBMs,
+              bms                 = batchPlans.totalBMs,
+              elapsedMs           = elapsedMs,
+              etaMs               = etaMs,
+              formats             = s.formats,
+              saveMechanism       = s.saveMechanism.value,
+              updateFormats       = None,
+              updateSaveMechanism = None,
+              engineOptionEditor  = engineOptionEditor,
+              start               = None,
+              abort               = Some(abortCB),
+              reset               = None,
+              downloadTest        = false,
             )
 
           case RunningStatus.Aborted
@@ -466,17 +514,19 @@ object BatchMode {
               }
 
             BatchModeControls.Props(
-              completedBMs       = s.completedBMs,
-              bms                = batchPlans.totalBMs,
-              elapsedMs          = elapsedMs,
-              etaMs              = etaMs,
-              formats            = s.formats,
-              updateFormats      = None,
-              engineOptionEditor = engineOptionEditor,
-              start              = None,
-              abort              = None,
-              reset              = Some(reset),
-              downloadTest       = false,
+              completedBMs        = s.completedBMs,
+              bms                 = batchPlans.totalBMs,
+              elapsedMs           = elapsedMs,
+              etaMs               = etaMs,
+              formats             = s.formats,
+              saveMechanism       = s.saveMechanism.value,
+              updateFormats       = None,
+              updateSaveMechanism = None,
+              engineOptionEditor  = engineOptionEditor,
+              start               = None,
+              abort               = None,
+              reset               = Some(reset),
+              downloadTest        = false,
             )
         }
 

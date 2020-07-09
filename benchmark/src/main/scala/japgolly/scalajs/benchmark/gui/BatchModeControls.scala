@@ -10,17 +10,19 @@ import scalacss.ScalaCssReact._
 
 object BatchModeControls {
 
-  final case class Props(completedBMs      : Int,
-                         bms               : Int,
-                         elapsedMs         : Double,
-                         etaMs             : Double,
-                         formats           : Map[SuiteResultsFormat.Text, Enabled],
-                         updateFormats     : Option[Map[SuiteResultsFormat.Text, Enabled] ~=> Callback],
-                         engineOptionEditor: StateSnapshot[EngineOptionEditor.State],
-                         start             : Option[Option[Reusable[Callback]]],
-                         abort             : Option[Reusable[Callback]],
-                         reset             : Option[Reusable[Callback]],
-                         downloadTest      : Boolean,
+  final case class Props(completedBMs       : Int,
+                         bms                : Int,
+                         elapsedMs          : Double,
+                         etaMs              : Double,
+                         formats            : Map[SuiteResultsFormat.Text, Enabled],
+                         updateFormats      : Option[Map[SuiteResultsFormat.Text, Enabled] ~=> Callback],
+                         saveMechanism      : BatchModeSaveMechanism,
+                         updateSaveMechanism: Option[BatchModeSaveMechanism ~=> Callback],
+                         engineOptionEditor : StateSnapshot[EngineOptionEditor.State],
+                         start              : Option[Option[Reusable[Callback]]],
+                         abort              : Option[Reusable[Callback]],
+                         reset              : Option[Reusable[Callback]],
+                         downloadTest       : Boolean,
                         ) {
     @inline def render: VdomElement = Component(this)
   }
@@ -71,7 +73,7 @@ object BatchModeControls {
       }
 
     val formats =
-      kv("Save results as") {
+      kv("Results formats") {
         <.div(MutableArray(p.formats).sortBy(_._1.label).iterator().toTagMod { case (fmt, enabled) =>
           <.div(
             <.label(
@@ -82,6 +84,22 @@ object BatchModeControls {
                 ^.onChange -->? p.updateFormats.map(_ (p.formats.updated(fmt, !enabled))),
               ),
               fmt.label))
+        })
+      }
+
+    val saveMechanisms =
+      kv("Save results") {
+        <.div(BatchModeSaveMechanism.orderedValues.toTagMod { m =>
+          <.div(
+            <.label(
+              *.controlSaveMech,
+              <.input.radio(
+                ^.checked := (m == p.saveMechanism),
+                ^.disabled := p.updateSaveMechanism.isEmpty,
+                ^.onChange -->? p.updateSaveMechanism.map(_(m)),
+              ),
+              ^.title := s"${m.label}: ${m.desc}",
+              m.label))
         })
       }
 
@@ -126,6 +144,7 @@ object BatchModeControls {
         <.tbody(
           engineOptions,
           formats,
+          saveMechanisms,
           kv("Benchmarks")(p.bms),
           completed,
           elapsed,

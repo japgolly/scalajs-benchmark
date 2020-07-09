@@ -24,7 +24,7 @@ final case class Progress[P](startedAt    : js.Date,
                              runs         : Int,
                              engineOptions: EngineOptions) {
 
-  def timestampTxt = TimeUtil.dateStrFromJsDate(startedAt) + "_" + TimeUtil.timeStrFromJsDate(startedAt)
+  def timestampTxt = TimeUtil.timestampStrFromJsDate(startedAt)
   def total        = plan.totalBenchmarks
   def remaining    = total - runs
 }
