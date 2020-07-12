@@ -47,8 +47,8 @@ object StateMonadShootout {
     import scalaz.{StateT, Trampoline}
     import scalaz.Free.Trampoline
 
-    val setup = Benchmark.setup[Int, StateT[Trampoline, Int, Unit]] { size =>
-      val step = StateT[Trampoline, Int, Unit](s => Trampoline.done((s + 1, ())))
+    val setup = Benchmark.setup[Int, StateT[Int, Trampoline, Unit]] { size =>
+      val step = StateT[Int, Trampoline, Unit](s => Trampoline.done((s + 1, ())))
       Iterator.fill(size)(step).reduce((a, b) => a.flatMap(_ => b))
     }
 
