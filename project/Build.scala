@@ -19,7 +19,7 @@ object ScalaJsBenchmark {
     val ChartJs          = "1.0.2"
     val Circe            = "0.13.0"
     val MacroParadise    = "2.1.1"
-    val Microlibs        = "2.3"
+    val Microlibs        = "2.5"
     val Monocle          = "1.6.3"
     val React            = "16.13.1"
     val Scala212         = "2.12.11"
