@@ -18,5 +18,5 @@ addSbtPlugin("org.xerial.sbt"    % "sbt-sonatype" % "3.9.4")
   if (scalaJSVersion.startsWith("0."))
     Nil
   else
-    Seq(addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.1"))
+    Seq(addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2"))
 }
