@@ -11,5 +11,6 @@ package object scala {
     SetBuilding.guiSuite,
     Flatmap.guiSuite,
     IntSet.guiSuite,
-    VectorIndex.guiSuite)
+    VectorIndex.guiSuite,
+  )
 }
