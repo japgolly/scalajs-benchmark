@@ -58,6 +58,18 @@ object GuiParams extends GuiParamsBoilerplate {
   def two[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)], param1: GuiParam[P1, E1], param2: GuiParam[P2, E2]): GuiParams[P] =
     combine2(iso)(param1, param2)
 
+  def combine1[P, P1, E1](iso: Iso[P, P1])(p1: GuiParam[P1, E1]): GuiParams[P] = {
+    val sp1 = SubParam(0, p1, iso.asLens)
+    val sps = Vector(sp1)
+    new MostlyGenericParams(sps) {
+      override def parseState(s: GenState): ParseResult[P] =
+        for {
+          v1 <- sp1.parse(sp1.key.get(s)) \/> sp1.param.header
+        } yield
+          for {a1 <- v1} yield iso.reverseGet(a1)
+    }
+  }
+
   // ===================================================================================================================
 
   protected object Internals {
