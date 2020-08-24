@@ -22,6 +22,7 @@ object Main {
       suites.example.Examples.all,
       suites.cats.all,
       suites.scala.all,
+      suites.scalajs.all,
       suites.scalaz.all,
       suites.shootouts.all,
     )
