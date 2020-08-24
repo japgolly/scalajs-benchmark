@@ -47,6 +47,11 @@ go 2.13.1  1.1.0
 go 2.13.2  1.1.0
 go 2.13.3  1.1.0
 
+go 2.12.11 1.1.1
+go 2.13.1  1.1.1
+go 2.13.2  1.1.1
+go 2.13.3  1.1.1
+
 git status
 echo
 echo "git commit -m 'Refresh gh-pages' && git push && git checkout master"
