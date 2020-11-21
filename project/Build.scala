@@ -24,7 +24,7 @@ object ScalaJsBenchmark {
     val React            = "16.13.1"
     val Scala212         = "2.12.11"
     val Scala213         = "2.13.3"
-    val ScalaCollCompat  = "2.1.6"
+    val ScalaCollCompat  = "2.3.0"
     val ScalaCss         = "0.6.1"
     val ScalaJsReact     = "1.7.3"
     val Scalaz           = "7.2.30"
