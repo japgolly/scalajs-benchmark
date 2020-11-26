@@ -2,7 +2,6 @@ package demo.suites.cats
 
 import cats._
 import cats.free.Trampoline
-import cats.implicits._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 
