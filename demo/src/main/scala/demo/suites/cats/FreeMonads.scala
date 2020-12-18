@@ -2,7 +2,6 @@ package demo.suites.cats
 
 import cats.data.{Kleisli, ReaderT}
 import cats.free.Free
-import cats.instances.function._
 import cats.~>
 import demo.Util._
 import japgolly.scalajs.benchmark._
