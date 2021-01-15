@@ -1,7 +1,7 @@
 ThisBuild / semanticdbEnabled := true
 
-ThisBuild / semanticdbVersion := "4.3.18"
+ThisBuild / semanticdbVersion := "4.4.6"
 
 ThisBuild / scalafixDependencies ++= Seq(
-  "com.github.liancheng" %% "organize-imports" % "0.3.1-RC3"
+  "com.github.liancheng" %% "organize-imports" % "0.4.4"
 )

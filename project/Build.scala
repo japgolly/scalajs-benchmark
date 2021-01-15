@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import com.typesafe.sbt.pgp.PgpKeys
+import com.jsuereth.sbtpgp.PgpKeys
 import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin
 import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
@@ -19,21 +19,21 @@ object ScalaJsBenchmark {
     val ChartJs          = "1.0.2"
     val Circe            = "0.13.0"
     val MacroParadise    = "2.1.1"
-    val Microlibs        = "2.3"
+    val Microlibs        = "2.5"
     val Monocle          = "1.6.3"
-    val React            = "16.13.1"
-    val Scala212         = "2.12.11"
-    val Scala213         = "2.13.3"
-    val ScalaCollCompat  = "2.1.6"
+    val React            = "16.14.0"
+    val Scala212         = "2.12.13"
+    val Scala213         = "2.13.4"
+    val ScalaCollCompat  = "2.3.2"
     val ScalaCss         = "0.6.1"
-    val ScalaJsReact     = "1.7.3"
+    val ScalaJsReact     = "1.7.7"
     val Scalaz           = "7.2.30"
 
     // Test only
-    val MTest = "0.7.4"
+    val MTest = "0.7.5"
 
     // Demo only
-    val Cats      = "2.1.1"
+    val Cats      = "2.3.1"
     val Shapeless = "2.3.3"
   }
 
