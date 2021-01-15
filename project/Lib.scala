@@ -4,6 +4,7 @@ import com.jsuereth.sbtpgp.PgpKeys._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import xerial.sbt.Sonatype.autoImport._
 
 object Lib {
   type PE = Project => Project
@@ -26,13 +27,7 @@ object Lib {
   def publicationSettings(ghProject: String): PE =
     sourceMapsToGithub(ghProject).andThen(
     _.settings(
-      publishTo := {
-        val nexus = "https://oss.sonatype.org/"
-        if (isSnapshot.value)
-          Some("snapshots" at nexus + "content/repositories/snapshots")
-        else
-          Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-      },
+      publishTo := sonatypePublishToBundle.value,
       pomExtra :=
         <scm>
           <connection>scm:git:github.com/japgolly/{ghProject}</connection>
