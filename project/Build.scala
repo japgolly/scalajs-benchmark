@@ -21,7 +21,7 @@ object ScalaJsBenchmark {
     val MacroParadise    = "2.1.1"
     val Microlibs        = "2.5"
     val Monocle          = "1.6.3"
-    val React            = "16.14.0"
+    val React            = "17.0.1"
     val Scala212         = "2.12.13"
     val Scala213         = "2.13.4"
     val ScalaCollCompat  = "2.3.2"
