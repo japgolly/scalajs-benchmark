@@ -34,7 +34,7 @@ object ScalaJsBenchmark {
 
     // Demo only
     val Cats      = "2.3.1"
-    val Shapeless = "2.3.3"
+    val Shapeless = "2.3.5"
   }
 
   def scalacFlags = Seq(
