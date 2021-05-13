@@ -33,7 +33,7 @@ object ScalaJsBenchmark {
     val MTest = "0.7.5"
 
     // Demo only
-    val Cats      = "2.3.1"
+    val Cats      = "2.6.1"
     val Shapeless = "2.3.3"
   }
 
