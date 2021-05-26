@@ -17,7 +17,7 @@ object ScalaJsBenchmark {
   object Ver {
     val BetterMonadicFor = "0.3.1"
     val ChartJs          = "1.0.2"
-    val Circe            = "0.13.0"
+    val Circe            = "0.14.0"
     val MacroParadise    = "2.1.1"
     val Microlibs        = "2.5"
     val Monocle          = "1.6.3"
