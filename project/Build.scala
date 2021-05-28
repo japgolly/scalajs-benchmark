@@ -22,7 +22,7 @@ object ScalaJsBenchmark {
     val Microlibs        = "2.5"
     val Monocle          = "1.6.3"
     val React            = "16.14.0"
-    val Scala212         = "2.12.13"
+    val Scala212         = "2.12.14"
     val Scala213         = "2.13.4"
     val ScalaCollCompat  = "2.3.2"
     val ScalaCss         = "0.7.0"
