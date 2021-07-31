@@ -39,7 +39,7 @@ object TextOutput {
 
     private val copyToClipboard: Callback =
       for {
-        textArea <- hiddenTextAreaRef.get
+        textArea <- hiddenTextAreaRef.get.asCBO
         _        <- Callback{ textArea.select(); document.execCommand("copy") }
         _        <- $.modState(_.copy(clicked = true))
       } yield ()

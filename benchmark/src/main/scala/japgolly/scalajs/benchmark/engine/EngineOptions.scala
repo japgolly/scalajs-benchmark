@@ -58,6 +58,6 @@ object EngineOptions {
   implicit val reusability: Reusability[EngineOptions] = {
     @nowarn("cat=unused") implicit val x1 = Reusability.byRef[Clock]
     @nowarn("cat=unused") implicit val x2 = Reusability.byRef[() => FiniteDuration]
-    Reusability.byRef || Reusability.derive
+    Reusability.derive
   }
 }

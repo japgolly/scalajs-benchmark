@@ -3,14 +3,14 @@ package japgolly.scalajs.benchmark.gui
 import japgolly.scalajs.benchmark.TestUtil._
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
-import scalaz.Equal
+import cats.Eq
 import sourcecode.Line
 import utest._
 
 object BmResultFormatTest extends TestSuite {
   import BmResultFormat._
 
-  private implicit val equalBmResultFormat: Equal[BmResultFormat] = Equal.equalRef[BmResultFormat]
+  private implicit val equalBmResultFormat: Eq[BmResultFormat] = _ eq _
 
   private val sample1 = statPlusMinus(123456123.nanos, 10.millis)
   private val sample2 = statPlusMinus(4.537.millis, 8.65.micros)

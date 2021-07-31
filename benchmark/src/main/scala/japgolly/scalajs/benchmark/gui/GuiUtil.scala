@@ -111,7 +111,7 @@ object GuiUtil {
     })(b => _ => b)
 
   def optionalToLens[S, A](o: Optional[S, A])(default: => A): Lens[S, A] =
-    Lens[S, A](o.getOption(_).getOrElse(default))(o.set)
+    Lens[S, A](o.getOption(_).getOrElse(default))(o.replace)
 
   def saveFile(text: String, filename: String, mimeType: String): Callback =
     Callback {

@@ -5,13 +5,13 @@ import japgolly.scalajs.benchmark.engine._
 import japgolly.scalajs.benchmark.gui.GuiParams.GenState
 import japgolly.scalajs.benchmark.gui.Styles.{Suite => *}
 import japgolly.scalajs.benchmark.vendor.chartjs.Chart
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle._
-import monocle.macros.Lenses
+import monocle.macros.GenLens
 import org.scalajs.dom.document
 import scala.concurrent.duration._
 import scala.util.{Success, Try}
@@ -48,7 +48,6 @@ object SuiteRunner {
                             engineOptions: EngineOptions,
                             guiOptions   : GuiOptions)
 
-  @Lenses
   final case class State[A](status            : SuiteStatus[A],
                             editors           : GenState,
                             engineOptionEditor: EngineOptionEditor.State,
@@ -57,8 +56,16 @@ object SuiteRunner {
                             resultsFormat     : SuiteResultsFormat)
 
   object State {
+    def status            [A] = GenLens[State[A]](_.status)
+    def editors           [A] = GenLens[State[A]](_.editors)
+    def engineOptionEditor[A] = GenLens[State[A]](_.engineOptionEditor)
+    def disabledBMs       [A] = GenLens[State[A]](_.disabledBMs)
+    def oldTitle          [A] = GenLens[State[A]](_.oldTitle)
+    def resultsFormat     [A] = GenLens[State[A]](_.resultsFormat)
+
+
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
-      status ^|-? SuiteStatus.at[A](k)
+      status andThen SuiteStatus.at[A](k)
 
     def initDisabledBMs(bms: Vector[Benchmark[Nothing]]): Set[Int] =
       bms.iterator.zipWithIndex.filter(_._1.isDisabledByDefault).map(_._2).toSet
@@ -135,7 +142,7 @@ object SuiteRunner {
         s => r => r.copy(bm = r.bm.updated(k, s)))
 
     def at[P](k: PlanKey[P]): Optional[SuiteStatus[P], BMStatus] =
-      running ^|-> runningAt(k)
+      running andThen runningAt(k)
   }
 
   // ===================================================================================================================
@@ -153,13 +160,13 @@ object SuiteRunner {
       Engine.run(plan, options) {
 
         case BenchmarkPreparing(_, k) =>
-          $.modStateAsync(State.at(k) set BMStatus.Preparing)
+          $.modStateAsync(State.at(k) replace BMStatus.Preparing)
 
         case BenchmarkRunning(_, k) =>
-          $.modStateAsync(State.at(k) set BMStatus.Running)
+          $.modStateAsync(State.at(k) replace BMStatus.Running)
 
         case BenchmarkFinished(p, k, r) =>
-          val setResult = State.at(k) set BMStatus.Done(r)
+          val setResult = State.at(k) replace BMStatus.Done(r)
           val setProgress = State.status[P].modify {
             case sr: SuiteRunning[P] => sr.copy(progress = p)
             case x                   => x
@@ -187,10 +194,10 @@ object SuiteRunner {
     for {
       startTime <- AsyncCallback.delay(System.currentTimeMillis())
       promise   <- AsyncCallback.promise[SuiteDone[P]].asAsyncCallback
-      _         <- $.modStateAsync(State.status.set(SuiteWillStart)(_))
+      _         <- $.modStateAsync(State.status.replace(SuiteWillStart)(_))
       abort     <- actuallyStart(startTime, promise._2).asAsyncCallback
       running   <- AsyncCallback.delay(SuiteRunning[P](guiSuite, Progress.start(plan, options), Map.empty, abort))
-      _         <- $.modStateAsync(State.status set running)
+      _         <- $.modStateAsync(State.status replace running)
     } yield RunCtrls(abort, promise._1)
   }
 
@@ -221,7 +228,7 @@ object SuiteRunner {
 
     def onMount: Callback = {
       def storeCurrentTitle =
-        CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].set
+        CallbackTo(document.title) |> Some.apply |> State.oldTitle[P].replace
 
       def setNewTitle =
         $.props.map(p => document.title = p.suite.name)
@@ -251,7 +258,7 @@ object SuiteRunner {
       StateSnapshot.withReuse.zoomL(State.engineOptionEditor[P]).prepareVia($)
 
     private val updateEditorState: (Option[GenState], Callback) => Callback =
-      (os, cb) => $.modStateOption(t => os.map(State.editors.set(_)(t)), cb)
+      (os, cb) => $.modStateOption(t => os.map(State.editors.replace(_)(t)), cb)
 
     private def toggleBM(i: Int): Callback =
       $.modState(State.disabledBMs.modify(s =>
@@ -259,7 +266,7 @@ object SuiteRunner {
 
     private def makeSoleBM(i: Int): Callback =
       $.props.flatMap(p =>
-        $.modState(State.disabledBMs.set(
+        $.modState(State.disabledBMs.replace(
           p.suite.suite.bms.indices.toSet - i)(_)))
 
     // =================================================================================================================
@@ -295,7 +302,7 @@ object SuiteRunner {
                 TriStateCheckbox.Indeterminate
 
             val setNextState: Callback =
-              $.modState(State.disabledBMs[P].set(
+              $.modState(State.disabledBMs[P].replace(
                 triState.nextDeterminate match {
                   case TriStateCheckbox.Checked   => Set.empty
                   case TriStateCheckbox.Unchecked => bms.indices.toSet
@@ -417,7 +424,7 @@ object SuiteRunner {
       def resetButton =
         <.button(
           *.resetButton,
-          ^.onClick --> $.modState(State.status.set(SuitePending)(_)),
+          ^.onClick --> $.modState(State.status.replace(SuitePending)(_)),
           "Reset")
 
       <.div(

@@ -2,7 +2,7 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.vendor.chartjs._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.internal.JsUtil
+import japgolly.scalajs.react.util.JsUtil
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Canvas
 import scala.scalajs.js

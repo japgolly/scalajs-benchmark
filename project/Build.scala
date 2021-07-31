@@ -15,7 +15,7 @@ object ScalaJsBenchmark {
 
   private val ghProject = "scalajs-benchmark"
 
-  def scalacFlags = Seq(
+  def scalacCommonFlags = Seq(
     "-deprecation",
     "-unchecked",
     "-feature",
@@ -23,13 +23,13 @@ object ScalaJsBenchmark {
     "-language:implicitConversions",
     "-language:higherKinds",
     "-language:existentials",
+  )
+
+  def scalac2Flags = Seq(
     "-opt:l:inline",
     "-opt-inline-from:japgolly.scalajs.benchmark.**",
     "-Yno-generic-signatures",                       // Suppress generation of generic signatures for Java.
-    "-Ypatmat-exhaust-depth", "off") ++
-    (if (scalaJSVersion.startsWith("0.")) Seq("-P:scalajs:sjsDefinedByDefault") else Nil)
-
-  def scalac213Flags = Seq(
+    "-Ypatmat-exhaust-depth", "off",
     "-Wconf:msg=may.not.be.exhaustive:e",            // Make non-exhaustive matches errors instead of warnings
     "-Wunused:explicits",                            // Warn if an explicit parameter is unused.
     "-Wunused:implicits",                            // Warn if an implicit parameter is unused.
@@ -58,17 +58,22 @@ object ScalaJsBenchmark {
     "-Ymacro-annotations"                            // Enable support for macro annotations, formerly in macro paradise.
   )
 
+  def scalac3Flags = Seq(
+    "-source", "3.0-migration",
+  )
+
   val commonSettings: PE =
     _.settings(
       organization                  := "com.github.japgolly.scalajs-benchmark",
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion                  := Ver.scala213,
-      crossScalaVersions            := Seq(Ver.scala212, Ver.scala213),
-      scalacOptions                ++= scalacFlags,
+      scalaVersion                  := Ver.scala2,
+      crossScalaVersions            := Seq(Ver.scala2),
+      scalacOptions                ++= scalacCommonFlags,
       scalacOptions                ++= byScalaVersion {
-                                         case (2, 13, 1, _) => scalac213Flags.filterNot(_.startsWith("-W"))
-                                         case (2, 13, _, _) => scalac213Flags
+                                         case (2, 13, 1, _) => scalac2Flags.filterNot(_.startsWith("-W"))
+                                         case (2, 13, _, _) => scalac2Flags
+                                         case (3,  _, _, _) => scalac3Flags
                                          case _             => Nil
                                        }.value,
       incOptions                    := incOptions.value.withLogRecompileOnMacro(false),
@@ -76,27 +81,7 @@ object ScalaJsBenchmark {
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(ThisBuild / version).value}",
       releaseVcsSign                := true,
-      addCompilerPlugin(Dep.betterMonadicFor),
     )
-
-  def definesMacros: Project => Project =
-    _.settings(
-      scalacOptions += "-language:experimental.macros",
-      libraryDependencies ++= Seq(
-        // "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-        // "org.scala-lang" % "scala-library" % scalaVersion.value,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided))
-
-  def addMacroParadisePlugin = Def.setting {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v <= 12 =>
-        Seq(Dep.macroParadise)
-      case _ =>
-        // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
-        // https://github.com/scala/scala/pull/6606
-        Nil
-    }
-  }
 
   def utestSettings: PE =
     _.settings(
@@ -116,26 +101,24 @@ object ScalaJsBenchmark {
 
   lazy val benchmark =
     Project("benchmark", file("benchmark"))
-      .enablePlugins(ScalaJSPlugin)
-      .enablePlugins(JSDependenciesPlugin)
-      .configure(commonSettings, definesMacros, publicationSettings(ghProject), utestSettings)
+      .enablePlugins(ScalaJSPlugin, JSDependenciesPlugin)
+      .configure(commonSettings, publicationSettings(ghProject), utestSettings)
       .settings(
-        libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
-          Dep.circe             .value,
-          Dep.circeGeneric      .value,
-          Dep.circeParser       .value % Test,
-          Dep.microlibsStdlibExt.value,
-          Dep.microlibsUtils    .value,
-          Dep.monocle           .value,
-          Dep.monocleMacro      .value,
-          Dep.scalaCollCompat   .value,
-          Dep.scalaCss          .value,
-          Dep.scalaCssReact     .value,
-          Dep.scalaJsReactCore  .value,
-          Dep.scalaJsReactExtra .value,
-          Dep.scalaJsReactScalaz.value,
-          Dep.scalaz            .value,
+          Dep.cats               .value,
+          Dep.circe              .value,
+          Dep.circeGeneric       .value,
+          Dep.circeParser        .value % Test,
+          Dep.microlibsStdlibExt .value,
+          Dep.microlibsUtils     .value,
+          Dep.monocle            .value,
+          Dep.monocleMacro       .value,
+          Dep.scalaCss           .value,
+          Dep.scalaCssReact      .value,
+          Dep.scalaJsReactCore   .value,
+          Dep.scalaJsReactExtra  .value,
+          Dep.scalaJsReactMonocle.value,
+          Dep.sourceCode         .value,
         ),
 
         Compile / unmanagedSourceDirectories ++= byScalaVersion {
@@ -178,12 +161,10 @@ object ScalaJsBenchmark {
 
   lazy val demo =
     Project("demo", file("demo"))
-      .enablePlugins(ScalaJSPlugin)
-      .enablePlugins(JSDependenciesPlugin)
+      .enablePlugins(ScalaJSPlugin, JSDependenciesPlugin)
       .configure(commonSettings, preventPublication, utestSettings)
       .dependsOn(benchmark)
       .settings(
-        libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
           Dep.cats        .value,
           Dep.catsFree    .value,

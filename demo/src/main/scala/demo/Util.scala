@@ -1,12 +1,12 @@
 package demo
 
 import japgolly.scalajs.react.vdom.html_<^._
-import scala.language.experimental.macros
+import sourcecode.FileName
 
 object Util {
 
-  def sourceFilename: String =
-    macro japgolly.scalajs.benchmark.macros.UtilMacrosImpl.sourceFilename
+  def sourceFilename(implicit f: FileName): String =
+    f.value
 
   def linkToSource(filename: String) = {
     val url = filename.replaceFirst("^.+?/demo/", "https://github.com/japgolly/scalajs-benchmark/blob/gh-pages/demo/")
