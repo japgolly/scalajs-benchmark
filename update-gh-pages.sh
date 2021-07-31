@@ -12,7 +12,7 @@ function go {
   rm -rf $res $res.html demo/target
   SCALAJS_VERSION=$scalaJsVer sbt ++$scalaVer clean demo/fastOptJS demo/fullOptJS
   mkdir $res
-  cp -v demo/target/scala-*/demo-* $res
+  cp -v demo/target/scala-*/demo-*.js* $res
   cat > $res.html <<EOB
 <!DOCTYPE html>
 <html>
@@ -32,25 +32,8 @@ EOB
   echo
 }
 
-go 2.12.11 0.6.33
-go 2.13.1  0.6.33
-go 2.13.2  0.6.33
-go 2.13.3  0.6.33
-
-go 2.12.11 1.0.1
-go 2.13.1  1.0.1
-go 2.13.2  1.0.1
-go 2.13.3  1.0.1
-
-go 2.12.11 1.1.0
-go 2.13.1  1.1.0
-go 2.13.2  1.1.0
-go 2.13.3  1.1.0
-
-go 2.12.11 1.1.1
-go 2.13.1  1.1.1
-go 2.13.2  1.1.1
-go 2.13.3  1.1.1
+go 2.13.6  1.6.0
+go 3.0.1   1.6.0
 
 git status
 echo
