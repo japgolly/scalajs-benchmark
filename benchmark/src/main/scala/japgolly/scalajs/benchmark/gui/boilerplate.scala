@@ -4,7 +4,7 @@ import monocle.{Iso, Lens}
 
 abstract class GuiParamsBoilerplate {
   self: GuiParams.type =>
-  import Internals._
+  import GuiParams.Internals._
 
   final def combine2[P, P1, E1, P2, E2](iso: Iso[P, (P1, P2)])(p1: GuiParam[P1, E1], p2: GuiParam[P2, E2]): GuiParams[P] = {
     val sp1 = SubParam(0, p1, iso andThen Lens[(P1, P2), P1](_._1)(n => t => (n, t._2)))

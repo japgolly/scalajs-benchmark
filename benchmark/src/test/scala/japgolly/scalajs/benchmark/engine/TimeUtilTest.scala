@@ -12,7 +12,7 @@ object TimeUtilTest extends TestSuite {
     "getUnitsFromMs" - {
       def test(t: TimeUnit)(implicit l: Line): Unit = {
         val oneAsMs = TimeUtil.toMs(FiniteDuration(1, t))
-        assertEq(TimeUtil.getUnitsFromMs(t)(oneAsMs), 1)
+        assertEq(TimeUtil.getUnitsFromMs(t)(oneAsMs), 1d)
       }
 
       "NANOSECONDS"  - test(TimeUnit.NANOSECONDS)

@@ -40,7 +40,7 @@ final case class AbortFn(value: AsyncCallback[Unit]) {
 
 object AbortFn {
   implicit val reusability: Reusability[AbortFn] = {
-    @nowarn("cat=unused") implicit val x = Reusability.asyncCallbackByRef[Unit]
+    @nowarn("cat=unused") implicit val x: Reusability[AsyncCallback[Unit]] = Reusability.asyncCallbackByRef
     Reusability.derive
   }
 }

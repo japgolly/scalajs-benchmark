@@ -22,7 +22,9 @@ final class SuiteRunner[P] {
 
   val Component = ScalaComponent.builder[Props[P]]
     .initialStateFromProps(State.init[P])
-    .renderBackend[Backend[P]]
+    // .renderBackend[Backend[P]] // TODO: https://github.com/japgolly/scalajs-react/issues/951
+    .backend[Backend[P]](new Backend(_))
+    .render($ => $.backend.render($.props, $.state))
     .componentDidMount(_.backend.onMount)
     // TODO handle suite changes - it's all in state atm
     .componentWillUnmount(_.backend.shutdown)
@@ -62,7 +64,6 @@ object SuiteRunner {
     def disabledBMs       [A] = GenLens[State[A]](_.disabledBMs)
     def oldTitle          [A] = GenLens[State[A]](_.oldTitle)
     def resultsFormat     [A] = GenLens[State[A]](_.resultsFormat)
-
 
     def at[A](k: PlanKey[A]): Optional[State[A], BMStatus] =
       status andThen SuiteStatus.at[A](k)

@@ -17,6 +17,7 @@ object Dependencies {
     val monocle      = "3.0.0"
     val react        = "17.0.2"
     val scala2       = "2.13.6"
+    val scala3       = "3.0.1"
     val scalaCss     = "0.8.0-RC1"
     val scalaJsReact = "2.0.0-RC2"
     val sourceCode   = "0.2.7"
@@ -46,8 +47,8 @@ object Dependencies {
     val scalaJsReactCore    = Def.setting("com.github.japgolly.scalajs-react" %%% "core"                    % Ver.scalaJsReact)
     val scalaJsReactExtra   = Def.setting("com.github.japgolly.scalajs-react" %%% "extra"                   % Ver.scalaJsReact)
     val scalaJsReactMonocle = Def.setting("com.github.japgolly.scalajs-react" %%% "extra-ext-monocle3"      % Ver.scalaJsReact)
-    val scalaz              = Def.setting("org.scalaz"                        %%% "scalaz-core"             % Ver.scalaz)
-    val scalazEffect        = Def.setting("org.scalaz"                        %%% "scalaz-effect"           % Ver.scalaz)
+    val scalaz              = Def.setting("org.scalaz"                        %%% "scalaz-core"             % Ver.scalaz cross CrossVersion.for3Use2_13)
+    val scalazEffect        = Def.setting("org.scalaz"                        %%% "scalaz-effect"           % Ver.scalaz cross CrossVersion.for3Use2_13)
     val shapeless           = Def.setting("com.chuusai"                       %%% "shapeless"               % Ver.shapeless)
     val sourceCode          = Def.setting("com.lihaoyi"                       %%% "sourcecode"              % Ver.sourceCode)
     val utest               = Def.setting("com.lihaoyi"                       %%% "utest"                   % Ver.utest)

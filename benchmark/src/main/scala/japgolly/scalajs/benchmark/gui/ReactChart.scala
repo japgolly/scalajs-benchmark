@@ -102,7 +102,7 @@ object ReactChart {
 
     val update: Callback =
       for {
-        c <- $.state.asCBO[BarChart]
+        c <- $.state.asCBO
         p <- $.props.toCBO
       } yield {
 
@@ -159,7 +159,7 @@ object ReactChart {
 
     def unmount: Callback =
       for {
-        c <- $.state.asCBO[BarChart]
+        c <- $.state.asCBO
         _ <- Callback(c.destroy())
         _ <- $.setState(None)
       } yield ()

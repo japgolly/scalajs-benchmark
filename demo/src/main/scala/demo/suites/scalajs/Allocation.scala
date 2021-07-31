@@ -2,13 +2,13 @@ package demo.suites.scalajs
 
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
-import monocle.macros.GenIso
+import monocle.Iso
 
 object Allocation {
 
   final case class Config(classes2: Int)
 
-  val iso    = GenIso.fields[Config]
+  val iso    = Iso[Config, Int](_.classes2)(Config.apply)
   val param1 = GuiParam.int("Arity-2 case classes to allocate", 1000000)
   val params = GuiParams.combine1(iso)(param1)
 

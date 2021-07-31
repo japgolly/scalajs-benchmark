@@ -68,7 +68,7 @@ object ScalaJsBenchmark {
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion                  := Ver.scala2,
-      crossScalaVersions            := Seq(Ver.scala2),
+      crossScalaVersions            := Seq(Ver.scala2, Ver.scala3),
       scalacOptions                ++= scalacCommonFlags,
       scalacOptions                ++= byScalaVersion {
                                          case (2, 13, 1, _) => scalac2Flags.filterNot(_.startsWith("-W"))
@@ -170,9 +170,12 @@ object ScalaJsBenchmark {
           Dep.catsFree    .value,
           Dep.scalaz      .value,
           Dep.scalazEffect.value,
-          Dep.shapeless   .value,
         ),
+        libraryDependencies ++= Seq(
+          Dep.shapeless.value,
+        ).filter(_ => scalaVersion.value.startsWith("2")),
         Compile / sourceGenerators += Demo.librariesFileTask.taskValue,
+        Compile / unmanagedSourceDirectories ++= addDirsFor213_+(Compile).value,
         scalaJSLinkerConfig ~= { _.withSourceMap(true) },
         packageJSDependencies / skip := false,
       )

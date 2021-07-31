@@ -1,14 +1,14 @@
 package japgolly.scalajs.benchmark
 
+import cats.instances.option._
+import cats.instances.vector._
+import cats.syntax.traverse._
 import japgolly.microlibs.stdlib_ext.ParseInt
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Prism}
 import scalacss.ScalaCssReact._
-import cats.instances.option._
-import cats.instances.vector._
-import cats.syntax.traverse._
 
 package object gui {
 

@@ -1,9 +1,9 @@
 package japgolly.scalajs.benchmark.gui
 
+import cats.Eq
 import japgolly.scalajs.benchmark.TestUtil._
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
-import cats.Eq
 import sourcecode.Line
 import utest._
 

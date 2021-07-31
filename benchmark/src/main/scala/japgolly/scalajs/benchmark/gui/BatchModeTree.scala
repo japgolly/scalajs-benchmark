@@ -1,5 +1,9 @@
 package japgolly.scalajs.benchmark.gui
 
+import cats.Applicative
+import cats.instances.vector._
+import cats.syntax.functor._
+import cats.syntax.traverse._
 import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
 import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react._
@@ -9,10 +13,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Traversal
 import monocle.macros.GenLens
 import scalacss.ScalaCssReact._
-import cats.Applicative
-import cats.instances.vector._
-import cats.syntax.functor._
-import cats.syntax.traverse._
 
 object BatchModeTree {
 
@@ -91,7 +91,7 @@ object BatchModeTree {
     }
 
     def fromTocItems(items: Seq[TableOfContents.Item.NonBatchMode]): Vector[Item[Unit, Unit]] =
-      items.iterator.map {
+      items.iterator.map[Item[Unit, Unit]] {
         case i: TableOfContents.Item.Folder => Folder(i.name, fromTocItems(i.children))
         case i: TableOfContents.Item.Suite  => Suite(i.suite, i.suite.suite.bms.map(bm => bmUnit(Disabled.when(bm.isDisabledByDefault))), ())
       }.toVector

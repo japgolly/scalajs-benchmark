@@ -26,7 +26,7 @@ object GuiBuilder {
              layoutConfig : LayoutConfig  = LayoutConfig.default,
              engineOptions: EngineOptions = EngineOptions.default,
              guiOptions   : GuiOptions    = GuiOptions.default)
-            (m1: Seq[MenuItem], mn: Seq[MenuItem]*): SJRRouter[_] = {
+            (m1: Seq[MenuItem], mn: Seq[MenuItem]*): SJRRouter[Router.Page] = {
 
     var mis = m1.toVector ++ mn.flatten
     if (guiOptions.allowBatchMode)
