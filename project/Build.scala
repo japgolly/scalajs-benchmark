@@ -8,34 +8,12 @@ import org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
+import Dependencies._
 import Lib._
 
 object ScalaJsBenchmark {
 
   private val ghProject = "scalajs-benchmark"
-
-  object Ver {
-    val BetterMonadicFor = "0.3.1"
-    val ChartJs          = "1.0.2"
-    val Circe            = "0.13.0"
-    val MacroParadise    = "2.1.1"
-    val Microlibs        = "2.5"
-    val Monocle          = "1.6.3"
-    val React            = "16.14.0"
-    val Scala212         = "2.12.13"
-    val Scala213         = "2.13.4"
-    val ScalaCollCompat  = "2.3.2"
-    val ScalaCss         = "0.7.0"
-    val ScalaJsReact     = "1.7.7"
-    val Scalaz           = "7.2.30"
-
-    // Test only
-    val MTest = "0.7.5"
-
-    // Demo only
-    val Cats      = "2.3.1"
-    val Shapeless = "2.3.3"
-  }
 
   def scalacFlags = Seq(
     "-deprecation",
@@ -85,21 +63,21 @@ object ScalaJsBenchmark {
       organization                  := "com.github.japgolly.scalajs-benchmark",
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion                  := Ver.Scala213,
-      crossScalaVersions            := Seq(Ver.Scala212, Ver.Scala213),
+      scalaVersion                  := Ver.scala213,
+      crossScalaVersions            := Seq(Ver.scala212, Ver.scala213),
       scalacOptions                ++= scalacFlags,
       scalacOptions                ++= byScalaVersion {
                                          case (2, 13, 1, _) => scalac213Flags.filterNot(_.startsWith("-W"))
                                          case (2, 13, _, _) => scalac213Flags
                                          case _             => Nil
                                        }.value,
-      shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
       incOptions                    := incOptions.value.withLogRecompileOnMacro(false),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-      releaseTagComment             := s"v${(version in ThisBuild).value}",
+      releaseTagComment             := s"v${(ThisBuild / version).value}",
       releaseVcsSign                := true,
-      addCompilerPlugin(compilerPlugin("com.olegpy" %% "better-monadic-for" % Ver.BetterMonadicFor)))
+      addCompilerPlugin(Dep.betterMonadicFor),
+    )
 
   def definesMacros: Project => Project =
     _.settings(
@@ -107,12 +85,12 @@ object ScalaJsBenchmark {
       libraryDependencies ++= Seq(
         // "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         // "org.scala-lang" % "scala-library" % scalaVersion.value,
-        "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"))
+        "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided))
 
   def addMacroParadisePlugin = Def.setting {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, v)) if v <= 12 =>
-        Seq(compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.patch))
+        Seq(Dep.macroParadise)
       case _ =>
         // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
         // https://github.com/scala/scala/pull/6606
@@ -123,8 +101,8 @@ object ScalaJsBenchmark {
   def utestSettings: PE =
     _.settings(
       jsEnv               := new JSDOMNodeJSEnv,
-      libraryDependencies += "com.lihaoyi" %%% "utest" % Ver.MTest % Test,
-      libraryDependencies += "com.github.japgolly.microlibs" %%% "test-util" % Ver.Microlibs % Test,
+      libraryDependencies += Dep.utest.value % Test,
+      libraryDependencies += Dep.microlibsTestUtil.value % Test,
       testFrameworks      := new TestFramework("utest.runner.Framework") :: Nil)
 
   lazy val genBoilerplate = TaskKey[Unit]("genBoilerplate")
@@ -144,55 +122,35 @@ object ScalaJsBenchmark {
       .settings(
         libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
-          "org.scala-lang.modules"            %%% "scala-collection-compat" % Ver.ScalaCollCompat,
-          "com.github.japgolly.microlibs"     %%% "stdlib-ext"              % Ver.Microlibs,
-          "com.github.japgolly.microlibs"     %%% "utils"                   % Ver.Microlibs,
-          "com.github.japgolly.scalajs-react" %%% "core"                    % Ver.ScalaJsReact,
-          "com.github.japgolly.scalajs-react" %%% "extra"                   % Ver.ScalaJsReact,
-          "com.github.japgolly.scalajs-react" %%% "ext-monocle-scalaz"      % Ver.ScalaJsReact,
-          "com.github.japgolly.scalacss"      %%% "core"                    % Ver.ScalaCss,
-          "com.github.japgolly.scalacss"      %%% "ext-react"               % Ver.ScalaCss,
-          "com.github.julien-truffaut"        %%% "monocle-core"            % Ver.Monocle,
-          "com.github.julien-truffaut"        %%% "monocle-macro"           % Ver.Monocle,
-          "io.circe"                          %%% "circe-core"              % Ver.Circe,
-          "io.circe"                          %%% "circe-generic"           % Ver.Circe,
-          "io.circe"                          %%% "circe-parser"            % Ver.Circe % Test,
-          "org.scalaz"                        %%% "scalaz-core"             % Ver.Scalaz),
+          Dep.circe             .value,
+          Dep.circeGeneric      .value,
+          Dep.circeParser       .value % Test,
+          Dep.microlibsStdlibExt.value,
+          Dep.microlibsUtils    .value,
+          Dep.monocle           .value,
+          Dep.monocleMacro      .value,
+          Dep.scalaCollCompat   .value,
+          Dep.scalaCss          .value,
+          Dep.scalaCssReact     .value,
+          Dep.scalaJsReactCore  .value,
+          Dep.scalaJsReactExtra .value,
+          Dep.scalaJsReactScalaz.value,
+          Dep.scalaz            .value,
+        ),
 
         Compile / unmanagedSourceDirectories ++= byScalaVersion {
           case (2, 13, 1, _) => "main/scala-2.13.1" :: Nil
           case _             => Nil
         }.value.map(sourceDirectory.value / _),
 
-        dependencyOverrides += "org.webjars.npm" % "js-tokens" % "3.0.2", // https://github.com/webjars/webjars/issues/1789
-
         jsDependencies ++= Seq(
-          "org.webjars.npm" % "react" % Ver.React
-            /        "umd/react.development.js"
-            minified "umd/react.production.min.js"
-            commonJSName "React",
-
-          "org.webjars.npm" % "react-dom" % Ver.React
-            /         "umd/react-dom.development.js"
-            minified  "umd/react-dom.production.min.js"
-            dependsOn "umd/react.development.js"
-            commonJSName "ReactDOM",
-
-          "org.webjars.npm" % "jstat" % "1.9.3"
-            /        "dist/jstat.js"
-            minified "dist/jstat.min.js",
-
-          "org.webjars.npm" % "file-saver" % "2.0.2"
-            /        "dist/FileSaver.js"
-            minified "dist/FileSaver.min.js",
-
-          "org.webjars.npm" % "jszip" % "3.5.0"
-            /        "dist/jszip.js"
-            minified "dist/jszip.min.js",
-
-          "org.webjars" % "chartjs" % Ver.ChartJs
-            /        "Chart.js"
-            minified "Chart.min.js"),
+          Dep.chartJs,
+          Dep.fileSaver,
+          Dep.jstat,
+          Dep.jsZip,
+          Dep.react,
+          Dep.reactDom,
+        ),
 
         genBoilerplate := GenBoilerplate(sourceDirectory.value / "main" / "scala")
       )
@@ -201,16 +159,16 @@ object ScalaJsBenchmark {
 
   object Demo {
     def librariesFileTask = Def.task {
-      val file = (sourceManaged in Compile).value / "demo" / "SbtLibraries.scala"
+      val file = (Compile / sourceManaged).value / "demo" / "SbtLibraries.scala"
       val content = s"""
            |package demo
            |
            |trait SbtLibraries {
-           |  final val Monocle   = Library("Monocle"  , "${Ver.Monocle}")
+           |  final val Monocle   = Library("Monocle"  , "${Ver.monocle}")
            |  final val Scala     = Library("Scala"    , "${scalaVersion.value}")
-           |  final val Cats      = Library("Cats"     , "${Ver.Cats}")
-           |  final val Scalaz    = Library("Scalaz"   , "${Ver.Scalaz}")
-           |  final val Shapeless = Library("Shapeless", "${Ver.Shapeless}")
+           |  final val Cats      = Library("Cats"     , "${Ver.cats}")
+           |  final val Scalaz    = Library("Scalaz"   , "${Ver.scalaz}")
+           |  final val Shapeless = Library("Shapeless", "${Ver.shapeless}")
            |}
          """.stripMargin
       IO.write(file, content)
@@ -227,12 +185,14 @@ object ScalaJsBenchmark {
       .settings(
         libraryDependencies ++= addMacroParadisePlugin.value,
         libraryDependencies ++= Seq(
-          "org.scalaz"    %%% "scalaz-core"   % Ver.Scalaz,
-          "org.scalaz"    %%% "scalaz-effect" % Ver.Scalaz,
-          "org.typelevel" %%% "cats-core"     % Ver.Cats,
-          "org.typelevel" %%% "cats-free"     % Ver.Cats,
-          "com.chuusai"   %%% "shapeless"     % Ver.Shapeless),
-        sourceGenerators in Compile += Demo.librariesFileTask.taskValue,
+          Dep.cats        .value,
+          Dep.catsFree    .value,
+          Dep.scalaz      .value,
+          Dep.scalazEffect.value,
+          Dep.shapeless   .value,
+        ),
+        Compile / sourceGenerators += Demo.librariesFileTask.taskValue,
         scalaJSLinkerConfig ~= { _.withSourceMap(true) },
-        skip in packageJSDependencies := false)
+        packageJSDependencies / skip := false,
+      )
 }
