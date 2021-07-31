@@ -1,17 +1,18 @@
 package japgolly.scalajs.benchmark.gui
 
+import cats.Applicative
+import cats.instances.vector._
+import cats.syntax.functor._
+import cats.syntax.traverse._
 import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Traversal
-import monocle.macros.Lenses
+import monocle.macros.GenLens
 import scalacss.ScalaCssReact._
-import scalaz.Applicative
-import scalaz.std.vector._
-import scalaz.syntax.traverse._
 
 object BatchModeTree {
 
@@ -23,21 +24,31 @@ object BatchModeTree {
 
   object Item {
 
-    @Lenses
     final case class Folder[A, B](name: String, children: Vector[Item[A, B]]) extends Item[A, B] {
       override val bmCount    = children.iterator.map(_.bmCount).sum
       override val enabledBMs = children.iterator.map(_.enabledBMs).sum
     }
+    object Folder {
+      def name    [A, B] = GenLens[Folder[A, B]](_.name)
+      def children[A, B] = GenLens[Folder[A, B]](_.children)
+    }
 
-    @Lenses
     final case class Suite[A, B](suite: GuiSuite[_], bms: Vector[BM[B]], value: A) extends Item[A, B] {
       override def name       = suite.name
       override def bmCount    = bms.length
       override val enabledBMs = bms.count(_.enabled is Enabled)
     }
+    object Suite {
+      def suite[A, B] = GenLens[Suite[A, B]](_.suite)
+      def bms  [A, B] = GenLens[Suite[A, B]](_.bms)
+      def value[A, B] = GenLens[Suite[A, B]](_.value)
+    }
 
-    @Lenses
     final case class BM[B](enabled: Enabled, value: B)
+    object BM {
+      def enabled[B] = GenLens[BM[B]](_.enabled)
+      def value  [B] = GenLens[BM[B]](_.value)
+    }
 
     implicit def reusabilityB[                B: Reusability]: Reusability[BM    [   B]] = Reusability.derive
     implicit def reusabilityS[A: Reusability, B: Reusability]: Reusability[Suite [A, B]] = Reusability.derive
@@ -58,15 +69,16 @@ object BatchModeTree {
 
     def bmsT[A, B]: Traversal[Item[A, B], BM[B]] =
       new Traversal[Item[A, B], BM[B]] {
-        override def modifyF[F[_]](f: BM[B] => F[BM[B]])(s: Item[A, B])(implicit F: Applicative[F]): F[Item[A, B]] =
+
+        override def modifyA[F[_]](f: BM[B] => F[BM[B]])(s: Item[A, B])(implicit F: Applicative[F]): F[Item[A, B]] =
           s match {
-            case i: Folder[A, B] => i.children.traverse(modifyF(f)).map(n => i.copy(children = n))
+            case i: Folder[A, B] => i.children.traverse(modifyA(f)).map(n => i.copy(children = n))
             case i: Suite [A, B] => i.bms.traverse(f).map(n => i.copy(bms = n))
           }
       }
 
     private val _enabledT: Traversal[Item[Any, Any], Enabled] =
-      bmsT[Any, Any] ^|-> BM.enabled[Any]
+      bmsT[Any, Any] andThen BM.enabled[Any]
 
     def enabledT[A, B]: Traversal[Item[A, B], Enabled] =
       _enabledT.asInstanceOf[Traversal[Item[A, B], Enabled]]
@@ -79,7 +91,7 @@ object BatchModeTree {
     }
 
     def fromTocItems(items: Seq[TableOfContents.Item.NonBatchMode]): Vector[Item[Unit, Unit]] =
-      items.iterator.map {
+      items.iterator.map[Item[Unit, Unit]] {
         case i: TableOfContents.Item.Folder => Folder(i.name, fromTocItems(i.children))
         case i: TableOfContents.Item.Suite  => Suite(i.suite, i.suite.suite.bms.map(bm => bmUnit(Disabled.when(bm.isDisabledByDefault))), ())
       }.toVector
@@ -109,7 +121,7 @@ object BatchModeTree {
 
   object Args {
     implicit def reusability[A: Reusability, B: Reusability]: Reusability[Args[A, B]] =
-      Reusability.byRef || Reusability.derive
+      Reusability.derive
   }
 
   type Props = Reusable[Args[_, _]]
@@ -136,13 +148,13 @@ object BatchModeTree {
             TriStateCheckbox.Indeterminate
 
         def setNextState: Callback =
-          Callback.byName {
+          Callback.suspend {
             val nextState: Enabled =
               triState.nextDeterminate match {
                 case TriStateCheckbox.Checked   => Enabled
                 case TriStateCheckbox.Unchecked => Disabled
               }
-            ss.modState(Item.enabledT[A, B].set(nextState)).when_(p.enabled is Enabled)
+            ss.modState(Item.enabledT[A, B].replace(nextState)).when_(p.enabled is Enabled)
           }
 
         val liStyle =
@@ -196,7 +208,7 @@ object BatchModeTree {
         val bm = ss.value.bms(idx)
         val enabled = bm.enabled & Enabled.when(isValid)
         val editing = p.enabled & Enabled.when(isValid)
-        def lens = Item.Suite.bms[A, B] ^|-> GuiUtil.vectorIndex(idx) ^|-> Item.BM.enabled
+        def lens = Item.Suite.bms[A, B] andThen GuiUtil.vectorIndex[Item.BM[B]](idx) andThen Item.BM.enabled[B]
         TagMod(
           *.menuLI(enabled),
           <.label(
@@ -204,7 +216,7 @@ object BatchModeTree {
               <.input.checkbox(
                 ^.checked := enabled.is(Enabled),
                 ^.disabled := editing.is(Disabled),
-                ^.onChange --> Callback.byName(ss.modState(lens.modify(!_))),
+                ^.onChange --> Callback.suspend(ss.modState(lens.modify(!_))),
               )
             ),
             p.renderBM(RenderBM(ss.value, idx))))

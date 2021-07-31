@@ -1,9 +1,10 @@
 import sbt._
 import Keys._
-import com.typesafe.sbt.pgp.PgpKeys._
+import com.jsuereth.sbtpgp.PgpKeys._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import xerial.sbt.Sonatype.autoImport._
 
 object Lib {
   type PE = Project => Project
@@ -26,13 +27,7 @@ object Lib {
   def publicationSettings(ghProject: String): PE =
     sourceMapsToGithub(ghProject).andThen(
     _.settings(
-      publishTo := {
-        val nexus = "https://oss.sonatype.org/"
-        if (isSnapshot.value)
-          Some("snapshots" at nexus + "content/repositories/snapshots")
-        else
-          Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-      },
+      publishTo := sonatypePublishToBundle.value,
       pomExtra :=
         <scm>
           <connection>scm:git:github.com/japgolly/{ghProject}</connection>
@@ -46,23 +41,34 @@ object Lib {
           </developer>
         </developers>))
 
-  def sourceMapsToGithub(ghProject: String): PE =
+  def sourceMapsToGithub(ghProject: String): Project => Project =
     p => p.settings(
-      scalacOptions ++= (if (isSnapshot.value) Seq.empty else Seq({
-        val a = p.base.toURI.toString.replaceFirst("[^/]+/?$", "")
-        val g = s"https://raw.githubusercontent.com/japgolly/$ghProject"
-        s"-P:scalajs:mapSourceURI:$a->$g/v${version.value}/"
-      }))
+      scalacOptions ++= {
+        val isDotty = scalaVersion.value startsWith "3"
+        val ver     = version.value
+        if (isSnapshot.value)
+          Nil
+        else {
+          val a = p.base.toURI.toString.replaceFirst("[^/]+/?$", "")
+          val g = s"https://raw.githubusercontent.com/japgolly/$ghProject"
+          val flag = if (isDotty) "-scalajs-mapSourceURI" else "-P:scalajs:mapSourceURI"
+          s"$flag:$a->$g/v$ver/" :: Nil
+        }
+      }
     )
 
   def preventPublication: PE =
-    _.settings(
-      publish            := {},
-      publishLocal       := {},
-      publishSigned      := {},
-      publishLocalSigned := {},
-      publishArtifact    := false,
-      publishTo          := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
-      packagedArtifacts  := Map.empty)
-    // .disablePlugins(plugins.IvyPlugin)
+    _.settings(publish / skip := true)
+
+  def addDirsFor213_+(scope: ConfigKey): Def.Initialize[Seq[File]] = Def.setting {
+    (scope / unmanagedSourceDirectories).value.flatMap { dir =>
+      if (dir.getPath.endsWith("scala"))
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, 12)) => Nil
+          case _             => file(dir.getPath ++ "-2.13+") :: Nil
+        }
+      else
+        Nil
+    }
+  }
 }

@@ -19,12 +19,12 @@ object GenBoilerplate {
         val subParams =
           (1 to n).map { i =>
             val newTuple = (1 to n).map(j => if (j == i) "n" else s"t._$j").mkString("(", ", ", ")")
-            s"    val sp$i = SubParam(${i-1}, p$i, iso ^|-> Lens[${`(Pn)`}, P$i](_._$i)(n => t => $newTuple))"
+            s"    val sp$i = SubParam(${i-1}, p$i, iso andThen Lens[${`(Pn)`}, P$i](_._$i)(n => t => $newTuple))"
           }.mkString("\n")
 
         val parses =
           (1 to n).map { i =>
-            s"          v$i <- sp$i.parse(sp$i.key.get(s)) \\/> sp$i.param.header"
+            s"          v$i <- sp$i.parse(sp$i.key.get(s)).toRight(sp$i.param.header)"
           }.mkString("\n")
 
         s"""
@@ -52,11 +52,10 @@ object GenBoilerplate {
          |package $pkg
          |
          |import monocle.{Iso, Lens}
-         |import scalaz.std.option.optionSyntax._
          |
          |abstract class GuiParamsBoilerplate {
          |  self: GuiParams.type =>
-         |  import Internals._
+         |  import GuiParams.Internals._
          |
          |${groups.mkString("\n\n")}
          |}

@@ -4,11 +4,11 @@ import japgolly.scalajs.benchmark.Benchmark
 import japgolly.scalajs.benchmark.engine.{AbortFn, EngineOptions}
 import japgolly.scalajs.benchmark.gui.BatchMode.State.RunningStatus
 import japgolly.scalajs.benchmark.gui.Styles.{BatchMode => *}
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
-import monocle.macros.{GenPrism, Lenses}
+import monocle.macros._
 import monocle.{Lens, Optional, Prism}
 import scala.annotation.nowarn
 import scala.scalajs.js
@@ -30,13 +30,31 @@ object BatchMode {
   sealed trait State
   object State {
 
-    @Lenses
     final case class Initial(items             : Vector[Item[Unit, Unit]],
                              formats           : Map[SuiteResultsFormat.Text, Enabled],
                              saveMechanism     : BatchModeSaveMechanism,
                              engineOptionEditor: EngineOptionEditor.State) extends State
 
-    @Lenses
+    object Initial {
+      def items              = GenLens[Initial](_.items)
+      def formats            = GenLens[Initial](_.formats)
+      def saveMechanism      = GenLens[Initial](_.saveMechanism)
+      def engineOptionEditor = GenLens[Initial](_.engineOptionEditor)
+    }
+
+    object Running {
+      def items              = GenLens[Running](_.items)
+      def formats            = GenLens[Running](_.formats)
+      def saveMechanism      = GenLens[Running](_.saveMechanism)
+      def engineOptions      = GenLens[Running](_.engineOptions)
+      def engineOptionEditor = GenLens[Running](_.engineOptionEditor)
+      def startedAt          = GenLens[Running](_.startedAt)
+      def startedMs          = GenLens[Running](_.startedMs)
+      def batchPlans         = GenLens[Running](_.batchPlans)
+      def status             = GenLens[Running](_.status)
+      def abortFn            = GenLens[Running](_.abortFn)
+    }
+
     final case class Running(items             : Vector[Item[SuiteState, Int]],
                              formats           : Map[SuiteResultsFormat.Text, Enabled],
                              saveMechanism     : BatchModeSaveMechanism.AndState,
@@ -90,19 +108,19 @@ object BatchMode {
       GenPrism[State, Initial]
 
     val initialItems: Optional[State, Vector[Item[Unit, Unit]]] =
-      initial ^|-> Initial.items
+      initial andThen Initial.items
 
     val running: Prism[State, Running] =
       GenPrism[State, Running]
 
     val abortFn: Optional[State, Option[AbortFn]] =
-      running ^|-> Running.abortFn
+      running andThen Running.abortFn
 
     val runningItems: Lens[State, Vector[Item[SuiteState, Int]]] =
-      GuiUtil.optionalToLens(running ^|-> State.Running.items)(Vector.empty)
+      GuiUtil.optionalToLens(running andThen State.Running.items)(Vector.empty)
 
     val runningStatus: Optional[State, RunningStatus] =
-      running ^|-> Running.status
+      running andThen Running.status
 
     val engineOptionEditor: Lens[State, EngineOptionEditor.State] =
       Lens[State, EngineOptionEditor.State]({
@@ -158,7 +176,7 @@ object BatchMode {
       plans.iterator.map(_.guiPlan.totalBMs).sum
 
     def start($: StateAccessPure[State], guiOptions: GuiOptions): Callback =
-      Callback.byName(startA($, guiOptions).toCallback)
+      Callback.suspend(startA($, guiOptions).toCallback)
 
     def startA($: StateAccessPure[State], guiOptions: GuiOptions): AsyncCallback[Unit] = {
       val keepRunning: AsyncCallback[Boolean] =
@@ -199,7 +217,7 @@ object BatchMode {
       def runPlan(p: BatchPlan, startedAt: js.Date): AsyncCallback[Unit] =
         for {
           ctls      <- p.start
-          _         <- $.modStateAsync(State.abortFn.set(Some(ctls.abortFn)))
+          _         <- $.modStateAsync(State.abortFn.replace(Some(ctls.abortFn)))
           done      <- ctls.onCompletion
           _         <- saveSuite(done, startedAt, p.guiPlan.folderPath).asAsyncCallback
         } yield ()
@@ -315,7 +333,7 @@ object BatchMode {
       }
 
       val folderItems: Lens[Item2, Vector[Item2]] =
-        GuiUtil.unsafeNarrowLens[Item2, Item.Folder[SuiteState, Int]] ^|-> Item.Folder.children
+        GuiUtil.unsafeNarrowLens[Item2, Item.Folder[SuiteState, Int]] andThen Item.Folder.children
 
       val castSuiteL: Lens[Item2, Suite2] =
         GuiUtil.unsafeNarrowLens
@@ -338,7 +356,7 @@ object BatchMode {
 
     private val setInitialItems =
       StateSnapshot.withReuse.prepare[Vector[Item[Unit, Unit]]]((oi, cb) =>
-        $.modStateOption(s => oi.flatMap(State.initialItems.setOption(_)(s)), cb))
+        $.modStateOption(s => oi.flatMap(State.initialItems.replaceOption(_)(s)), cb))
 
     private val setInitialFormats: Map[SuiteResultsFormat.Text, Enabled] ~=> Callback =
       Reusable.byRef { f =>
@@ -485,7 +503,7 @@ object BatchMode {
 
             val abortCB =
               Reusable.implicitly(s.abortFn).withLazyValue(
-                $.modState(State.runningStatus.set(State.RunningStatus.Aborted),
+                $.modState(State.runningStatus.replace(State.RunningStatus.Aborted),
                   Callback.traverseOption(s.abortFn)(_.callback)))
 
             BatchModeControls.Props(
@@ -510,7 +528,7 @@ object BatchMode {
             val reset =
               // No other change can happen in this state, no need for Reusability
               Reusable.callbackByRef {
-                Callback.byName($.setState(s.reset(p)))
+                Callback.suspend($.setState(s.reset(p)))
               }
 
             BatchModeControls.Props(

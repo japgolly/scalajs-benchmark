@@ -26,7 +26,7 @@ for f in "$src/demo/"*.html; do
   link "$f"
 done
 
-for scalaVer in 2.12 2.13; do
+for scalaVer in 2.12 2.13 3.0.1; do
 
   link "$src/demo/target/scala-$scalaVer/demo-jsdeps.js"      "target/scala-$scalaVer"
   link "$src/demo/target/scala-$scalaVer/demo-fastopt.js"     "target/scala-$scalaVer"

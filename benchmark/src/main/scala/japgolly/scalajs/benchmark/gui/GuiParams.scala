@@ -3,8 +3,6 @@ package japgolly.scalajs.benchmark.gui
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Lens}
-import scalaz.std.option.optionSyntax._
-import scalaz.{\/, \/-}
 
 trait GuiParams[P] {
   import GuiParams._
@@ -27,7 +25,7 @@ trait GuiParams[P] {
 
 object GuiParams extends GuiParamsBoilerplate {
   type GenState = Vector[Any]
-  type ParseResult[P] = Header \/ Vector[P]
+  type ParseResult[P] = Either[Header, Vector[P]]
   type GenEditor = Editor[GenState]
 
   import Internals._
@@ -41,16 +39,16 @@ object GuiParams extends GuiParamsBoilerplate {
       override def renderParamsToText(p: Unit) = Vector.empty
       override def bmNameSuffix(p: Unit)       = ""
       override def parseState(s: GenState)     = parseResult
-      val parseResult = \/-(Vector(()))
+      val parseResult = Right(Vector(()))
     }
 
   def one[P, E](param: GuiParam[P, E]): GuiParams[P] = {
-    val p = SubParam(0, param, Lens.id[P])
+    val p = SubParam(0, param, Iso.id[P])
     val ps = Vector(p)
 
     new MostlyGenericParams(ps) {
       override def parseState(s: GenState): ParseResult[P] =
-        p.parse(p.key.get(s)) \/> p.param.header
+        p.parse(p.key.get(s)).toRight(p.param.header)
     }
   }
 
@@ -64,7 +62,7 @@ object GuiParams extends GuiParamsBoilerplate {
     new MostlyGenericParams(sps) {
       override def parseState(s: GenState): ParseResult[P] =
         for {
-          v1 <- sp1.parse(sp1.key.get(s)) \/> sp1.param.header
+          v1 <- sp1.parse(sp1.key.get(s)).toRight(sp1.param.header)
         } yield
           for {a1 <- v1} yield iso.reverseGet(a1)
     }
@@ -72,7 +70,7 @@ object GuiParams extends GuiParamsBoilerplate {
 
   // ===================================================================================================================
 
-  protected object Internals {
+  private[gui] object Internals {
 
     def emptyState(size: Int): GenState =
       Vector.fill(size)(())
@@ -90,7 +88,7 @@ object GuiParams extends GuiParamsBoilerplate {
       val key: Key[B]
 
       val editor: GenEditor =
-        e => param editor StateSnapshot(key get e.value)((ob, cb) => e.setStateOption(ob.map(key.set(_)(e.value)), cb))
+        e => param editor StateSnapshot(key get e.value)((ob, cb) => e.setStateOption(ob.map(key.replace(_)(e.value)), cb))
 
       def parse(b: B): Option[Vector[A]] =
         param.parser.getOption(b)
@@ -117,7 +115,7 @@ object GuiParams extends GuiParamsBoilerplate {
     abstract class MostlyGenericParams[P](ps: Vector[SubParam[P]]) extends GuiParams[P] {
       override final def initialState: GenState =
         ps.foldLeft(emptyState(ps.length))((m, p) =>
-          p.key.set(p.param.parser reverseGet p.param.initValues)(m))
+          p.key.replace(p.param.parser reverseGet p.param.initValues)(m))
 
       override final val headers: Vector[Header] =
         ps.map(_.param.header)

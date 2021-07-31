@@ -22,7 +22,7 @@ final class GuiSuite[P](val suite : Suite[P],
     new GuiSuite(suite, params, Some(e))
 
   def withBMs(bms: Vector[Benchmark[P]]): GuiSuite[P] =
-    GuiSuite.bms[P].set(bms)(this)
+    GuiSuite.bms[P].replace(bms)(this)
 }
 
 object GuiSuite {
@@ -36,7 +36,7 @@ object GuiSuite {
     new GuiSuite(suite, params, None)
 
   def bms[P]: Lens[GuiSuite[P], Vector[Benchmark[P]]] =
-    suite[P] ^|-> Suite.bms
+    suite[P] andThen Suite.bms
 
   implicit val reusability: Reusability[GuiSuite[_]] =
     Reusability.byRef

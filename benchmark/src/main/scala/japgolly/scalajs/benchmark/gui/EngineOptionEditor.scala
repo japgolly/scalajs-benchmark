@@ -2,11 +2,11 @@ package japgolly.scalajs.benchmark.gui
 
 import japgolly.scalajs.benchmark.engine.EngineOptions
 import japgolly.scalajs.benchmark.gui.Styles.{Editors => *}
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
-import monocle.macros.Lenses
+import monocle.macros.GenLens
 import scalacss.ScalaCssReact._
 
 object EngineOptionEditor {
@@ -24,7 +24,6 @@ object EngineOptionEditor {
     @inline def render: VdomElement = Component(this)
   }
 
-  @Lenses
   final case class State(warmupCnt: IntEditor.State,
                          warmupDur: DurationEditor.State,
                          mainCnt  : IntEditor.State,
@@ -45,6 +44,11 @@ object EngineOptionEditor {
   }
 
   object State {
+    def warmupCnt = GenLens[State](_.warmupCnt)
+    def warmupDur = GenLens[State](_.warmupDur)
+    def mainCnt   = GenLens[State](_.mainCnt)
+    def mainDur   = GenLens[State](_.mainDur)
+
     def init(e: EngineOptions): State =
       apply(
         warmupCnt = IntEditor.State.init(e.warmupIterations),

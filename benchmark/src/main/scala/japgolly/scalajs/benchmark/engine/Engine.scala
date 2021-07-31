@@ -40,7 +40,7 @@ final case class AbortFn(value: AsyncCallback[Unit]) {
 
 object AbortFn {
   implicit val reusability: Reusability[AbortFn] = {
-    @nowarn("cat=unused") implicit val x = Reusability.asyncCallbackByRef[Unit]
+    @nowarn("cat=unused") implicit val x: Reusability[AsyncCallback[Unit]] = Reusability.asyncCallbackByRef
     Reusability.derive
   }
 }
@@ -89,7 +89,7 @@ object Engine {
           msg(BenchmarkPreparing(progress, key)) {
 
             def complete(result: Result): AsyncCallback[Unit] =
-              AsyncCallback.byName {
+              AsyncCallback.suspend {
                 progress = progress.copy(runs = progress.runs + 1)
                 msg(BenchmarkFinished(progress, key, result))(go(next))
               }
@@ -135,7 +135,7 @@ object Engine {
                       }
 
                     var self: AsyncCallback[Unit] = AsyncCallback.delay(???)
-                    self = bmRound >> AsyncCallback.byName {
+                    self = bmRound >> AsyncCallback.suspend {
                       if (!isEnough() && !aborted)
                         self.delayMs(1)
                       else
@@ -145,7 +145,7 @@ object Engine {
                   }
 
                   def runIterations(iterations: Int, maxTime: FiniteDuration): AsyncCallback[() => Stats] =
-                    AsyncCallback.byName {
+                    AsyncCallback.suspend {
                       val sm        = new Stats.Builder
                       val iteration = runIteration(sm, TimeUtil.toMs(maxTime))
                       val runs      = (1 to iterations).foldLeft(AsyncCallback.unit)((q, _) => q >> iteration)

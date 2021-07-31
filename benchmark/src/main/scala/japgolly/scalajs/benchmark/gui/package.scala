@@ -1,14 +1,14 @@
 package japgolly.scalajs.benchmark
 
+import cats.instances.option._
+import cats.instances.vector._
+import cats.syntax.traverse._
+import japgolly.microlibs.stdlib_ext.ParseInt
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.{Iso, Prism}
 import scalacss.ScalaCssReact._
-import scalaz.\/
-import scalaz.std.option._
-import scalaz.std.vector._
-import scalaz.syntax.traverse._
 
 package object gui {
 
@@ -89,7 +89,7 @@ package object gui {
       )
 
     val IntStringPrism: Prism[String, Int] =
-      Prism[String, Int](s => \/.fromTryCatchNonFatal(s.toInt).toOption)(_.toString)
+      Prism[String, Int](ParseInt.unapply)(_.toString)
 
     val IntsAsText: Parser[Int, String] =
       listAsText(IntStringPrism)

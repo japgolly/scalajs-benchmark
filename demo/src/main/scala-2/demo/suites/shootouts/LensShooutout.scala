@@ -1,5 +1,6 @@
 package demo.suites.shootouts
 
+import cats.Functor
 import demo.Libraries
 import demo.Util._
 import japgolly.scalajs.benchmark._
@@ -11,6 +12,11 @@ import scalaz.std.anyVal._
 import scalaz.{IMap, Maybe}
 
 object LensShooutout {
+
+  implicit val catsFunctorForMaybe: Functor[Maybe] =
+    new Functor[Maybe] {
+      override def map[A, B](fa: Maybe[A])(f: A => B) = fa map f
+    }
 
   object BenchModel {
     def safeDivide(a: Int, b: Int): Maybe[Int] = if(b == 0) Maybe.empty else Maybe.just(a / b)
@@ -124,16 +130,16 @@ object LensShooutout {
     val _n3_i = Lens[Nested3, Int](_.i)(i => n => n.copy(i = i))
     val _n6_i = Lens[Nested6, Int](_.i)(i => n => n.copy(i = i))
 
-    val _n0Ton3I = _n1 composeLens _n2 composeLens _n3 composeLens _n3_i
-    val _n0Ton6I = _n1 composeLens _n2 composeLens _n3 composeLens _n4 composeLens _n5 composeLens _n6 composeLens _n6_i
+    val _n0Ton3I = _n1 andThen _n2 andThen _n3 andThen _n3_i
+    val _n0Ton6I = _n1 andThen _n2 andThen _n3 andThen _n4 andThen _n5 andThen _n6 andThen _n6_i
 
     override def lensGet0(in: Nested0Input) = _n0_i.get(in.n0)
     override def lensGet3(in: Nested0Input) = _n0Ton3I.get(in.n0)
     override def lensGet6(in: Nested0Input) = _n0Ton6I.get(in.n0)
 
-    override def lensSet0(in: Nested0Input) = _n0_i.set(43)(in.n0)
-    override def lensSet3(in: Nested0Input) = _n0Ton3I.set(43)(in.n0)
-    override def lensSet6(in: Nested0Input) = _n0Ton6I.set(43)(in.n0)
+    override def lensSet0(in: Nested0Input) = _n0_i.replace(43)(in.n0)
+    override def lensSet3(in: Nested0Input) = _n0Ton3I.replace(43)(in.n0)
+    override def lensSet6(in: Nested0Input) = _n0Ton6I.replace(43)(in.n0)
 
     override def lensModify0(in: Nested0Input) = _n0_i.modify(_ + 1)(in.n0)
     override def lensModify3(in: Nested0Input) = _n0Ton3I.modify(_ + 1)(in.n0)
@@ -158,16 +164,16 @@ object LensShooutout {
     val _n3_i = GenLens[Nested3](_.i)
     val _n6_i = GenLens[Nested6](_.i)
 
-    val _n0Ton3I = _n1 composeLens _n2 composeLens _n3 composeLens _n3_i
-    val _n0Ton6I = _n1 composeLens _n2 composeLens _n3 composeLens _n4 composeLens _n5 composeLens _n6 composeLens _n6_i
+    val _n0Ton3I = _n1 andThen _n2 andThen _n3 andThen _n3_i
+    val _n0Ton6I = _n1 andThen _n2 andThen _n3 andThen _n4 andThen _n5 andThen _n6 andThen _n6_i
 
     override def lensGet0(in: Nested0Input) = _n0_i.get(in.n0)
     override def lensGet3(in: Nested0Input) = _n0Ton3I.get(in.n0)
     override def lensGet6(in: Nested0Input) = _n0Ton6I.get(in.n0)
 
-    override def lensSet0(in: Nested0Input) = _n0_i.set(43)(in.n0)
-    override def lensSet3(in: Nested0Input) = _n0Ton3I.set(43)(in.n0)
-    override def lensSet6(in: Nested0Input) = _n0Ton6I.set(43)(in.n0)
+    override def lensSet0(in: Nested0Input) = _n0_i.replace(43)(in.n0)
+    override def lensSet3(in: Nested0Input) = _n0Ton3I.replace(43)(in.n0)
+    override def lensSet6(in: Nested0Input) = _n0Ton6I.replace(43)(in.n0)
 
     override def lensModify0(in: Nested0Input) = _n0_i.modify(_ + 1)(in.n0)
     override def lensModify3(in: Nested0Input) = _n0Ton3I.modify(_ + 1)(in.n0)
@@ -335,8 +341,8 @@ object LensShooutout {
     bm(Libraries.Scalaz.fullName            , ScalazLensBench),
     bm(Libraries.Shapeless.fullName         , ShapelessLensBench))
 
-  val param1 = GuiParam.enum[Op]("Op", Get, Set, Modify)(_.toString, initialValues = Seq(Modify))
-  val param2 = GuiParam.enum[Size]("Size", Size0, Size3, Size6)(_.size.toString, initialValues = Seq(Size6))
+  val param1 = GuiParam.enumOf[Op]("Op", Get, Set, Modify)(_.toString, initialValues = Seq(Modify))
+  val param2 = GuiParam.enumOf[Size]("Size", Size0, Size3, Size6)(_.size.toString, initialValues = Seq(Size6))
 
   val iso = GenIso.fields[Params]
   val params = GuiParams.combine2(iso)(param1, param2)

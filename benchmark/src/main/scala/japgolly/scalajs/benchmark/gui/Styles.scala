@@ -348,9 +348,9 @@ object Styles extends StyleSheet.Inline {
         case Status.Disabled   => styleS()
         case Status.Pending    => styleS()
         case Status.Incomplete => styleS(color(c"#7db2e8"))
-        case Status.Preparing  => styleS(color(c"#ef9d06"), &.before(content := "'➜ '"))
-        case Status.Running    => styleS(color(c"#ef9d06"), &.before(content := "'➜ '"))
-        case Status.Done       => styleS(color(c"#008800"), &.before(content := "'✓ '"))
+        case Status.Preparing  => styleS(color(c"#ef9d06"), &.before(content.string("➜ ")))
+        case Status.Running    => styleS(color(c"#ef9d06"), &.before(content.string("➜ ")))
+        case Status.Done       => styleS(color(c"#008800"), &.before(content.string("✓ ")))
       }
     ))
   }

@@ -30,7 +30,7 @@ object BatchModeControls {
   implicit val reusabilityProps: Reusability[Props] = {
     @nowarn("cat=unused") implicit val d = Reusability.double(499) // 499ms tolerance because we're rendering ETA with second-precision
     @nowarn("cat=unused") implicit val f: Reusability[Map[SuiteResultsFormat.Text, Enabled]] = Reusability.byRef
-    Reusability.byRef || Reusability.derive
+    Reusability.derive
   }
 
   private val engineOptionEditorStyles =
@@ -126,7 +126,7 @@ object BatchModeControls {
     // before starting a BM (so that they can walk away after hitting start).
     val downloadPrepButton =
       TagMod.when(p.downloadTest) {
-        val save = Callback.byName {
+        val save = Callback.suspend {
           Callback.traverse(List(1, 2))(i =>
             GuiUtil.saveFile(text = "", filename = s"test-$i.tmp", "text/plain"))
         }
