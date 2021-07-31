@@ -55,7 +55,7 @@ object GenBoilerplate {
          |
          |abstract class GuiParamsBoilerplate {
          |  self: GuiParams.type =>
-         |  import Internals._
+         |  import GuiParams.Internals._
          |
          |${groups.mkString("\n\n")}
          |}

@@ -25,7 +25,20 @@ object GuiParam {
   implicit def autoSingleParam[A, B](p: GuiParam[A, B]): GuiParams[A] =
     GuiParams.one(p)
 
-  def enum[A](header: Header, values: A*)
+  @deprecated("Use enumOf", "0.10.0")
+  def `enum`[A](header: Header, values: A*)
+             (resultTxt    : RenderTxt[A],
+              resultLabel  : Render[A] = null,
+              editorLabel  : A => VdomElement = null,
+              initialValues: Seq[A] = null): GuiParam[A, BitSet] =
+    enumOf(header, values: _*)(
+      resultTxt,
+      resultLabel,
+      editorLabel,
+      initialValues,
+    )
+
+  def enumOf[A](header: Header, values: A*)
              (resultTxt    : RenderTxt[A],
               resultLabel  : Render[A] = null,
               editorLabel  : A => VdomElement = null,
@@ -79,7 +92,7 @@ object GuiParam {
   }
 
   def boolean(header: Header): GuiParam[Boolean, BitSet] =
-    enum(header, true, false)(RenderTxt.Bool, Render.Bool)
+    enumOf(header, true, false)(RenderTxt.Bool, Render.Bool)
 
   def int(header: Header, initialValues: Int*): GuiParam[Int, String] =
     GuiParam(Render.Int, RenderTxt.Int, Editor.Text, Parser.IntsAsText)(header, initialValues: _*)

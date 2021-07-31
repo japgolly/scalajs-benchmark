@@ -70,7 +70,7 @@ object GuiParams extends GuiParamsBoilerplate {
 
   // ===================================================================================================================
 
-  protected object Internals {
+  private[gui] object Internals {
 
     def emptyState(size: Int): GenState =
       Vector.fill(size)(())

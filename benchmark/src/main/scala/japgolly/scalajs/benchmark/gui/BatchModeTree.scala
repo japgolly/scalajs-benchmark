@@ -91,7 +91,7 @@ object BatchModeTree {
     }
 
     def fromTocItems(items: Seq[TableOfContents.Item.NonBatchMode]): Vector[Item[Unit, Unit]] =
-      items.iterator.map {
+      items.iterator.map[Item[Unit, Unit]] {
         case i: TableOfContents.Item.Folder => Folder(i.name, fromTocItems(i.children))
         case i: TableOfContents.Item.Suite  => Suite(i.suite, i.suite.suite.bms.map(bm => bmUnit(Disabled.when(bm.isDisabledByDefault))), ())
       }.toVector
