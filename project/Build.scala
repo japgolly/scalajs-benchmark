@@ -170,9 +170,12 @@ object ScalaJsBenchmark {
           Dep.catsFree    .value,
           Dep.scalaz      .value,
           Dep.scalazEffect.value,
-          Dep.shapeless   .value,
         ),
+        libraryDependencies ++= Seq(
+          Dep.shapeless.value,
+        ).filter(_ => scalaVersion.value.startsWith("2")),
         Compile / sourceGenerators += Demo.librariesFileTask.taskValue,
+        Compile / unmanagedSourceDirectories ++= addDirsFor213_+(Compile).value,
         scalaJSLinkerConfig ~= { _.withSourceMap(true) },
         packageJSDependencies / skip := false,
       )

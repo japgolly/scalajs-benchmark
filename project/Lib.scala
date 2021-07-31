@@ -59,4 +59,16 @@ object Lib {
 
   def preventPublication: PE =
     _.settings(publish / skip := true)
+
+  def addDirsFor213_+(scope: ConfigKey): Def.Initialize[Seq[File]] = Def.setting {
+    (scope / unmanagedSourceDirectories).value.flatMap { dir =>
+      if (dir.getPath.endsWith("scala"))
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, 12)) => Nil
+          case _             => file(dir.getPath ++ "-2.13+") :: Nil
+        }
+      else
+        Nil
+    }
+  }
 }

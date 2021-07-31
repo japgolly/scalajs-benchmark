@@ -341,8 +341,8 @@ object LensShooutout {
     bm(Libraries.Scalaz.fullName            , ScalazLensBench),
     bm(Libraries.Shapeless.fullName         , ShapelessLensBench))
 
-  val param1 = GuiParam.enum[Op]("Op", Get, Set, Modify)(_.toString, initialValues = Seq(Modify))
-  val param2 = GuiParam.enum[Size]("Size", Size0, Size3, Size6)(_.size.toString, initialValues = Seq(Size6))
+  val param1 = GuiParam.enumOf[Op]("Op", Get, Set, Modify)(_.toString, initialValues = Seq(Modify))
+  val param2 = GuiParam.enumOf[Size]("Size", Size0, Size3, Size6)(_.size.toString, initialValues = Seq(Size6))
 
   val iso = GenIso.fields[Params]
   val params = GuiParams.combine2(iso)(param1, param2)

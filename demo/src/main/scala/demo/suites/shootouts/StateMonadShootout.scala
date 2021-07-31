@@ -1,11 +1,11 @@
 package demo.suites.shootouts
 
 import demo.Libraries
+import demo.TempExt._
 import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
-import monocle.macros.GenIso
 
 object StateMonadShootout {
 
@@ -60,7 +60,7 @@ object StateMonadShootout {
   case class Params(lib: Lib, size: Int) {
     override def toString = s"${lib.name} @ $size"
   }
-  val param1 = GuiParam.enum[Lib]("Library", Cats, Scalaz, ScalazTramp)(_.name)
+  val param1 = GuiParam.enumOf[Lib]("Library", Cats, Scalaz, ScalazTramp)(_.name)
   val param2 = GuiParam.int("Size", 100, 1000, 10000)
 
   val iso = GenIso.fields[Params]
