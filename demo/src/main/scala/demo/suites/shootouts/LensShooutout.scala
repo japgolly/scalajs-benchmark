@@ -1,5 +1,6 @@
 package demo.suites.shootouts
 
+import cats.Functor
 import demo.Libraries
 import demo.Util._
 import japgolly.scalajs.benchmark._
@@ -9,7 +10,6 @@ import monocle.macros.GenIso
 import scala.util.Random
 import scalaz.std.anyVal._
 import scalaz.{IMap, Maybe}
-import cats.Functor
 
 object LensShooutout {
 
