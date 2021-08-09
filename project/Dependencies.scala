@@ -19,7 +19,7 @@ object Dependencies {
     val scala2       = "2.13.6"
     val scala3       = "3.0.1"
     val scalaCss     = "0.8.0-RC1"
-    val scalaJsReact = "2.0.0-RC2"
+    val scalaJsReact = "2.0.0-RC3"
     val sourceCode   = "0.2.7"
 
     // Test only
