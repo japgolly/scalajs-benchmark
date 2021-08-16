@@ -31,7 +31,7 @@ object AsyncEffectShootout {
     import cats.effect._
     import cats.effect.unsafe.implicits.global
 
-    private def toIO[A](f: => js.Promise[A]): IO[A] =
+    @inline private def toIO[A](f: => js.Promise[A]): IO[A] =
       IO.fromPromise(IO(f))
 
     override def flatMap = setup
@@ -60,11 +60,33 @@ object AsyncEffectShootout {
 
   // ===================================================================================================================
 
+  object Zio extends Lib(Libraries.Zio.fullName) {
+    import zio._
+
+    private[this] val runtime = Runtime.default
+
+    @inline private def toTask[A](f: => js.Promise[A]): Task[A] =
+      Task.fromPromiseJS(f)
+
+    override def flatMap = setup
+      .map(_.iterator.foldLeft(Task(0))((t, f) => t.flatMap(s => toTask(f(s)))).toPromiseJS)
+      .async("") { task =>
+        new js.Promise[Int]((ok, ko) => {
+          runtime.unsafeRunAsync(task) {
+            case Exit.Success(n) => ok(n)
+            case Exit.Failure(e) => ko(e.toString)
+          }
+        })
+      }
+  }
+
+  // ===================================================================================================================
+
   final case class Params(lib: Lib, size: Int) {
     override def toString = s"${lib.name} @ $size"
   }
 
-  val param1 = GuiParam.enumOf[Lib]("Library", CatsEffect, JsPromise, ScalaJsReact)(_.name)
+  val param1 = GuiParam.enumOf[Lib]("Library", CatsEffect, JsPromise, ScalaJsReact, Zio)(_.name)
   val param2 = GuiParam.int("Size", 500)
 
   val iso = GenIso.fields[Params]

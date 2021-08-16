@@ -155,6 +155,7 @@ object ScalaJsBenchmark {
            |  final val ScalaJsReact = Library("ScalaJsReact", "${Ver.scalaJsReact}")
            |  final val Scalaz       = Library("Scalaz"      , "${Ver.scalaz}")
            |  final val Shapeless    = Library("Shapeless"   , "${Ver.shapeless}")
+           |  final val Zio          = Library("ZIO"         , "${Ver.zio}")
            |}
          """.stripMargin
       IO.write(file, content)
@@ -169,11 +170,13 @@ object ScalaJsBenchmark {
       .dependsOn(benchmark)
       .settings(
         libraryDependencies ++= Seq(
-          Dep.cats        .value,
-          Dep.catsEffect  .value,
-          Dep.catsFree    .value,
-          Dep.scalaz      .value,
-          Dep.scalazEffect.value,
+          Dep.cats           .value,
+          Dep.catsEffect     .value,
+          Dep.catsFree       .value,
+          Dep.scalaJsJavaTime.value,
+          Dep.scalaz         .value,
+          Dep.scalazEffect   .value,
+          Dep.zio            .value,
         ),
         libraryDependencies ++= Seq(
           Dep.shapeless.value,
