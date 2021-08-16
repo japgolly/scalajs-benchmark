@@ -32,8 +32,8 @@ EOB
   echo
 }
 
-go 2.13.6  1.6.0
-go 3.0.1   1.6.0
+go 2.13.6  1.7.0
+go 3.0.1   1.7.0
 
 git status
 echo
