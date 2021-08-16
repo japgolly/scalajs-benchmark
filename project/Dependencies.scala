@@ -26,6 +26,7 @@ object Dependencies {
     val utest        = "0.7.10"
 
     // Demo only
+    val catsEffect   = "3.2.2"
     val shapeless    = "2.3.7"
     val scalaz       = "7.3.4"
   }
@@ -33,6 +34,7 @@ object Dependencies {
   object Dep {
 
     val cats                = Def.setting("org.typelevel"                     %%% "cats-core"               % Ver.cats)
+    val catsEffect          = Def.setting("org.typelevel"                     %%% "cats-effect"             % Ver.catsEffect)
     val catsFree            = Def.setting("org.typelevel"                     %%% "cats-free"               % Ver.cats)
     val circe               = Def.setting("io.circe"                          %%% "circe-core"              % Ver.circe)
     val circeGeneric        = Def.setting("io.circe"                          %%% "circe-generic"           % Ver.circe)
