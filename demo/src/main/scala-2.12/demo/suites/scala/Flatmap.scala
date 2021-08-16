@@ -16,7 +16,7 @@ object Flatmap {
   val a: A = 123
 
   private def makeBmFn(as: => TraversableOnce[A]): Benchmark.Fn =
-    () => as.foreach(_ => ())
+    Benchmark.Fn.Sync(() => as.foreach(_ => ()))
 
   private def makeTravBm[C[x] <: Iterable[x]](name: String, fill: (Int, A) => C[A]): Benchmark[Params] =
     Benchmark.fromFn[Params](name) { p =>

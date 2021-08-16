@@ -39,4 +39,4 @@ jobs:
 
       - name: Build and test
         shell: bash
-        run: sbt ++${{ matrix.scala }} test
+        run: sbt ++${{ matrix.scala }} test demo/fastOptJS
