@@ -105,15 +105,15 @@ object Engine {
                 // Real benchmarking here
 
                 msg(BenchmarkRunning(progress, key)) {
-                  val bm = CallbackTo.lift(bmFn)
-                  val bmTimedUnsafe = clock.time(bm).toScalaFn
 
                   def runIteration(s: Stats.Builder, maxTimeMs: Double): AsyncCallback[Unit] = {
 
                     def isEnough(): Boolean =
                       s.totalIterationTime() >= maxTimeMs
 
-                    val bmRound: AsyncCallback[Unit] =
+                    def bmRoundSync(bm: CallbackTo[Any]): AsyncCallback[Unit] = {
+                      val bmTimedUnsafe = clock.time(bm).toScalaFn
+
                       AsyncCallback.delay {
                         val startTime = System.currentTimeMillis()
                         val delayAfter = startTime + 1000
@@ -132,6 +132,37 @@ object Engine {
 
                         if (!aborted)
                           go()
+                      }
+                    }
+
+                    def bmRoundAsync(bm: AsyncCallback[Any]): AsyncCallback[Unit] = {
+                      val bmTimed = clock.timeAsync(bm)
+
+                      AsyncCallback.suspend {
+                        val startTime = System.currentTimeMillis()
+                        val delayAfter = startTime + 1000
+                        @inline def needDelay(): Boolean = System.currentTimeMillis() > delayAfter
+
+                        var go: AsyncCallback[Unit] = AsyncCallback.delay(???)
+                        go = bmTimed.flatMap { t =>
+                          s.add(t)
+                          if (!isEnough() && !needDelay())
+                            go
+                          else
+                            AsyncCallback.unit
+                        }
+
+                        if (aborted)
+                          AsyncCallback.unit
+                        else
+                          go
+                      }
+                    }
+
+                    val bmRound: AsyncCallback[Unit] =
+                      bmFn match {
+                        case Benchmark.Fn.Sync (f) => bmRoundSync(CallbackTo.lift(f))
+                        case Benchmark.Fn.Async(f) => bmRoundAsync(AsyncCallback.fromJsPromise(f()))
                       }
 
                     var self: AsyncCallback[Unit] = AsyncCallback.delay(???)
