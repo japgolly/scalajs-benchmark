@@ -13,26 +13,30 @@ object Dependencies {
     val fileSaver    = "2.0.5"
     val jstat        = "1.9.3"
     val jsZip        = "3.5.0"
-    val microlibs    = "3.0"
+    val microlibs    = "3.0.1"
     val monocle      = "3.0.0"
     val react        = "17.0.2"
     val scala2       = "2.13.6"
     val scala3       = "3.0.1"
     val scalaCss     = "0.8.0-RC1"
-    val scalaJsReact = "2.0.0-RC2"
+    val scalaJsReact = "2.0.0-RC3"
     val sourceCode   = "0.2.7"
 
     // Test only
     val utest        = "0.7.10"
 
     // Demo only
-    val shapeless    = "2.3.7"
-    val scalaz       = "7.3.4"
+    val catsEffect      = "3.2.2"
+    val scalaJsJavaTime = "2.3.0"
+    val scalaz          = "7.3.4"
+    val shapeless       = "2.3.7"
+    val zio             = "1.0.10"
   }
 
   object Dep {
 
     val cats                = Def.setting("org.typelevel"                     %%% "cats-core"               % Ver.cats)
+    val catsEffect          = Def.setting("org.typelevel"                     %%% "cats-effect"             % Ver.catsEffect)
     val catsFree            = Def.setting("org.typelevel"                     %%% "cats-free"               % Ver.cats)
     val circe               = Def.setting("io.circe"                          %%% "circe-core"              % Ver.circe)
     val circeGeneric        = Def.setting("io.circe"                          %%% "circe-generic"           % Ver.circe)
@@ -44,6 +48,7 @@ object Dependencies {
     val monocleMacro        = Def.setting("dev.optics"                        %%% "monocle-macro"           % Ver.monocle)
     val scalaCss            = Def.setting("com.github.japgolly.scalacss"      %%% "core"                    % Ver.scalaCss)
     val scalaCssReact       = Def.setting("com.github.japgolly.scalacss"      %%% "ext-react"               % Ver.scalaCss)
+    val scalaJsJavaTime     = Def.setting("io.github.cquiroz"                 %%% "scala-java-time"         % Ver.scalaJsJavaTime)
     val scalaJsReactCore    = Def.setting("com.github.japgolly.scalajs-react" %%% "core"                    % Ver.scalaJsReact)
     val scalaJsReactExtra   = Def.setting("com.github.japgolly.scalajs-react" %%% "extra"                   % Ver.scalaJsReact)
     val scalaJsReactMonocle = Def.setting("com.github.japgolly.scalajs-react" %%% "extra-ext-monocle3"      % Ver.scalaJsReact)
@@ -52,6 +57,7 @@ object Dependencies {
     val shapeless           = Def.setting("com.chuusai"                       %%% "shapeless"               % Ver.shapeless)
     val sourceCode          = Def.setting("com.lihaoyi"                       %%% "sourcecode"              % Ver.sourceCode)
     val utest               = Def.setting("com.lihaoyi"                       %%% "utest"                   % Ver.utest)
+    val zio                 = Def.setting("dev.zio"                           %%% "zio"                     % Ver.zio)
 
     val react = (
       "org.webjars.npm" % "react" % Ver.react

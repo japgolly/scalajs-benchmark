@@ -1,13 +1,16 @@
 package japgolly.scalajs.benchmark.engine
 
-import japgolly.scalajs.react.CallbackTo
+import japgolly.scalajs.react.{AsyncCallback, CallbackTo}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal
 import scala.util.Try
 
 trait Clock {
   /** @return time `f` took to complete, in milliseconds */
-  def time(f: CallbackTo[_]): CallbackTo[Double]
+  def time(f: CallbackTo[Any]): CallbackTo[Double]
+
+  /** @return time `f` took to complete, in milliseconds */
+  def timeAsync(f: AsyncCallback[Any]): AsyncCallback[Double]
 }
 
 trait StatelessClock extends Clock {
@@ -25,7 +28,7 @@ trait StatelessClock extends Clock {
       case _                     => "StatelessClock"
     }
 
-  override def time(c: CallbackTo[_]): CallbackTo[Double] = {
+  override def time(c: CallbackTo[Any]): CallbackTo[Double] = {
     val f = c.toScalaFn
     CallbackTo {
       val a = unsafeGet()
@@ -34,6 +37,16 @@ trait StatelessClock extends Clock {
       duration(a, b)
     }
   }
+
+  override def timeAsync(f: AsyncCallback[Any]): AsyncCallback[Double] =
+    for {
+      a <- asyncNow
+      _ <- f
+      b <- asyncNow
+    } yield duration(a, b)
+
+  private[this] val asyncNow =
+    AsyncCallback.delay(unsafeGet())
 }
 
 object Clock {
@@ -63,6 +76,8 @@ object Clock {
     Try(new ChromeInterval()).toOption.map { i =>
       var last: Any = 123 // serving the same purpose as BlackHole
 
+      @inline def result() = i.microseconds() / 1000.0
+
       new Clock {
         override def toString =
           last match {
@@ -70,15 +85,27 @@ object Clock {
             case _                     => "Clock.Chrome"
           }
 
-        override def time(c: CallbackTo[_]): CallbackTo[Double] = {
+        override def time(c: CallbackTo[Any]): CallbackTo[Double] = {
           val f = c.toScalaFn
           CallbackTo {
             i.start()
             last = f()
             i.stop()
-            i.microseconds() / 1000.0
+            result()
           }
         }
+
+        override def timeAsync(f: AsyncCallback[Any]): AsyncCallback[Double] =
+          asyncStart >> f >> asyncStop
+
+        private[this] val asyncStart =
+          AsyncCallback.delay(i.start())
+
+        private[this] val asyncStop =
+          AsyncCallback.delay {
+            i.stop()
+            result()
+          }
       }
     }
 
