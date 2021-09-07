@@ -14,7 +14,7 @@ object Dependencies {
     val jstat        = "1.9.3"
     val jsZip        = "3.5.0"
     val microlibs    = "3.0.1"
-    val monocle      = "3.0.0"
+    val monocle      = "3.1.0"
     val react        = "17.0.2"
     val scala2       = "2.13.6"
     val scala3       = "3.0.1"
@@ -26,11 +26,11 @@ object Dependencies {
     val utest        = "0.7.10"
 
     // Demo only
-    val catsEffect      = "3.2.2"
+    val catsEffect      = "3.2.7"
     val scalaJsJavaTime = "2.3.0"
-    val scalaz          = "7.3.4"
+    val scalaz          = "7.3.5"
     val shapeless       = "2.3.7"
-    val zio             = "1.0.10"
+    val zio             = "1.0.11"
   }
 
   object Dep {
