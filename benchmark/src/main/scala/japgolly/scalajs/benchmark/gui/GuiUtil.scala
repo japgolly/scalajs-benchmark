@@ -4,7 +4,7 @@ import japgolly.scalajs.benchmark.engine.TimeUtil
 import japgolly.scalajs.benchmark.vendor.FileSaver
 import japgolly.scalajs.react.Callback
 import monocle.{Lens, Optional}
-import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
+import org.scalajs.dom.{Blob, BlobPropertyBag}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.reflect.ClassTag
 import scala.scalajs.js
@@ -116,7 +116,7 @@ object GuiUtil {
   def saveFile(text: String, filename: String, mimeType: String): Callback =
     Callback {
       val body = js.Array[js.Any](text)
-      val mime = BlobPropertyBag(mimeType + ";charset=utf-8")
+      val mime = new BlobPropertyBag { `type` = mimeType + ";charset=utf-8" }
       val blob = new Blob(body, mime)
       FileSaver.saveAs(blob, filename)
     }
