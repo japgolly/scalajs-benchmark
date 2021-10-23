@@ -86,7 +86,8 @@ object AsyncEffectShootout {
     override def toString = s"${lib.name} @ $size"
   }
 
-  val param1 = GuiParam.enumOf[Lib]("Library", CatsEffect, JsPromise, ScalaJsReact, Zio)(_.name)
+  // Disabling CatsEffect because it's quite misleading, see #217
+  val param1 = GuiParam.enumOf[Lib]("Library", /*CatsEffect,*/ JsPromise, ScalaJsReact, Zio)(_.name)
   val param2 = GuiParam.int("Size", 500)
 
   val iso = GenIso.fields[Params]
