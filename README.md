@@ -12,12 +12,25 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
 ## How do I use it?
 
-1. Include `scalajs-benchmark` as a dependency in your Scala.JS project.
+1. Include the Scala.js and JsDependencies plugins in your sbt `project/plugins.sbt` file:
   ```scala
-  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.10.0"
+  addSbtPlugin("org.scala-js" %% "sbt-scalajs"  % "1.7.1")
+  addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
   ```
 
-1. You write benchmarks.
+2. Enable the plugins in your sbt project.
+  ```scala
+  enablePlugins(ScalaJSPlugin, JSDependenciesPlugin)
+  ```
+
+3. Include `scalajs-benchmark` as a dependency in your Scala.JS project, along with chartjs.
+  ```scala
+  libraryDependencies += "com.github.japgolly.scalajs-benchmark" %%% "benchmark" % "0.10.0"
+  
+  jsDependencies += "org.webjars" % "chartjs" % "1.0.2" / "Chart.js" minified "Chart.min.js"
+  ```
+
+4. Write benchmarks your benchmarks.
   ```scala
   import japgolly.scalajs.benchmark._
   import japgolly.scalajs.benchmark.gui._
@@ -44,9 +57,23 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
   *(Hey, can you make that `1 to 100` configurable in the GUI? [You sure can.](https://github.com/japgolly/scalajs-benchmark/blob/master/demo/src/main/scala/demo/suites/example/Examples.scala))*
 
-1. Add a tiny loader HTML [like this](demo/scala213-full.html).
+5. Add a tiny loader HTML [like this](demo/scala213-full.html) file called `index.html` to the root directory of your project. In this example our project is called 'demo'. `demo-fastopt.js` is the result of our compiled benchmark suite, while `demo-jsdeps.js` is produced by the `JsDependencies` plugin.:
+  ```html
+  <!DOCTYPE html>
+  <html>
+  <head lang="en">
+      <title>scalajs-benchmarks</title>
+  </head>
+  <body>
+      <div id="body">Loading...</div>
+      <script type="text/javascript" src="target/scala-3.0.1/demo-jsdeps.js"></script>
+      <script type="text/javascript" src="target/scala-3.0.1/demo-fastopt.js"></script>
+      <script type="text/javascript">main();</script>
+  </body>
+  </html>
+  ```
 
-1. Create a main app and point `scalajs-benchmark` at your suite of benchmarks.
+6. Create a main app and point `scalajs-benchmark` at your suite of benchmarks.
 
   ```scala
   import org.scalajs.dom.document
@@ -54,7 +81,7 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
 
   object Main {
 
-    def main(args: Array[String]) = {
+    def main(): Unit = {
       val body = document getElementById "body"
       BenchmarkGUI.renderSuite(body)(Example.suite)
     }
@@ -73,7 +100,7 @@ See an online demo here: https://japgolly.github.io/scalajs-benchmark/.
     suites.scala.all)
   ```
 
-1. Compile; run in browser. Done.
+7. Compile and run in browser. One way to do this is the use the `fastOptJS` sbt command, and then run a local [http server](https://www.npmjs.com/package/http-server) from the root directory of your project.
 
 
 ## Support
