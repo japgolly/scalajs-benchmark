@@ -7,7 +7,7 @@ import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 object Dependencies {
 
   object Ver {
-    val cats         = "2.6.1"
+    val cats         = "2.7.0"
     val chartJs      = "1.0.2"
     val circe        = "0.14.1"
     val fileSaver    = "2.0.5"
