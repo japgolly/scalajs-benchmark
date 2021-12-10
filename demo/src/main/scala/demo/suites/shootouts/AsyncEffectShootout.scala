@@ -9,6 +9,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.GenIso
 import scala.scalajs.js
 import scala.scalajs.js.|
+import cats.effect.unsafe.IORuntime
+import cats.effect.unsafe.IORuntimeConfig
 
 object AsyncEffectShootout {
 
@@ -29,7 +31,14 @@ object AsyncEffectShootout {
 
   object CatsEffect extends Lib(Libraries.CatsEffect.fullName) {
     import cats.effect._
-    import cats.effect.unsafe.implicits.global
+    import scala.scalajs.concurrent.QueueExecutionContext
+    implicit val ioRuntime = IORuntime(
+      QueueExecutionContext.promises(),
+      QueueExecutionContext.promises(),
+      IORuntime.defaultScheduler,
+      () => (),
+      IORuntimeConfig()
+    )
 
     @inline private def toIO[A](f: => js.Promise[A]): IO[A] =
       IO.fromPromise(IO(f))
