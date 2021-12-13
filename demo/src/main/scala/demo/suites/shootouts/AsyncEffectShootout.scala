@@ -29,7 +29,15 @@ object AsyncEffectShootout {
 
   object CatsEffect extends Lib(Libraries.CatsEffect.fullName) {
     import cats.effect._
-    import cats.effect.unsafe.implicits.global
+    import cats.effect.unsafe._
+    import scala.scalajs.concurrent.QueueExecutionContext
+    implicit val ioRuntime = IORuntime(
+      QueueExecutionContext.promises(),
+      QueueExecutionContext.promises(),
+      IORuntime.defaultScheduler,
+      () => (),
+      IORuntimeConfig()
+    )
 
     @inline private def toIO[A](f: => js.Promise[A]): IO[A] =
       IO.fromPromise(IO(f))
@@ -86,8 +94,7 @@ object AsyncEffectShootout {
     override def toString = s"${lib.name} @ $size"
   }
 
-  // Disabling CatsEffect because it's quite misleading, see #217
-  val param1 = GuiParam.enumOf[Lib]("Library", /*CatsEffect,*/ JsPromise, ScalaJsReact, Zio)(_.name)
+  val param1 = GuiParam.enumOf[Lib]("Library", CatsEffect, JsPromise, ScalaJsReact, Zio)(_.name)
   val param2 = GuiParam.int("Size", 500)
 
   val iso = GenIso.fields[Params]
