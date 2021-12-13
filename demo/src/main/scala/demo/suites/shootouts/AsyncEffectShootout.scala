@@ -31,7 +31,8 @@ object AsyncEffectShootout {
     import cats.effect._
     import cats.effect.unsafe._
     import scala.scalajs.concurrent.QueueExecutionContext
-    implicit val ioRuntime = IORuntime(
+
+    private[this] implicit val ioRuntime: IORuntime = IORuntime(
       QueueExecutionContext.promises(),
       QueueExecutionContext.promises(),
       IORuntime.defaultScheduler,
