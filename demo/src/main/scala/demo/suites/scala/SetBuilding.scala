@@ -1,10 +1,10 @@
 package demo.suites.scala
 
-import demo.TempExt._
 import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
+import monocle.macros.GenIso
 import scala.collection.immutable._
 
 object SetBuilding {

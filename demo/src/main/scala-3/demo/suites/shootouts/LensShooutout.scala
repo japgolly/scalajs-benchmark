@@ -2,7 +2,6 @@ package demo.suites.shootouts
 
 import cats.Functor
 import demo.Libraries
-import demo.TempExt._
 import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
@@ -10,6 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import scala.util.Random
 import scalaz.std.anyVal._
 import scalaz.{IMap, Maybe}
+import monocle.macros.GenIso
 
 object LensShooutout {
 

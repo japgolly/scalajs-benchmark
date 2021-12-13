@@ -1,12 +1,12 @@
 package demo.suites.shootouts
 
 import demo.Libraries
-import demo.TempExt._
 import demo.Util._
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.callback.AsyncCallback
 import japgolly.scalajs.react.vdom.html_<^._
+import monocle.macros.GenIso
 import scala.scalajs.js
 import scala.scalajs.js.|
 
@@ -29,7 +29,15 @@ object AsyncEffectShootout {
 
   object CatsEffect extends Lib(Libraries.CatsEffect.fullName) {
     import cats.effect._
-    import cats.effect.unsafe.implicits.global
+    import cats.effect.unsafe._
+    import scala.scalajs.concurrent.QueueExecutionContext
+    implicit val ioRuntime = IORuntime(
+      QueueExecutionContext.promises(),
+      QueueExecutionContext.promises(),
+      IORuntime.defaultScheduler,
+      () => (),
+      IORuntimeConfig()
+    )
 
     @inline private def toIO[A](f: => js.Promise[A]): IO[A] =
       IO.fromPromise(IO(f))

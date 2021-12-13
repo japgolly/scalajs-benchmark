@@ -1,6 +1,6 @@
 package japgolly.scalajs.benchmark.vendor
 
-import org.scalajs.dom.raw.Blob
+import org.scalajs.dom.Blob
 import scala.annotation.nowarn
 import scala.scalajs.js
 import scala.scalajs.js.annotation._

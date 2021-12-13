@@ -1,11 +1,11 @@
 package demo.suites.shootouts
 
-import demo.TempExt._
 import demo.Util._
 import demo.{Libraries, suites}
 import japgolly.scalajs.benchmark._
 import japgolly.scalajs.benchmark.gui._
 import japgolly.scalajs.react.vdom.html_<^._
+import monocle.macros.GenIso
 
 object FreeMonadShootout {
 

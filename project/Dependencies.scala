@@ -7,30 +7,30 @@ import org.scalajs.jsdependencies.sbtplugin.JSDependenciesPlugin.autoImport._
 object Dependencies {
 
   object Ver {
-    val cats         = "2.6.1"
+    val cats         = "2.7.0"
     val chartJs      = "1.0.2"
     val circe        = "0.14.1"
     val fileSaver    = "2.0.5"
     val jstat        = "1.9.3"
-    val jsZip        = "3.5.0"
-    val microlibs    = "3.0.1"
+    val jsZip        = "3.7.1"
+    val microlibs    = "4.0.0"
     val monocle      = "3.1.0"
     val react        = "17.0.2"
     val scala2       = "2.13.6"
     val scala3       = "3.0.1"
-    val scalaCss     = "0.8.0-RC1"
-    val scalaJsReact = "2.0.0-RC3"
+    val scalaCss     = "1.0.0"
+    val scalaJsReact = "2.0.0"
     val sourceCode   = "0.2.7"
 
     // Test only
     val utest        = "0.7.10"
 
     // Demo only
-    val catsEffect      = "3.2.7"
+    val catsEffect      = "3.3.0"
     val scalaJsJavaTime = "2.3.0"
     val scalaz          = "7.3.5"
     val shapeless       = "2.3.7"
-    val zio             = "1.0.11"
+    val zio             = "1.0.12"
   }
 
   object Dep {
