@@ -30,7 +30,7 @@ object Dependencies {
     val scalaJsJavaTime = "2.3.0"
     val scalaz          = "7.3.5"
     val shapeless       = "2.3.7"
-    val zio             = "1.0.12"
+    val zio             = "1.0.13"
   }
 
   object Dep {
