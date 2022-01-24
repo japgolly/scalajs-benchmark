@@ -23,7 +23,7 @@ object Dependencies {
     val sourceCode   = "0.2.7"
 
     // Test only
-    val utest        = "0.7.10"
+    val utest        = "0.7.11"
 
     // Demo only
     val catsEffect      = "3.3.0"
