@@ -12,7 +12,7 @@ object Dependencies {
     val circe        = "0.14.1"
     val fileSaver    = "2.0.5"
     val jstat        = "1.9.3"
-    val jsZip        = "3.7.1"
+    val jsZip        = "3.8.0"
     val microlibs    = "4.0.0"
     val monocle      = "3.1.0"
     val react        = "17.0.2"
