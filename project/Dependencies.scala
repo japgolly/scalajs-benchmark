@@ -26,7 +26,7 @@ object Dependencies {
     val utest        = "0.7.10"
 
     // Demo only
-    val catsEffect      = "3.3.0"
+    val catsEffect      = "3.3.13"
     val scalaJsJavaTime = "2.3.0"
     val scalaz          = "7.3.5"
     val shapeless       = "2.3.7"
