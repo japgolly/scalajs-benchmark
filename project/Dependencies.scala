@@ -9,7 +9,7 @@ object Dependencies {
   object Ver {
     val cats         = "2.7.0"
     val chartJs      = "1.0.2"
-    val circe        = "0.14.1"
+    val circe        = "0.14.3"
     val fileSaver    = "2.0.5"
     val jstat        = "1.9.3"
     val jsZip        = "3.7.1"
