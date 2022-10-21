@@ -16,7 +16,7 @@ object Dependencies {
     val microlibs    = "4.0.0"
     val monocle      = "3.1.0"
     val react        = "17.0.2"
-    val scala2       = "2.13.6"
+    val scala2       = "2.13.10"
     val scala3       = "3.0.1"
     val scalaCss     = "1.0.0"
     val scalaJsReact = "2.0.0"
