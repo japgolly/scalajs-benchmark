@@ -14,7 +14,7 @@ object Dependencies {
     val jstat        = "1.9.3"
     val jsZip        = "3.7.1"
     val microlibs    = "4.0.0"
-    val monocle      = "3.1.0"
+    val monocle      = "3.2.0"
     val react        = "17.0.2"
     val scala2       = "2.13.6"
     val scala3       = "3.0.1"
