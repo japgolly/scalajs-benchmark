@@ -28,7 +28,7 @@ object Dependencies {
     // Demo only
     val catsEffect      = "3.3.0"
     val scalaJsJavaTime = "2.3.0"
-    val scalaz          = "7.3.5"
+    val scalaz          = "7.3.8"
     val shapeless       = "2.3.7"
     val zio             = "1.0.12"
   }
